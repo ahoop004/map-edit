@@ -2,23 +2,29 @@
 
 ## MVP Foundation
 - [x] Scaffold project directories and placeholder modules.
-- [ ] Bootstrap PySide6 application entry point (`src/map_editor/app.py`) and lightweight CLI launcher.
-- [ ] Implement main window shell with menu, status bar, and dock/side layouts (`src/map_editor/ui/main_window.py`).
-- [ ] Build map viewer widget with zoom/pan and overlay hooks (`src/map_editor/ui/map_viewer.py`).
-- [ ] Build metadata editor panel with validated inputs and signal wiring (`src/map_editor/ui/metadata_panel.py`).
-- [ ] Define map bundle data model capturing image path, metadata, and annotations (`src/map_editor/models/map_bundle.py`).
+- [x] Implement application bootstrap in `src/map_editor/app.py` (QApplication factory, `main()` entry).
+- [x] Create CLI launcher script `scripts/run_map_editor.py` that invokes the app bootstrap.
+- [x] Implement `MainWindow` skeleton with central widget placeholders.
+- [x] Add file menu actions, status bar messaging, and dock/side panel layout to `MainWindow`.
+- [x] Implement `MapViewer` base widget that renders the loaded PNG.
+- [ ] Add zoom/pan interaction handlers to `MapViewer`.
+- [ ] Expose overlay management hooks in `MapViewer` for annotations.
+- [ ] Build metadata editor form layout in `src/map_editor/ui/metadata_panel.py`.
+- [ ] Add field validation and signal/slot wiring for the metadata panel.
+- [ ] Define `MapBundle` data model capturing image path, metadata, and annotations (`src/map_editor/models/map_bundle.py`).
 - [ ] Define annotation data structures for start/finish lines and spawn points (`src/map_editor/models/annotations.py`).
-- [ ] Implement YAML read/write utilities (`src/map_editor/services/yaml_serializer.py`).
-- [ ] Implement bundle loader/validator that pairs PNG + YAML and reports issues (`src/map_editor/services/map_loader.py`).
-- [ ] Create undo/redo command implementations for metadata and annotations (`src/map_editor/commands/annotation_commands.py`).
-- [ ] Wire viewer and panels together to display loaded maps and overlays.
+- [ ] Implement YAML load helpers with schema validation (`src/map_editor/services/yaml_serializer.py`).
+- [ ] Implement YAML dump helpers that serialize metadata + annotations.
+- [ ] Implement bundle loader that pairs PNG + YAML, resolves paths, and surfaces validation issues (`src/map_editor/services/map_loader.py`).
+- [ ] Implement annotation-focused undo/redo commands (`src/map_editor/commands/annotation_commands.py`).
+- [ ] Wire viewer, metadata panel, and models together to display loaded maps.
 - [ ] Implement annotation editing tools (add/move/delete) tied into undo stack.
 - [ ] Add save workflow exporting updated YAML (with backups/versioning as needed).
 
 ## Testing & Quality
-- [ ] Define sample map fixtures (existing PNG/YAML pairs) for manual + automated tests.
+- [ ] Collect sample map fixtures (existing PNG/YAML pairs) for manual + automated tests.
 - [ ] Add unit tests for YAML parsing/serialization and annotation models.
-- [ ] Plan integration test to ensure round-trip open → edit → save works.
+- [ ] Add integration test covering open → edit → save round trip.
 - [ ] Integrate linting/formatting (e.g., `ruff`, `black`) and CI-ready test entry point.
 
 ## UX Enhancements
