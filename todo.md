@@ -7,14 +7,14 @@
 - [x] Implement `MainWindow` skeleton with central widget placeholders.
 - [x] Add file menu actions, status bar messaging, and dock/side panel layout to `MainWindow`.
 - [x] Implement `MapViewer` base widget that renders the loaded PNG.
-- [ ] Add zoom/pan interaction handlers to `MapViewer`.
-- [ ] Expose overlay management hooks in `MapViewer` for annotations.
-- [ ] Build metadata editor form layout in `src/map_editor/ui/metadata_panel.py`.
-- [ ] Add field validation and signal/slot wiring for the metadata panel.
-- [ ] Define `MapBundle` data model capturing image path, metadata, and annotations (`src/map_editor/models/map_bundle.py`).
-- [ ] Define annotation data structures for start/finish lines and spawn points (`src/map_editor/models/annotations.py`).
-- [ ] Implement YAML load helpers with schema validation (`src/map_editor/services/yaml_serializer.py`).
-- [ ] Implement YAML dump helpers that serialize metadata + annotations.
+- [x] Add zoom/pan interaction handlers to `MapViewer`.
+- [x] Expose overlay management hooks in `MapViewer` for annotations.
+- [x] Build metadata editor form layout in `src/map_editor/ui/metadata_panel.py`.
+- [x] Add field validation and signal/slot wiring for the metadata panel.
+- [x] Define `MapBundle` data model capturing image path, metadata, and annotations (`src/map_editor/models/map_bundle.py`).
+- [x] Define annotation data structures for start/finish lines and spawn points (`src/map_editor/models/annotations.py`).
+- [x] Implement YAML load helpers with schema validation (`src/map_editor/services/yaml_serializer.py`).
+- [x] Implement YAML dump helpers that serialize metadata + annotations.
 - [ ] Implement bundle loader that pairs PNG + YAML, resolves paths, and surfaces validation issues (`src/map_editor/services/map_loader.py`).
 - [ ] Implement annotation-focused undo/redo commands (`src/map_editor/commands/annotation_commands.py`).
 - [ ] Wire viewer, metadata panel, and models together to display loaded maps.

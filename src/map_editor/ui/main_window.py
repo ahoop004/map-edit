@@ -11,14 +11,15 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QDockWidget,
     QHBoxLayout,
-    QLabel,
     QMainWindow,
     QMessageBox,
     QStatusBar,
     QWidget,
 )
 
+from map_editor.models.map_bundle import MapMetadata
 from map_editor.ui.map_viewer import MapViewer
+from map_editor.ui.metadata_panel import MapMetadataPanel
 
 
 class MainWindow(QMainWindow):
@@ -31,6 +32,7 @@ class MainWindow(QMainWindow):
 
         self._current_map: Optional[Path] = None
         self._map_viewer = MapViewer(self)
+        self._metadata_panel = MapMetadataPanel(self)
 
         self._init_status_bar()
         self._init_central_widget()
@@ -76,28 +78,41 @@ class MainWindow(QMainWindow):
         metadata_dock = QDockWidget("Metadata", self)
         metadata_dock.setObjectName("metadataDock")
         metadata_dock.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea | Qt.DockWidgetArea.LeftDockWidgetArea)
-        placeholder = QLabel("Metadata panel coming soon", metadata_dock)
-        placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        metadata_dock.setWidget(placeholder)
+        metadata_dock.setWidget(self._metadata_panel)
         metadata_dock.setMinimumWidth(280)
         metadata_dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, metadata_dock)
+        self._metadata_panel.metadataChanged.connect(self._handle_metadata_changed)
 
     def _select_map_bundle(self) -> None:
         start_dir = str(self._current_map.parent if self._current_map else Path.home())
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Open map YAML",
+            "Open map bundle",
             start_dir,
-            "ROS map YAML files (*.yaml);;All files (*)",
+            "ROS map YAML files (*.yaml);;Image files (*.png *.jpg *.jpeg *.bmp);;All files (*)",
         )
         if not file_path:
             return
 
-        self._current_map = Path(file_path)
-        self.statusBar().showMessage(f"Loaded metadata: {self._current_map.name}")
+        selected_path = Path(file_path)
+        suffix = selected_path.suffix.lower()
+
+        if suffix in {".png", ".jpg", ".jpeg", ".bmp"}:
+            if self._map_viewer.set_map_image(selected_path):
+                self._current_map = selected_path
+                self.statusBar().showMessage(f"Loaded image: {selected_path.name}")
+                self._metadata_panel.set_metadata(MapMetadata.default())
+            else:
+                QMessageBox.warning(self, "Failed to load image", selected_path.name)
+            return
+
+        # Default to YAML handling; full parsing will come later.
+        self._current_map = selected_path
+        self.statusBar().showMessage(f"Loaded metadata: {selected_path.name}")
         self._map_viewer.show_message("YAML parsing not implemented yet")
         self._action_save.setEnabled(True)
+        self._metadata_panel.set_metadata(None)
 
     def _save_map_bundle(self) -> None:
         if not self._current_map:
@@ -106,3 +121,8 @@ class MainWindow(QMainWindow):
 
         # Placeholder save logic; will integrate with map persistence services.
         self.statusBar().showMessage(f"Saved (placeholder): {self._current_map.name}")
+
+    def _handle_metadata_changed(self, metadata: MapMetadata) -> None:
+        self.statusBar().showMessage(
+            f"Metadata updated: res={metadata.resolution:.3f}, origin=({metadata.origin_x:.2f}, {metadata.origin_y:.2f})"
+        )
