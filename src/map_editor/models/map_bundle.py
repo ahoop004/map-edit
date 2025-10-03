@@ -55,6 +55,9 @@ class MapBundle:
     def with_annotations(self, annotations: MapAnnotations) -> "MapBundle":
         return MapBundle(self.image_path, self.yaml_path, self.metadata, annotations)
 
+    def with_yaml_path(self, yaml_path: Path) -> "MapBundle":
+        return MapBundle(self.image_path, yaml_path, self.metadata, self.annotations)
+
     @property
     def stem(self) -> str:
         """Base filename stem shared by the map bundle."""

@@ -130,4 +130,4 @@ class MapMetadataPanel(QWidget):
         self.metadataChanged.emit(updated)
 
 
-__all__ = ["MapMetadata", "MapMetadataPanel"]
+__all__ = ["MapMetadataPanel"]
