@@ -99,6 +99,10 @@ class MapViewer(QGraphicsView):
         self._overlay_items.clear()
         self.cancel_placement()
         self._diagnostic_overlay = None
+        for item in self._centerline_preview_items:
+            self._scene.removeItem(item)
+        self._centerline_preview_items.clear()
+        self._centerline_temp_points.clear()
 
         self._pixmap_item = self._scene.addPixmap(pixmap)
         self._pixmap_width = float(pixmap.width())
@@ -469,3 +473,7 @@ class MapViewer(QGraphicsView):
             f"Centerline placement complete ({len(points)} point(s))."
         )
         self.centerlinePlacementFinished.emit(points)
+
+    def complete_centerline_placement(self) -> None:
+        if self._placement_mode is MapViewer.PlacementMode.CENTERLINE:
+            self._finish_centerline_placement()

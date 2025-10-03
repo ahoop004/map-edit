@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Sequence
 
+import csv
+
 from PySide6.QtGui import QImage
 
 from map_editor.models.annotations import Point2D
@@ -56,22 +58,42 @@ def extract_walls(image_path: Path, metadata: MapMetadata) -> WallExtractionResu
 
 
 def derive_centerline_from_walls(walls: Sequence[Sequence[Point2D]]) -> List[Point2D]:
-    """Rudimentary centerline derived from two largest wall contours."""
+    """Derive a smooth centerline from the two dominant wall contours."""
     if len(walls) < 2:
         return []
-    outer = walls[0]
-    inner = walls[1]
-    outer_sorted = _sort_points_by_angle(outer)
-    inner_sorted = _sort_points_by_angle(inner)
-    count = min(len(outer_sorted), len(inner_sorted))
-    if count == 0:
+
+    outer = list(walls[0])
+    inner = list(walls[1])
+    if len(outer) < 3 or len(inner) < 3:
         return []
-    centerline = []
-    for i in range(count):
-        op = outer_sorted[i]
-        ip = inner_sorted[i]
-        centerline.append(Point2D((op.x + ip.x) * 0.5, (op.y + ip.y) * 0.5))
-    return centerline
+
+    outer = _ensure_closed_loop(outer)
+    inner = _ensure_closed_loop(inner)
+
+    outer = _ensure_orientation(outer, clockwise=False)
+    inner = _ensure_orientation(inner, clockwise=False)
+
+    sample_count = max(len(outer), len(inner), 64)
+
+    outer_resampled = _resample_closed_polyline(outer, sample_count)
+    inner_resampled = _resample_closed_polyline(inner, sample_count)
+
+    centerline = [
+        Point2D((op.x + ip.x) * 0.5, (op.y + ip.y) * 0.5)
+        for op, ip in zip(outer_resampled, inner_resampled)
+    ]
+    return _smooth_polyline(centerline, passes=2)
+
+
+def export_walls_csv(walls: Sequence[Sequence[Point2D]], destination: Path) -> None:
+    """Write wall polylines to CSV with columns wall_id,vertex_id,x,y."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with destination.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["wall_id", "vertex_id", "x", "y"])
+        for wall_id, wall in enumerate(walls):
+            for vertex_id, point in enumerate(wall):
+                writer.writerow([wall_id, vertex_id, f"{point.x:.6f}", f"{point.y:.6f}"])
 
 
 def _collect_component(mask: List[List[bool]], visited: List[List[bool]], sx: int, sy: int) -> List[tuple[int, int]]:
@@ -135,4 +157,90 @@ def _sort_points_by_angle(points: Sequence[Point2D]) -> List[Point2D]:
     cx = sum(p.x for p in points) / len(points)
     cy = sum(p.y for p in points) / len(points)
     return sorted(points, key=lambda p: math.atan2(p.y - cy, p.x - cx))
-*** End Patch
+
+
+def _smooth_polyline(points: Sequence[Point2D], passes: int = 1) -> List[Point2D]:
+    if len(points) < 3 or passes <= 0:
+        return list(points)
+    smoothed = list(points)
+    for _ in range(passes):
+        new_points = [smoothed[0]]
+        for i in range(1, len(smoothed) - 1):
+            prev_pt = smoothed[i - 1]
+            cur_pt = smoothed[i]
+            next_pt = smoothed[i + 1]
+            new_points.append(
+                Point2D(
+                    (prev_pt.x + cur_pt.x + next_pt.x) / 3.0,
+                    (prev_pt.y + cur_pt.y + next_pt.y) / 3.0,
+                )
+            )
+        new_points.append(smoothed[-1])
+        smoothed = new_points
+    return smoothed
+
+
+def _ensure_closed_loop(points: Sequence[Point2D]) -> List[Point2D]:
+    pts = list(points)
+    if not pts:
+        return pts
+    if pts[0].x != pts[-1].x or pts[0].y != pts[-1].y:
+        pts.append(Point2D(pts[0].x, pts[0].y))
+    return pts
+
+
+def _ensure_orientation(points: Sequence[Point2D], clockwise: bool) -> List[Point2D]:
+    if len(points) < 3:
+        return list(points)
+    area = _signed_area(points)
+    is_clockwise = area < 0
+    if is_clockwise != clockwise:
+        return list(reversed(points))
+    return list(points)
+
+
+def _signed_area(points: Sequence[Point2D]) -> float:
+    area = 0.0
+    for i in range(len(points) - 1):
+        j = i + 1
+        area += points[i].x * points[j].y - points[j].x * points[i].y
+    return area * 0.5
+
+
+def _cumulative_lengths(points: Sequence[Point2D]) -> List[float]:
+    lengths = [0.0]
+    for i in range(1, len(points)):
+        prev = points[i - 1]
+        cur = points[i]
+        lengths.append(lengths[-1] + math.hypot(cur.x - prev.x, cur.y - prev.y))
+    return lengths
+
+
+def _resample_closed_polyline(points: Sequence[Point2D], sample_count: int) -> List[Point2D]:
+    if sample_count <= 0 or len(points) < 2:
+        return list(points)
+    lengths = _cumulative_lengths(points)
+    total_length = lengths[-1]
+    if total_length <= 0:
+        return [Point2D(pt.x, pt.y) for pt in points[:sample_count]]
+    result: List[Point2D] = []
+    target_step = total_length / sample_count
+    target = 0.0
+    idx = 0
+    for _ in range(sample_count):
+        while idx < len(points) - 1 and lengths[idx + 1] < target:
+            idx += 1
+        if idx >= len(points) - 1:
+            idx = len(points) - 2
+        start_pt = points[idx]
+        end_pt = points[idx + 1]
+        seg_len = lengths[idx + 1] - lengths[idx]
+        t = 0.0 if seg_len == 0 else (target - lengths[idx]) / seg_len
+        result.append(
+            Point2D(
+                start_pt.x + (end_pt.x - start_pt.x) * t,
+                start_pt.y + (end_pt.y - start_pt.y) * t,
+            )
+        )
+        target += target_step
+    return result

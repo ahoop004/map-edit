@@ -63,8 +63,13 @@ def load_map_yaml(yaml_path: Path) -> MapYamlDocument:
     if not yaml_path.exists():
         raise MapYamlError(f"YAML file does not exist: {yaml_path}")
 
-    with yaml_path.open("r", encoding="utf-8") as handle:
-        parsed = yaml.safe_load(handle)
+    try:
+        with yaml_path.open("r", encoding="utf-8") as handle:
+            parsed = yaml.safe_load(handle)
+    except UnicodeDecodeError as exc:
+        raise MapYamlError(
+            "YAML file is not valid UTF-8. Please re-save the file using UTF-8 encoding."
+        ) from exc
 
     if not isinstance(parsed, dict):
         raise MapYamlError("Map YAML must be a mapping at the top level")

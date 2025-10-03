@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+
 from pathlib import Path
 from typing import Optional
 
@@ -42,6 +44,12 @@ from map_editor.exporters.centerline import (
     export_centerline_path_yaml,
     resample_centerline,
 )
+from map_editor.services.wall_extraction import (
+    derive_centerline_from_walls,
+    export_walls_csv,
+    extract_walls,
+)
+from map_editor.exporters.image import export_png_as_pgm
 from map_editor.ui.annotation_panel import AnnotationPanel, SpawnPointDialog, StartFinishDialog
 from map_editor.ui.centerline_editor import CenterlineEditorDialog
 from map_editor.ui.diagnostics_panel import DiagnosticsPanel
@@ -136,6 +144,10 @@ class MainWindow(QMainWindow):
         self._action_place_centerline.setToolTip(
             "Enter centerline placement mode to click points directly on the map."
         )
+        self._action_import_centerline = QAction("Import Centerline CSV…", self)
+        self._action_import_centerline.triggered.connect(self._import_centerline_csv)
+        self._action_import_centerline.setToolTip("Load centerline nodes from a CSV file (x,y[,theta]).")
+
         self._action_edit_centerline = QAction("Edit Centerline…", self)
         self._action_edit_centerline.triggered.connect(self._edit_centerline)
         self._action_edit_centerline.setToolTip("Open the centerline editor to add or adjust nodes.")
@@ -148,6 +160,10 @@ class MainWindow(QMainWindow):
         self._action_export_centerline_csv.triggered.connect(self._export_centerline_csv)
         self._action_export_centerline_path = QAction("Export Centerline Path YAML…", self)
         self._action_export_centerline_path.triggered.connect(self._export_centerline_path)
+        self._action_export_map_pgm = QAction("Export Map as PGM…", self)
+        self._action_export_map_pgm.triggered.connect(self._export_map_as_pgm)
+        self._action_export_walls_csv = QAction("Export Walls CSV…", self)
+        self._action_export_walls_csv.triggered.connect(self._export_walls_csv)
 
     def _create_menus(self) -> None:
         menu_bar = self.menuBar()
@@ -157,6 +173,8 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(self._action_export_centerline_csv)
         file_menu.addAction(self._action_export_centerline_path)
+        file_menu.addAction(self._action_export_walls_csv)
+        file_menu.addAction(self._action_export_map_pgm)
         file_menu.addSeparator()
         file_menu.addAction(self._action_exit)
 
@@ -172,8 +190,13 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self._action_clear_start_finish)
         edit_menu.addSeparator()
         edit_menu.addAction(self._action_place_centerline)
+        edit_menu.addAction(self._action_import_centerline)
         edit_menu.addAction(self._action_edit_centerline)
         edit_menu.addAction(self._action_clear_centerline)
+        edit_menu.addSeparator()
+        self._action_generate_centerline = QAction("Generate Centerline from Map", self)
+        self._action_generate_centerline.triggered.connect(self._generate_centerline_from_walls)
+        edit_menu.addAction(self._action_generate_centerline)
 
     def _create_docks(self) -> None:
         metadata_dock = QDockWidget("Metadata", self)
@@ -198,7 +221,8 @@ class MainWindow(QMainWindow):
         self._annotation_panel.deleteSpawnRequested.connect(self._delete_spawn_point)
         self._annotation_panel.setStartFinishRequested.connect(self._set_start_finish_line)
         self._annotation_panel.clearStartFinishRequested.connect(self._clear_start_finish_line)
-        self._annotation_panel.placeCenterlineRequested.connect(self._start_centerline_placement)
+        self._annotation_panel.beginCenterlineRequested.connect(self._start_centerline_placement)
+        self._annotation_panel.finishCenterlineRequested.connect(self._finish_centerline_placement)
         self._annotation_panel.editCenterlineRequested.connect(self._edit_centerline)
         self._annotation_panel.clearCenterlineRequested.connect(self._clear_centerline)
 
@@ -418,15 +442,22 @@ class MainWindow(QMainWindow):
 
     def _on_viewer_placement_cancelled(self) -> None:
         # No additional work required beyond the viewer status message.
-        pass
+        self._annotation_panel.set_centerline_placing(False)
 
     def _start_centerline_placement(self) -> None:
         if self._annotation_context is None and self._ensure_annotation_context() is None:
             return
         if self._map_viewer.begin_centerline_placement():
+            self._annotation_panel.set_centerline_placing(True)
             self.statusBar().showMessage(
                 "Centerline placement mode: left-click to add points, Enter/right-click to finish."
             )
+
+    def _finish_centerline_placement(self) -> None:
+        if self._map_viewer.placement_mode() != MapViewer.PlacementMode.CENTERLINE:
+            self._annotation_panel.set_centerline_placing(False)
+            return
+        self._map_viewer.complete_centerline_placement()
 
     def _handle_centerline_placement_finished(self, points: object) -> None:
         context = self._ensure_annotation_context()
@@ -435,9 +466,75 @@ class MainWindow(QMainWindow):
         typed_points = [Point2D(p.x, p.y) for p in points] if isinstance(points, list) else []
         if len(typed_points) < 2:
             self.statusBar().showMessage("Centerline requires at least two points.")
+            self._annotation_panel.set_centerline_placing(False)
             return
         self._undo_stack.push(SetCenterlineCommand(context, typed_points))
         self.statusBar().showMessage(f"Centerline placed ({len(typed_points)} point(s)).")
+        self._annotation_panel.set_centerline_placing(False)
+        self._refresh_diagnostics()
+
+    def _import_centerline_csv(self) -> None:
+        context = self._ensure_annotation_context()
+        if context is None:
+            return
+        default_path = self._suggest_export_path("centerline.csv")
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import centerline CSV",
+            str(Path(default_path).parent),
+            "CSV files (*.csv);;All files (*)",
+        )
+        if not file_path:
+            return
+        try:
+            points = self._read_centerline_csv(Path(file_path))
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.critical(self, "Import failed", f"Could not read centerline CSV: {exc}")
+            return
+        if len(points) < 2:
+            QMessageBox.warning(self, "Insufficient points", "Centerline must contain at least two points.")
+            return
+        self._undo_stack.push(SetCenterlineCommand(context, points))
+        self.statusBar().showMessage(f"Imported centerline with {len(points)} point(s).")
+        self._refresh_diagnostics()
+
+    def _read_centerline_csv(self, path: Path) -> list[Point2D]:
+        points: list[Point2D] = []
+        with path.open("r", encoding="utf-8") as handle:
+            reader = csv.reader(handle)
+            headers = next(reader, None)
+            for row in reader:
+                if not row:
+                    continue
+                if headers and row == headers:
+                    continue
+                try:
+                    x = float(row[0])
+                    y = float(row[1])
+                except (IndexError, ValueError) as exc:
+                    raise ValueError(f"Invalid row: {row}") from exc
+                points.append(Point2D(x, y))
+        return points
+
+    def _generate_centerline_from_walls(self) -> None:
+        context = self._ensure_annotation_context()
+        if context is None:
+            return
+        if not self._current_bundle:
+            QMessageBox.information(self, "No map", "Load a map before generating a centerline.")
+            return
+        extraction = extract_walls(self._current_bundle.image_path, self._current_bundle.metadata)
+        if len(extraction.walls) < 2:
+            QMessageBox.warning(self, "Insufficient walls", "Need at least two wall contours to derive a centerline.")
+            return
+        centerline_points = derive_centerline_from_walls(extraction.walls)
+        if len(centerline_points) < 2:
+            QMessageBox.warning(self, "Centerline generation failed", "Could not derive a usable centerline from walls.")
+            return
+        self._undo_stack.push(SetCenterlineCommand(context, centerline_points))
+        self.statusBar().showMessage(
+            f"Generated centerline from occupancy map ({len(centerline_points)} point(s))."
+        )
         self._refresh_diagnostics()
 
     def _finalize_spawn_point(self, x: float, y: float) -> None:
@@ -556,11 +653,55 @@ class MainWindow(QMainWindow):
         export_centerline_path_yaml(samples, Path(file_path), frame_id=frame)
         self.statusBar().showMessage(f"Centerline Path exported: {Path(file_path).name}")
 
+    def _export_walls_csv(self) -> None:
+        if not self._current_bundle:
+            QMessageBox.information(self, "No map", "Load a map before exporting walls.")
+            return
+        extraction = extract_walls(self._current_bundle.image_path, self._current_bundle.metadata)
+        if not extraction.walls:
+            QMessageBox.warning(self, "No walls detected", "Could not find occupied regions to export.")
+            return
+        default_path = self._suggest_export_path("walls.csv")
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export walls CSV",
+            default_path,
+            "CSV files (*.csv);;All files (*)",
+        )
+        if not file_path:
+            return
+        export_walls_csv(extraction.walls, Path(file_path))
+        self.statusBar().showMessage(f"Walls CSV exported: {Path(file_path).name}")
+
     def _suggest_export_path(self, suffix: str) -> str:
         if self._current_map:
             base = Path(self._current_map)
             return str(base.with_name(f"{base.stem}_{suffix}"))
         return str(Path.home() / suffix)
+
+    def _export_map_as_pgm(self) -> None:
+        if not self._current_bundle:
+            QMessageBox.information(self, "No map", "Load a map before exporting.")
+            return
+        source = self._current_bundle.image_path
+        if not source.exists():
+            QMessageBox.warning(self, "Missing image", f"Image file not found: {source}")
+            return
+        default_path = self._suggest_export_path("map.pgm")
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export map as PGM",
+            default_path,
+            "PGM files (*.pgm);;All files (*)",
+        )
+        if not file_path:
+            return
+        try:
+            export_png_as_pgm(source, Path(file_path))
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.critical(self, "Export failed", str(exc))
+            return
+        self.statusBar().showMessage(f"Map exported as PGM: {Path(file_path).name}")
 
     def _refresh_diagnostics(self) -> None:
         if self._current_bundle is None:

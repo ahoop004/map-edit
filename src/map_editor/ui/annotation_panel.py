@@ -39,7 +39,8 @@ class AnnotationPanel(QWidget):
     deleteSpawnRequested = Signal(int)
     setStartFinishRequested = Signal()
     clearStartFinishRequested = Signal()
-    placeCenterlineRequested = Signal()
+    beginCenterlineRequested = Signal()
+    finishCenterlineRequested = Signal()
     editCenterlineRequested = Signal()
     clearCenterlineRequested = Signal()
 
@@ -143,6 +144,20 @@ class AnnotationPanel(QWidget):
         self._edit_button.setEnabled(has_selection)
         self._delete_button.setEnabled(has_selection)
 
+    def _toggle_centerline_placing(self) -> None:
+        active = bool(self._place_button.property("placing"))
+        if active:
+            self.finishCenterlineRequested.emit()
+        else:
+            self.beginCenterlineRequested.emit()
+
+    def set_centerline_placing(self, active: bool) -> None:
+        self._place_button.setProperty("placing", active)
+        self._place_button.setText("Finish" if active else "Place…")
+        self._place_button.setToolTip(
+            "Click to finish placement." if active else "Place centerline points by clicking on the map."
+        )
+
     def _build_centerline_section(self) -> QWidget:
         container = QWidget(self)
         layout = QVBoxLayout(container)
@@ -155,16 +170,16 @@ class AnnotationPanel(QWidget):
         self._centerline_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         button_row = QHBoxLayout()
-        place_button = QPushButton("Place…")
-        place_button.setToolTip("Place centerline points by clicking on the map.")
-        place_button.clicked.connect(self.placeCenterlineRequested.emit)
+        self._place_button = QPushButton("Place…")
+        self._place_button.setToolTip("Place centerline points by clicking on the map.")
+        self._place_button.clicked.connect(self._toggle_centerline_placing)
         edit_button = QPushButton("Edit…")
         edit_button.setToolTip("Open centerline editor to add/move/delete nodes.")
         edit_button.clicked.connect(self.editCenterlineRequested.emit)
         clear_button = QPushButton("Clear")
         clear_button.setToolTip("Remove all centerline nodes.")
         clear_button.clicked.connect(self.clearCenterlineRequested.emit)
-        button_row.addWidget(place_button)
+        button_row.addWidget(self._place_button)
         button_row.addWidget(edit_button)
         button_row.addWidget(clear_button)
         button_row.addStretch(1)
