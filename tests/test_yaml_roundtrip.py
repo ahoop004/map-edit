@@ -42,6 +42,7 @@ def test_save_then_load_preserves_annotations(tmp_path: Path):
         spawn_points=[
             SpawnPoint(name="spawn_1", pose=Pose2D(3.0, 4.0, 0.1)),
         ],
+        centerline=[Point2D(0.0, 0.0), Point2D(1.0, 0.0), Point2D(2.0, 1.0)],
     )
     bundle = MapBundle(image_path=image_path, yaml_path=None, metadata=metadata, annotations=annotations)
 
@@ -55,3 +56,4 @@ def test_save_then_load_preserves_annotations(tmp_path: Path):
     assert loaded.metadata == metadata
     assert loaded.annotations.start_finish_line == annotations.start_finish_line
     assert loaded.annotations.spawn_points == annotations.spawn_points
+    assert loaded.annotations.centerline == annotations.centerline

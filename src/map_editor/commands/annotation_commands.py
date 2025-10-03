@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Callable, Iterable, List, Optional
 
 from PySide6.QtGui import QUndoCommand
 
-from map_editor.models.annotations import MapAnnotations, SpawnPoint, StartFinishLine
+from map_editor.models.annotations import MapAnnotations, Point2D, SpawnPoint, StartFinishLine
 
 
 @dataclass
@@ -95,4 +95,22 @@ class DeleteSpawnPointCommand(QUndoCommand):
     def undo(self) -> None:
         if self._removed is not None:
             self._context.annotations.spawn_points.insert(self._index, self._removed)
+        self._context.on_annotations_changed(self._context.annotations)
+
+
+class SetCenterlineCommand(QUndoCommand):
+    """Replace the entire centerline with a new sequence of points."""
+
+    def __init__(self, context: AnnotationContext, points: Iterable[Point2D]) -> None:
+        super().__init__("Set centerline")
+        self._context = context
+        self._new_points: List[Point2D] = [Point2D(p.x, p.y) for p in points]
+        self._old_points: List[Point2D] = [Point2D(p.x, p.y) for p in context.annotations.centerline]
+
+    def redo(self) -> None:
+        self._context.annotations.centerline = [Point2D(p.x, p.y) for p in self._new_points]
+        self._context.on_annotations_changed(self._context.annotations)
+
+    def undo(self) -> None:
+        self._context.annotations.centerline = [Point2D(p.x, p.y) for p in self._old_points]
         self._context.on_annotations_changed(self._context.annotations)

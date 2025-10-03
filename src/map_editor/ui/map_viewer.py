@@ -185,6 +185,25 @@ class MapViewer(QGraphicsView):
             heading.setZValue(9.5)
             overlay_items.append(heading)
 
+        if len(annotations.centerline) >= 2:
+            pen = QPen(Qt.GlobalColor.cyan, max(1.5, marker_radius * 0.25))
+            pen.setStyle(Qt.PenStyle.DashLine)
+            prev_scene = self._world_to_scene(
+                annotations.centerline[0].x, annotations.centerline[0].y
+            )
+            for point in annotations.centerline[1:]:
+                curr_scene = self._world_to_scene(point.x, point.y)
+                segment = QGraphicsLineItem(
+                    prev_scene.x(),
+                    prev_scene.y(),
+                    curr_scene.x(),
+                    curr_scene.y(),
+                )
+                segment.setPen(pen)
+                segment.setZValue(8)
+                overlay_items.append(segment)
+                prev_scene = curr_scene
+
         self.set_overlay_items(overlay_items)
         # Refresh diagnostic overlay to ensure Z-order remains consistent.
         self._update_diagnostic_overlay(self._diagnostic_has_issues)

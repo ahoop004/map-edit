@@ -5,10 +5,10 @@
   - [x] Document placement workflow in README.
   - [x] Add status bar/cursor hints summary to UX notes.
   - [x] Update any in-app tooltips or help dialogs.
-- [ ] Add regression checks (manual or automated) to confirm save/load still reflects new annotations accurately.
+- [x] Add regression checks (manual or automated) to confirm save/load still reflects new annotations accurately.
   - [x] Capture baseline round-trip using sample map bundles.
   - [x] Add unit tests for coordinate conversions in `map_viewer`.
-  - [ ] Add integration test covering click-to-place → undo → save → reload.
+  - [x] Add integration test covering click-to-place → undo → save → reload.
 
 ## Future Features
 - [x] Map diagnostics tooling.
@@ -16,10 +16,17 @@
   - [x] Provide quick toggle/visual overlay for metadata mismatches.
   - [x] Summarize diagnostics in a dock or modal report.
 - [ ] Centerline editing/generation.
-  - [ ] Decide on centerline data model (polyline or spline representation) and sampling resolution (e.g., 0.1–0.25 m spacing).
-  - [ ] Implement manual centerline editing tools (add/move/delete nodes, smoothing options).
+  - [x] Decide on centerline data model (polyline representation) and baseline sampling approach.
+  - [x] Implement manual centerline editing tools (add/move/delete nodes, smoothing options).
   - [ ] Export centerline as `nav_msgs/Path` YAML and `waypoints.csv` (x, y, theta [, v]) for ROS and offline use.
+    - [x] Implement centerline resampling and CSV/Path message exporters.
+    - [ ] Wire exporters into UI (save actions, dialogs).
   - [ ] Provide helper to publish/export the waypoints for RL pipelines.
+- [ ] Wall & centerline extraction from occupancy map.
+  - [ ] Threshold map image to binary mask using occupancy metadata.
+  - [ ] Extract wall contours (e.g., marching squares) and simplify/smooth.
+  - [ ] Create CSV export for walls in map coordinates.
+  - [ ] Derive centerline from inner/outer walls, resample to fixed spacing, and hand off to centerline exporter.
 - [ ] New map wizard.
   - [ ] Design wizard steps for metadata defaults, spawn grid presets, optional centerline seed.
   - [ ] Implement wizard UI and integrate with project bootstrap.

@@ -39,6 +39,8 @@ class AnnotationPanel(QWidget):
     deleteSpawnRequested = Signal(int)
     setStartFinishRequested = Signal()
     clearStartFinishRequested = Signal()
+    editCenterlineRequested = Signal()
+    clearCenterlineRequested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -91,6 +93,7 @@ class AnnotationPanel(QWidget):
         root.setSpacing(10)
         root.addWidget(spawn_group)
         root.addWidget(start_group)
+        root.addWidget(self._build_centerline_section())
         root.addStretch(1)
 
         self._update_button_states()
@@ -112,6 +115,10 @@ class AnnotationPanel(QWidget):
             self._start_finish_label.setText(
                 f"({start.x:.2f}, {start.y:.2f}) → ({end.x:.2f}, {end.y:.2f})"
             )
+        if annotations.centerline:
+            self._centerline_label.setText(f"{len(annotations.centerline)} point(s)")
+        else:
+            self._centerline_label.setText("No centerline")
         self._update_button_states()
 
     def selected_index(self) -> Optional[int]:
@@ -134,6 +141,33 @@ class AnnotationPanel(QWidget):
         has_selection = self.selected_index() is not None
         self._edit_button.setEnabled(has_selection)
         self._delete_button.setEnabled(has_selection)
+
+    def _build_centerline_section(self) -> QWidget:
+        container = QWidget(self)
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 12, 0, 0)
+        layout.setSpacing(6)
+
+        header = QLabel("Centerline")
+        header.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self._centerline_label = QLabel("No centerline")
+        self._centerline_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+        button_row = QHBoxLayout()
+        edit_button = QPushButton("Edit…")
+        edit_button.setToolTip("Open centerline editor to add/move/delete nodes.")
+        edit_button.clicked.connect(self.editCenterlineRequested.emit)
+        clear_button = QPushButton("Clear")
+        clear_button.setToolTip("Remove all centerline nodes.")
+        clear_button.clicked.connect(self.clearCenterlineRequested.emit)
+        button_row.addWidget(edit_button)
+        button_row.addWidget(clear_button)
+        button_row.addStretch(1)
+
+        layout.addWidget(header)
+        layout.addWidget(self._centerline_label)
+        layout.addLayout(button_row)
+        return container
 
 
 class SpawnPointDialog(QDialog):

@@ -52,6 +52,7 @@ class MapAnnotations:
 
     start_finish_line: Optional[StartFinishLine] = None
     spawn_points: List[SpawnPoint] = field(default_factory=list)
+    centerline: List[Point2D] = field(default_factory=list)
 
     def replace_spawn_points(self, points: Iterable[SpawnPoint]) -> None:
         """Replace the spawn point list in-place."""
@@ -61,6 +62,7 @@ class MapAnnotations:
         """Remove all annotations."""
         self.start_finish_line = None
         self.spawn_points.clear()
+        self.centerline.clear()
 
 
 __all__ = [

@@ -23,6 +23,7 @@ from map_editor.commands import (
     AddSpawnPointCommand,
     AnnotationContext,
     DeleteSpawnPointCommand,
+    SetCenterlineCommand,
     SetStartFinishLineCommand,
     UpdateSpawnPointCommand,
 )
@@ -37,6 +38,7 @@ from map_editor.models.annotations import (
 from map_editor.models.map_bundle import MapBundle, MapMetadata
 from map_editor.services.diagnostics import DiagnosticsReport, analyse_bundle
 from map_editor.ui.annotation_panel import AnnotationPanel, SpawnPointDialog, StartFinishDialog
+from map_editor.ui.centerline_editor import CenterlineEditorDialog
 from map_editor.ui.diagnostics_panel import DiagnosticsPanel
 from map_editor.ui.map_viewer import MapViewer
 from map_editor.ui.metadata_panel import MapMetadataPanel
@@ -123,6 +125,14 @@ class MainWindow(QMainWindow):
         self._action_clear_start_finish.triggered.connect(self._clear_start_finish_line)
         self._action_clear_start_finish.setToolTip("Remove the current start/finish line from the map.")
 
+        self._action_edit_centerline = QAction("Edit Centerline…", self)
+        self._action_edit_centerline.triggered.connect(self._edit_centerline)
+        self._action_edit_centerline.setToolTip("Open the centerline editor to add or adjust nodes.")
+
+        self._action_clear_centerline = QAction("Clear Centerline", self)
+        self._action_clear_centerline.triggered.connect(self._clear_centerline)
+        self._action_clear_centerline.setToolTip("Remove all centerline nodes from the map.")
+
     def _create_menus(self) -> None:
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("&File")
@@ -141,6 +151,9 @@ class MainWindow(QMainWindow):
         edit_menu.addSeparator()
         edit_menu.addAction(self._action_set_start_finish)
         edit_menu.addAction(self._action_clear_start_finish)
+        edit_menu.addSeparator()
+        edit_menu.addAction(self._action_edit_centerline)
+        edit_menu.addAction(self._action_clear_centerline)
 
     def _create_docks(self) -> None:
         metadata_dock = QDockWidget("Metadata", self)
@@ -165,6 +178,8 @@ class MainWindow(QMainWindow):
         self._annotation_panel.deleteSpawnRequested.connect(self._delete_spawn_point)
         self._annotation_panel.setStartFinishRequested.connect(self._set_start_finish_line)
         self._annotation_panel.clearStartFinishRequested.connect(self._clear_start_finish_line)
+        self._annotation_panel.editCenterlineRequested.connect(self._edit_centerline)
+        self._annotation_panel.clearCenterlineRequested.connect(self._clear_centerline)
 
         diagnostics_dock = QDockWidget("Diagnostics", self)
         diagnostics_dock.setObjectName("diagnosticsDock")
@@ -422,6 +437,33 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("Start/finish placement cancelled.")
 
         self._refresh_diagnostics()
+
+    def _edit_centerline(self) -> None:
+        self._map_viewer.cancel_placement()
+        context = self._ensure_annotation_context()
+        if context is None:
+            return
+
+        dialog = CenterlineEditorDialog(context.annotations.centerline, self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        new_points = dialog.points()
+        if new_points == context.annotations.centerline:
+            return
+        self._undo_stack.push(SetCenterlineCommand(context, new_points))
+        self.statusBar().showMessage(f"Centerline updated ({len(new_points)} point(s)).")
+
+    def _clear_centerline(self) -> None:
+        self._map_viewer.cancel_placement()
+        context = self._ensure_annotation_context()
+        if context is None:
+            return
+        if not context.annotations.centerline:
+            self.statusBar().showMessage("Centerline already empty.")
+            return
+        self._undo_stack.push(SetCenterlineCommand(context, []))
+        self.statusBar().showMessage("Centerline cleared.")
 
     def _refresh_diagnostics(self) -> None:
         if self._current_bundle is None:

@@ -9,6 +9,7 @@ A PySide6 desktop tool for inspecting and editing ROS map bundles used in F1TENT
 - Visualise annotations: start/finish segment, spawn markers with heading ticks.
 - Click-to-place tools for adding spawn points and defining the start/finish line with undo support.
 - Diagnostics dock summarises metadata warnings and can highlight issues on the map.
+- Centerline editor for managing polyline waypoints with smoothing helpers.
 - YAML save workflow with automatic backups to keep prior revisions safe.
 
 ## Annotation Placement Workflow

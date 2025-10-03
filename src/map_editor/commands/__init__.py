@@ -5,6 +5,7 @@ from .annotation_commands import (
     AnnotationContext,
     DeleteSpawnPointCommand,
     SetStartFinishLineCommand,
+    SetCenterlineCommand,
     UpdateSpawnPointCommand,
 )
 
@@ -12,6 +13,7 @@ __all__ = [
     "AddSpawnPointCommand",
     "AnnotationContext",
     "DeleteSpawnPointCommand",
+    "SetCenterlineCommand",
     "SetStartFinishLineCommand",
     "UpdateSpawnPointCommand",
 ]

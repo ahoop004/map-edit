@@ -171,6 +171,10 @@ def _parse_annotations(data: Any) -> MapAnnotations:
     if spawn_points_raw:
         annotations.replace_spawn_points(_parse_spawn_points(spawn_points_raw))
 
+    centerline_raw = data.get("centerline", [])
+    if centerline_raw:
+        annotations.centerline = _parse_centerline(centerline_raw)
+
     return annotations
 
 
@@ -217,6 +221,15 @@ def _parse_pose(raw: Any, field_name: str) -> Pose2D:
     return Pose2D(float(x), float(y), float(theta))
 
 
+def _parse_centerline(raw: Any) -> List[Point2D]:
+    if not isinstance(raw, list):
+        raise MapYamlError("centerline must be a list of [x, y] points")
+    points: List[Point2D] = []
+    for index, point in enumerate(raw):
+        points.append(_parse_point(point, f"centerline[{index}]"))
+    return points
+
+
 def _annotations_to_dict(annotations: MapAnnotations) -> Dict[str, Any]:
     payload: Dict[str, Any] = {}
     if annotations.start_finish_line is not None:
@@ -238,6 +251,8 @@ def _annotations_to_dict(annotations: MapAnnotations) -> Dict[str, Any]:
             }
             for spawn in annotations.spawn_points
         ]
+    if annotations.centerline:
+        payload["centerline"] = [[point.x, point.y] for point in annotations.centerline]
     return payload
 
 
