@@ -6,7 +6,7 @@ import math
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Sequence
+from typing import Iterable, List, Optional, Sequence
 
 import csv
 
@@ -48,10 +48,11 @@ def extract_walls(image_path: Path, metadata: MapMetadata) -> WallExtractionResu
                 component = _collect_component(mask, visited, x, y)
                 if len(component) < 8:
                     continue
-                hull = _convex_hull(component)
-                if len(hull) >= 3:
+                component_set = set(component)
+                boundary = _trace_perimeter(component_set)
+                if len(boundary) >= 3:
                     walls.append([
-                        _grid_to_world(px, py, metadata, height) for px, py in hull
+                        _grid_to_world(px, py, metadata, height) for px, py in boundary
                     ])
     walls.sort(key=lambda contour: -_polygon_area(contour))
     return WallExtractionResult(walls=walls, grid_width=width, grid_height=height)
@@ -73,15 +74,20 @@ def derive_centerline_from_walls(walls: Sequence[Sequence[Point2D]]) -> List[Poi
     outer = _ensure_orientation(outer, clockwise=False)
     inner = _ensure_orientation(inner, clockwise=False)
 
-    sample_count = max(len(outer), len(inner), 64)
+    sample_count = max(len(outer), len(inner), 128)
 
     outer_resampled = _resample_closed_polyline(outer, sample_count)
-    inner_resampled = _resample_closed_polyline(inner, sample_count)
+    inner_polyline = _resample_closed_polyline(inner, len(inner) * 2)
 
-    centerline = [
-        Point2D((op.x + ip.x) * 0.5, (op.y + ip.y) * 0.5)
-        for op, ip in zip(outer_resampled, inner_resampled)
-    ]
+    centerline: List[Point2D] = []
+    for outer_point in outer_resampled:
+        corresponding = _project_point_to_polyline(outer_point, inner_polyline)
+        centerline.append(
+            Point2D(
+                (outer_point.x + corresponding.x) * 0.5,
+                (outer_point.y + corresponding.y) * 0.5,
+            )
+        )
     return _smooth_polyline(centerline, passes=2)
 
 
@@ -112,27 +118,51 @@ def _collect_component(mask: List[List[bool]], visited: List[List[bool]], sx: in
     return component
 
 
-def _convex_hull(points: Iterable[tuple[int, int]]) -> List[tuple[int, int]]:
-    pts = sorted(set(points))
-    if len(pts) <= 2:
-        return pts
+def _trace_perimeter(component: set[tuple[int, int]]) -> List[tuple[int, int]]:
+    if not component:
+        return []
+    start = _find_boundary_start(component)
+    if start is None:
+        return list(component)
 
-    def cross(o, a, b):
-        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    dirs = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
+    contour: List[tuple[int, int]] = []
+    current = start
+    direction = 0
+    visited = set()
+    max_steps = len(component) * 4
 
-    lower: List[tuple[int, int]] = []
-    for p in pts:
-        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
-            lower.pop()
-        lower.append(p)
+    while True:
+        contour.append(current)
+        visited.add(current)
+        step_taken = False
+        for i in range(8):
+            idx = (direction + i) % 8
+            dx, dy = dirs[idx]
+            nx, ny = current[0] + dx, current[1] + dy
+            if (nx, ny) in component:
+                direction = (idx + 5) % 8
+                current = (nx, ny)
+                step_taken = True
+                break
+        if not step_taken:
+            break
+        if current == start and len(contour) > 1:
+            break
+        if len(contour) >= max_steps:
+            break
 
-    upper: List[tuple[int, int]] = []
-    for p in reversed(pts):
-        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
-            upper.pop()
-        upper.append(p)
+    return contour
 
-    return lower[:-1] + upper[:-1]
+
+def _find_boundary_start(component: set[tuple[int, int]]) -> Optional[tuple[int, int]]:
+    if not component:
+        return None
+    for px, py in sorted(component, key=lambda p: (p[1], p[0])):
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            if (px + dx, py + dy) not in component:
+                return (px, py)
+    return next(iter(component))
 
 
 def _grid_to_world(x: int, y: int, metadata: MapMetadata, height: int) -> Point2D:
@@ -244,3 +274,31 @@ def _resample_closed_polyline(points: Sequence[Point2D], sample_count: int) -> L
         )
         target += target_step
     return result
+
+
+def _project_point_to_polyline(point: Point2D, polyline: Sequence[Point2D]) -> Point2D:
+    best_point = polyline[0]
+    best_dist_sq = float("inf")
+    for i in range(1, len(polyline)):
+        a = polyline[i - 1]
+        b = polyline[i]
+        candidate = _project_point_to_segment(point, a, b)
+        dist_sq = (candidate.x - point.x) ** 2 + (candidate.y - point.y) ** 2
+        if dist_sq < best_dist_sq:
+            best_dist_sq = dist_sq
+            best_point = candidate
+    return best_point
+
+
+def _project_point_to_segment(p: Point2D, a: Point2D, b: Point2D) -> Point2D:
+    ax, ay = a.x, a.y
+    bx, by = b.x, b.y
+    abx = bx - ax
+    aby = by - ay
+    denom = abx * abx + aby * aby
+    if denom == 0:
+        return Point2D(ax, ay)
+    t = ((p.x - ax) * abx + (p.y - ay) * aby) / denom
+    t = max(0.0, min(1.0, t))
+    return Point2D(ax + abx * t, ay + aby * t)
+
