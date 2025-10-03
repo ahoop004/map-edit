@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QGraphicsView,
 )
 
-from map_editor.models.annotations import MapAnnotations
+from map_editor.models.annotations import MapAnnotations, Point2D
 from map_editor.models.map_bundle import MapMetadata
 
 
@@ -29,11 +29,13 @@ class MapViewer(QGraphicsView):
         IDLE = auto()
         SPAWN = auto()
         START_FINISH = auto()
+        CENTERLINE = auto()
 
     spawnPlacementCompleted = Signal(float, float)
     startFinishPlacementCompleted = Signal(float, float, float, float)
     placementStatusChanged = Signal(str)
     placementCancelled = Signal()
+    centerlinePlacementFinished = Signal(object)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -51,6 +53,8 @@ class MapViewer(QGraphicsView):
         self._diagnostic_overlay: Optional[QGraphicsItem] = None
         self._diagnostic_highlight_enabled: bool = True
         self._diagnostic_has_issues: bool = False
+        self._centerline_preview_items: list[QGraphicsItem] = []
+        self._centerline_temp_points: list[Point2D] = []
 
         self._zoom_factor = 1.25
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -228,6 +232,18 @@ class MapViewer(QGraphicsView):
         self.placementStatusChanged.emit("Click to choose the start point, then the end point (Esc/right-click to cancel).")
         return True
 
+    def begin_centerline_placement(self) -> bool:
+        if not self._is_transform_ready():
+            self.placementStatusChanged.emit("Load a map (with metadata) before placing the centerline.")
+            return False
+        self._set_placement_mode(MapViewer.PlacementMode.CENTERLINE)
+        self._centerline_temp_points.clear()
+        self._update_centerline_preview()
+        self.placementStatusChanged.emit(
+            "Left-click to add centerline points, Enter to finish, Esc/right-click to cancel."
+        )
+        return True
+
     def cancel_placement(self) -> None:
         if self._placement_mode is MapViewer.PlacementMode.IDLE:
             return
@@ -265,7 +281,10 @@ class MapViewer(QGraphicsView):
             return
 
         if event.button() == Qt.MouseButton.RightButton:
-            self.cancel_placement()
+            if self._placement_mode is MapViewer.PlacementMode.CENTERLINE and self._centerline_temp_points:
+                self._finish_centerline_placement()
+            else:
+                self.cancel_placement()
             event.accept()
             return
 
@@ -307,11 +326,25 @@ class MapViewer(QGraphicsView):
                     world_x,
                     world_y,
                 )
+        elif self._placement_mode is MapViewer.PlacementMode.CENTERLINE:
+            point = Point2D(world_x, world_y)
+            self._centerline_temp_points.append(point)
+            self._update_centerline_preview()
+            self.placementStatusChanged.emit(
+                f"Centerline points: {len(self._centerline_temp_points)} (Enter/right-click to finish, Esc to cancel)."
+            )
         event.accept()
 
     def keyPressEvent(self, event):  # type: ignore[override]
         if event.key() == Qt.Key.Key_Escape and self._placement_mode is not MapViewer.PlacementMode.IDLE:
             self.cancel_placement()
+            event.accept()
+            return
+        if (
+            self._placement_mode is MapViewer.PlacementMode.CENTERLINE
+            and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
+        ):
+            self._finish_centerline_placement()
             event.accept()
             return
         super().keyPressEvent(event)
@@ -324,6 +357,11 @@ class MapViewer(QGraphicsView):
             self.unsetCursor()
         else:
             self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
+        if mode is not MapViewer.PlacementMode.START_FINISH:
+            self._pending_line_start = None
+        if mode is not MapViewer.PlacementMode.CENTERLINE:
+            self._centerline_temp_points.clear()
+            self._update_centerline_preview()
 
     def _is_transform_ready(self) -> bool:
         return self.has_map and self._metadata is not None and self._pixmap_height > 0
@@ -374,3 +412,60 @@ class MapViewer(QGraphicsView):
             overlay.setBrush(Qt.GlobalColor.transparent)
             overlay.setZValue(20)
             self._diagnostic_overlay = overlay
+
+    def _update_centerline_preview(self) -> None:
+        for item in self._centerline_preview_items:
+            self._scene.removeItem(item)
+        self._centerline_preview_items.clear()
+
+        if self._placement_mode is not MapViewer.PlacementMode.CENTERLINE or len(self._centerline_temp_points) < 1:
+            return
+
+        pen = QPen(Qt.GlobalColor.cyan, 1.5)
+        pen.setStyle(Qt.PenStyle.DotLine)
+        prev_scene = self._world_to_scene(
+            self._centerline_temp_points[0].x,
+            self._centerline_temp_points[0].y,
+        )
+        marker_radius = self._marker_radius() * 0.5
+
+        for point in self._centerline_temp_points[1:]:
+            curr_scene = self._world_to_scene(point.x, point.y)
+            segment = QGraphicsLineItem(
+                prev_scene.x(),
+                prev_scene.y(),
+                curr_scene.x(),
+                curr_scene.y(),
+            )
+            segment.setPen(pen)
+            segment.setZValue(15)
+            self._centerline_preview_items.append(segment)
+            self._scene.addItem(segment)
+            prev_scene = curr_scene
+
+        # Draw markers on each point
+        for pt in self._centerline_temp_points:
+            scene_pt = self._world_to_scene(pt.x, pt.y)
+            marker = QGraphicsEllipseItem(
+                scene_pt.x() - marker_radius,
+                scene_pt.y() - marker_radius,
+                marker_radius * 2,
+                marker_radius * 2,
+            )
+            marker.setBrush(Qt.GlobalColor.cyan)
+            marker.setPen(QPen(Qt.GlobalColor.cyan))
+            marker.setZValue(16)
+            self._centerline_preview_items.append(marker)
+            self._scene.addItem(marker)
+
+    def _finish_centerline_placement(self) -> None:
+        if len(self._centerline_temp_points) < 2:
+            self.placementStatusChanged.emit("Centerline requires at least two points.")
+            self.cancel_placement()
+            return
+        points = [Point2D(p.x, p.y) for p in self._centerline_temp_points]
+        self._set_placement_mode(MapViewer.PlacementMode.IDLE)
+        self.placementStatusChanged.emit(
+            f"Centerline placement complete ({len(points)} point(s))."
+        )
+        self.centerlinePlacementFinished.emit(points)

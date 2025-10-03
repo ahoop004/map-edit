@@ -20,7 +20,7 @@
   - [x] Implement manual centerline editing tools (add/move/delete nodes, smoothing options).
   - [ ] Export centerline as `nav_msgs/Path` YAML and `waypoints.csv` (x, y, theta [, v]) for ROS and offline use.
     - [x] Implement centerline resampling and CSV/Path message exporters.
-    - [ ] Wire exporters into UI (save actions, dialogs).
+    - [x] Wire exporters into UI (save actions, dialogs).
   - [ ] Provide helper to publish/export the waypoints for RL pipelines.
 - [ ] Wall & centerline extraction from occupancy map.
   - [ ] Threshold map image to binary mask using occupancy metadata.

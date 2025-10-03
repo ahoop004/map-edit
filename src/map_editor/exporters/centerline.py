@@ -8,9 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Optional
 
-from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import Path as RosPath
-
 from map_editor.models.annotations import Point2D
 
 
@@ -23,43 +20,42 @@ class CenterlineSample:
 
 
 def resample_centerline(points: Iterable[Point2D], spacing: float) -> List[CenterlineSample]:
-    """Resample a polyline to roughly `spacing` meters between samples."""
+    """Resample polyline points so samples are roughly `spacing` meters apart."""
     pts = list(points)
-    if len(pts) < 2:
+    if len(pts) < 2 or spacing <= 0:
         return []
 
     samples: List[CenterlineSample] = []
     accumulated = 0.0
     prev = pts[0]
+
     for idx in range(1, len(pts)):
         current = pts[idx]
-        segment_dx = current.x - prev.x
-        segment_dy = current.y - prev.y
-        segment_length = math.hypot(segment_dx, segment_dy)
-        if segment_length == 0:
+        seg_dx = current.x - prev.x
+        seg_dy = current.y - prev.y
+        seg_length = math.hypot(seg_dx, seg_dy)
+        if seg_length <= 1e-9:
             continue
-        direction = (segment_dx / segment_length, segment_dy / segment_length)
-        while accumulated + segment_length >= spacing or not samples:
-            if samples:
-                overshoot = spacing - accumulated
-            else:
-                overshoot = 0.0
-            t = overshoot / segment_length if segment_length else 0.0
+        direction = (seg_dx / seg_length, seg_dy / seg_length)
+
+        while accumulated + seg_length >= spacing or not samples:
+            overshoot = spacing - accumulated if samples else 0.0
+            if overshoot > seg_length:
+                break
             sample_x = prev.x + direction[0] * overshoot
             sample_y = prev.y + direction[1] * overshoot
             theta = math.atan2(direction[1], direction[0])
             samples.append(CenterlineSample(sample_x, sample_y, theta))
-            segment_length -= overshoot
+            seg_length -= overshoot
             prev = Point2D(sample_x, sample_y)
             accumulated = 0.0
-            if segment_length <= 1e-6:
+            if seg_length <= 1e-9:
                 break
-            direction = (current.x - prev.x, current.y - prev.y)
-            length_remaining = math.hypot(direction[0], direction[1])
-            if length_remaining == 0:
-                break
-            direction = (direction[0] / length_remaining, direction[1] / length_remaining)
-        accumulated += segment_length
+            direction = (
+                (current.x - prev.x) / seg_length,
+                (current.y - prev.y) / seg_length,
+            )
+        accumulated += seg_length
         prev = current
 
     last = pts[-1]
@@ -75,7 +71,7 @@ def resample_centerline(points: Iterable[Point2D], spacing: float) -> List[Cente
 
 
 def export_centerline_csv(samples: Iterable[CenterlineSample], destination: Path) -> None:
-    """Write centerline samples to a CSV with columns: x,y,theta[,velocity]."""
+    """Export centerline samples to CSV columns: x,y,theta,velocity."""
     destination.parent.mkdir(parents=True, exist_ok=True)
     with destination.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
@@ -86,22 +82,31 @@ def export_centerline_csv(samples: Iterable[CenterlineSample], destination: Path
             writer.writerow(row)
 
 
-def centerline_to_ros_path(samples: Iterable[CenterlineSample], frame_id: str = "map") -> RosPath:
-    """Convert centerline samples to a nav_msgs/Path message."""
-    path_msg = RosPath()
-    path_msg.header.frame_id = frame_id
+def export_centerline_path_yaml(
+    samples: Iterable[CenterlineSample],
+    destination: Path,
+    frame_id: str = "map",
+) -> None:
+    """Export centerline as a nav_msgs/Path-like YAML file."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    poses = []
     for index, sample in enumerate(samples):
-        pose = PoseStamped()
-        pose.header.frame_id = frame_id
-        pose.header.seq = index
-        pose.pose.position.x = sample.x
-        pose.pose.position.y = sample.y
-        pose.pose.position.z = 0.0
         qw, qz = _yaw_to_quaternion(sample.theta)
-        pose.pose.orientation.w = qw
-        pose.pose.orientation.z = qz
-        path_msg.poses.append(pose)
-    return path_msg
+        poses.append(
+            {
+                "header": {"frame_id": frame_id, "seq": index},
+                "pose": {
+                    "position": {"x": float(sample.x), "y": float(sample.y), "z": 0.0},
+                    "orientation": {"x": 0.0, "y": 0.0, "z": qz, "w": qw},
+                },
+            }
+        )
+    path_dict = {"header": {"frame_id": frame_id}, "poses": poses}
+
+    import yaml  # local import to avoid hard dependency when unused
+
+    with destination.open("w", encoding="utf-8") as handle:
+        yaml.safe_dump(path_dict, handle, sort_keys=False)
 
 
 def _yaw_to_quaternion(yaw: float) -> tuple[float, float]:

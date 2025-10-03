@@ -37,6 +37,11 @@ from map_editor.models.annotations import (
 )
 from map_editor.models.map_bundle import MapBundle, MapMetadata
 from map_editor.services.diagnostics import DiagnosticsReport, analyse_bundle
+from map_editor.exporters.centerline import (
+    export_centerline_csv,
+    export_centerline_path_yaml,
+    resample_centerline,
+)
 from map_editor.ui.annotation_panel import AnnotationPanel, SpawnPointDialog, StartFinishDialog
 from map_editor.ui.centerline_editor import CenterlineEditorDialog
 from map_editor.ui.diagnostics_panel import DiagnosticsPanel
@@ -64,6 +69,7 @@ class MainWindow(QMainWindow):
         self._undo_stack = QUndoStack(self)
         self._annotation_context: Optional[AnnotationContext] = None
         self._diagnostics_report: Optional[DiagnosticsReport] = None
+        self._centerline_spacing: float = 0.2
 
         self._init_status_bar()
         self._init_central_widget()
@@ -125,6 +131,11 @@ class MainWindow(QMainWindow):
         self._action_clear_start_finish.triggered.connect(self._clear_start_finish_line)
         self._action_clear_start_finish.setToolTip("Remove the current start/finish line from the map.")
 
+        self._action_place_centerline = QAction("Place Centerline (click to add)", self)
+        self._action_place_centerline.triggered.connect(self._start_centerline_placement)
+        self._action_place_centerline.setToolTip(
+            "Enter centerline placement mode to click points directly on the map."
+        )
         self._action_edit_centerline = QAction("Edit Centerline…", self)
         self._action_edit_centerline.triggered.connect(self._edit_centerline)
         self._action_edit_centerline.setToolTip("Open the centerline editor to add or adjust nodes.")
@@ -133,11 +144,19 @@ class MainWindow(QMainWindow):
         self._action_clear_centerline.triggered.connect(self._clear_centerline)
         self._action_clear_centerline.setToolTip("Remove all centerline nodes from the map.")
 
+        self._action_export_centerline_csv = QAction("Export Centerline CSV…", self)
+        self._action_export_centerline_csv.triggered.connect(self._export_centerline_csv)
+        self._action_export_centerline_path = QAction("Export Centerline Path YAML…", self)
+        self._action_export_centerline_path.triggered.connect(self._export_centerline_path)
+
     def _create_menus(self) -> None:
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("&File")
         file_menu.addAction(self._action_open)
         file_menu.addAction(self._action_save)
+        file_menu.addSeparator()
+        file_menu.addAction(self._action_export_centerline_csv)
+        file_menu.addAction(self._action_export_centerline_path)
         file_menu.addSeparator()
         file_menu.addAction(self._action_exit)
 
@@ -152,6 +171,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self._action_set_start_finish)
         edit_menu.addAction(self._action_clear_start_finish)
         edit_menu.addSeparator()
+        edit_menu.addAction(self._action_place_centerline)
         edit_menu.addAction(self._action_edit_centerline)
         edit_menu.addAction(self._action_clear_centerline)
 
@@ -178,6 +198,7 @@ class MainWindow(QMainWindow):
         self._annotation_panel.deleteSpawnRequested.connect(self._delete_spawn_point)
         self._annotation_panel.setStartFinishRequested.connect(self._set_start_finish_line)
         self._annotation_panel.clearStartFinishRequested.connect(self._clear_start_finish_line)
+        self._annotation_panel.placeCenterlineRequested.connect(self._start_centerline_placement)
         self._annotation_panel.editCenterlineRequested.connect(self._edit_centerline)
         self._annotation_panel.clearCenterlineRequested.connect(self._clear_centerline)
 
@@ -197,6 +218,7 @@ class MainWindow(QMainWindow):
         self._map_viewer.startFinishPlacementCompleted.connect(self._finalize_start_finish_line)
         self._map_viewer.placementStatusChanged.connect(self.statusBar().showMessage)
         self._map_viewer.placementCancelled.connect(self._on_viewer_placement_cancelled)
+        self._map_viewer.centerlinePlacementFinished.connect(self._handle_centerline_placement_finished)
 
     def _select_map_bundle(self) -> None:
         start_dir = str(self._current_map.parent if self._current_map else Path.home())
@@ -392,10 +414,31 @@ class MainWindow(QMainWindow):
         if context is None:
             return
         self._undo_stack.push(SetStartFinishLineCommand(context, None, "Clear start/finish line"))
+        self.statusBar().showMessage("Start/finish line cleared.")
 
     def _on_viewer_placement_cancelled(self) -> None:
         # No additional work required beyond the viewer status message.
         pass
+
+    def _start_centerline_placement(self) -> None:
+        if self._annotation_context is None and self._ensure_annotation_context() is None:
+            return
+        if self._map_viewer.begin_centerline_placement():
+            self.statusBar().showMessage(
+                "Centerline placement mode: left-click to add points, Enter/right-click to finish."
+            )
+
+    def _handle_centerline_placement_finished(self, points: object) -> None:
+        context = self._ensure_annotation_context()
+        if context is None:
+            return
+        typed_points = [Point2D(p.x, p.y) for p in points] if isinstance(points, list) else []
+        if len(typed_points) < 2:
+            self.statusBar().showMessage("Centerline requires at least two points.")
+            return
+        self._undo_stack.push(SetCenterlineCommand(context, typed_points))
+        self.statusBar().showMessage(f"Centerline placed ({len(typed_points)} point(s)).")
+        self._refresh_diagnostics()
 
     def _finalize_spawn_point(self, x: float, y: float) -> None:
         context = self._annotation_context
@@ -464,6 +507,60 @@ class MainWindow(QMainWindow):
             return
         self._undo_stack.push(SetCenterlineCommand(context, []))
         self.statusBar().showMessage("Centerline cleared.")
+        self._refresh_diagnostics()
+
+    def _export_centerline_csv(self) -> None:
+        if not self._current_bundle or not self._current_bundle.annotations.centerline:
+            QMessageBox.information(self, "No centerline", "Create a centerline before exporting.")
+            return
+        samples = resample_centerline(
+            self._current_bundle.annotations.centerline,
+            self._centerline_spacing,
+        )
+        if not samples:
+            QMessageBox.warning(self, "Centerline too short", "Not enough points to export.")
+            return
+        default_path = self._suggest_export_path("centerline.csv")
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export centerline CSV",
+            default_path,
+            "CSV files (*.csv);;All files (*)",
+        )
+        if not file_path:
+            return
+        export_centerline_csv(samples, Path(file_path))
+        self.statusBar().showMessage(f"Centerline CSV exported: {Path(file_path).name}")
+
+    def _export_centerline_path(self) -> None:
+        if not self._current_bundle or not self._current_bundle.annotations.centerline:
+            QMessageBox.information(self, "No centerline", "Create a centerline before exporting.")
+            return
+        samples = resample_centerline(
+            self._current_bundle.annotations.centerline,
+            self._centerline_spacing,
+        )
+        if not samples:
+            QMessageBox.warning(self, "Centerline too short", "Not enough points to export.")
+            return
+        default_path = self._suggest_export_path("centerline_path.yaml")
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export centerline Path YAML",
+            default_path,
+            "YAML files (*.yaml);;All files (*)",
+        )
+        if not file_path:
+            return
+        frame = "map"
+        export_centerline_path_yaml(samples, Path(file_path), frame_id=frame)
+        self.statusBar().showMessage(f"Centerline Path exported: {Path(file_path).name}")
+
+    def _suggest_export_path(self, suffix: str) -> str:
+        if self._current_map:
+            base = Path(self._current_map)
+            return str(base.with_name(f"{base.stem}_{suffix}"))
+        return str(Path.home() / suffix)
 
     def _refresh_diagnostics(self) -> None:
         if self._current_bundle is None:
