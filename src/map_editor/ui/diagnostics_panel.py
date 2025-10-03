@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from map_editor.services.diagnostics import DiagnosticIssue, DiagnosticsReport
+from map_editor.ui.collapsible_section import CollapsibleSection
 
 
 class DiagnosticsPanel(QWidget):
@@ -44,10 +45,19 @@ class DiagnosticsPanel(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(8)
-        layout.addWidget(self._summary_label)
-        layout.addWidget(self._issues_list, stretch=1)
-        layout.addWidget(self._highlight_checkbox)
-        layout.addWidget(self._refresh_button)
+
+        section = CollapsibleSection(
+            "Diagnostics", self, settings_key="diagnostics/main_section"
+        )
+        section_layout = section.content_layout()
+        section_layout.setSpacing(6)
+        section_layout.addWidget(self._summary_label)
+        section_layout.addWidget(self._issues_list, stretch=1)
+        section_layout.addWidget(self._highlight_checkbox)
+        section_layout.addWidget(self._refresh_button)
+
+        layout.addWidget(section)
+        layout.addStretch(1)
 
     def set_report(self, report: Optional[DiagnosticsReport]) -> None:
         self._report = report
@@ -81,4 +91,3 @@ class DiagnosticsPanel(QWidget):
 
     def _on_highlight_changed(self, state: int) -> None:
         self.highlightToggled.emit(state == Qt.CheckState.Checked)
-

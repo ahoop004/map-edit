@@ -6,6 +6,7 @@ from typing import Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QDoubleSpinBox,
@@ -17,6 +18,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QPushButton,
+    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -29,6 +31,8 @@ from map_editor.models.annotations import (
     SpawnPoint,
     StartFinishLine,
 )
+from map_editor.models.spawn_stamp import MAX_STAMP_COUNT, SpawnStampSettings
+from map_editor.ui.collapsible_section import CollapsibleSection
 
 
 class AnnotationPanel(QWidget):
@@ -43,10 +47,12 @@ class AnnotationPanel(QWidget):
     finishCenterlineRequested = Signal()
     editCenterlineRequested = Signal()
     clearCenterlineRequested = Signal()
+    stampSettingsChanged = Signal(SpawnStampSettings)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._annotations = MapAnnotations()
+        self._stamp_settings = SpawnStampSettings()
 
         self._spawn_list = QListWidget(self)
         self._spawn_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
@@ -67,10 +73,13 @@ class AnnotationPanel(QWidget):
         button_row.addWidget(self._edit_button)
         button_row.addWidget(self._delete_button)
 
-        spawn_group = QGroupBox("Spawn Points", self)
-        spawn_layout = QVBoxLayout(spawn_group)
+        spawn_section = CollapsibleSection(
+            "Spawn Points", self, settings_key="annotations/spawn_section"
+        )
+        spawn_layout = spawn_section.content_layout()
         spawn_layout.addWidget(self._spawn_list)
         spawn_layout.addLayout(button_row)
+        spawn_layout.addLayout(self._build_stamp_controls())
 
         self._start_finish_label = QLabel("No start/finish line")
         self._set_start_finish_button = QPushButton("Set…")
@@ -85,20 +94,23 @@ class AnnotationPanel(QWidget):
         start_button_row.addWidget(self._set_start_finish_button)
         start_button_row.addWidget(self._clear_start_finish_button)
 
-        start_group = QGroupBox("Start / Finish", self)
-        start_layout = QVBoxLayout(start_group)
+        start_section = CollapsibleSection(
+            "Start / Finish", self, settings_key="annotations/start_finish_section"
+        )
+        start_layout = start_section.content_layout()
         start_layout.addWidget(self._start_finish_label)
         start_layout.addLayout(start_button_row)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(8, 8, 8, 8)
         root.setSpacing(10)
-        root.addWidget(spawn_group)
-        root.addWidget(start_group)
+        root.addWidget(spawn_section)
+        root.addWidget(start_section)
         root.addWidget(self._build_centerline_section())
         root.addStretch(1)
 
         self._update_button_states()
+        self._emit_stamp_settings()
 
     def set_annotations(self, annotations: MapAnnotations) -> None:
         """Refresh UI state based on provided annotations."""
@@ -122,6 +134,80 @@ class AnnotationPanel(QWidget):
         else:
             self._centerline_label.setText("No centerline")
         self._update_button_states()
+
+    def stamp_settings(self) -> SpawnStampSettings:
+        """Return the current stamp placement configuration."""
+        return self._stamp_settings
+
+    def _build_stamp_controls(self) -> QVBoxLayout:
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 8, 0, 0)
+        layout.setSpacing(4)
+
+        self._stamp_enabled = QCheckBox("Enable stamp placement", self)
+        self._stamp_enabled.setChecked(self._stamp_settings.enabled)
+        self._stamp_enabled.setToolTip(
+            "Place multiple spawn points at once using a configurable grid."
+        )
+        self._stamp_enabled.stateChanged.connect(self._on_stamp_control_changed)
+
+        form = QFormLayout()
+        form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        form.setContentsMargins(0, 0, 0, 0)
+        form.setSpacing(4)
+
+        self._stamp_count = QSpinBox(self)
+        self._stamp_count.setRange(1, MAX_STAMP_COUNT)
+        self._stamp_count.setValue(self._stamp_settings.count)
+        self._stamp_count.valueChanged.connect(self._on_stamp_control_changed)
+
+        self._stamp_long_spacing = self._create_stamp_spin(
+            0.1, 10.0, self._stamp_settings.longitudinal_spacing
+        )
+        self._stamp_long_spacing.setSuffix(" m")
+        self._stamp_long_spacing.valueChanged.connect(self._on_stamp_control_changed)
+
+        self._stamp_lat_spacing = self._create_stamp_spin(
+            0.1, 10.0, self._stamp_settings.lateral_spacing
+        )
+        self._stamp_lat_spacing.setSuffix(" m")
+        self._stamp_lat_spacing.valueChanged.connect(self._on_stamp_control_changed)
+
+        form.addRow("Stamp count", self._stamp_count)
+        form.addRow("Row spacing", self._stamp_long_spacing)
+        form.addRow("Lane spacing", self._stamp_lat_spacing)
+
+        layout.addWidget(self._stamp_enabled)
+        layout.addLayout(form)
+        self._update_stamp_controls_enabled()
+        return layout
+
+    @staticmethod
+    def _create_stamp_spin(minimum: float, maximum: float, value: float) -> QDoubleSpinBox:
+        spin = QDoubleSpinBox()
+        spin.setRange(minimum, maximum)
+        spin.setDecimals(3)
+        spin.setKeyboardTracking(False)
+        spin.setValue(value)
+        return spin
+
+    def _on_stamp_control_changed(self) -> None:
+        self._update_stamp_controls_enabled()
+        self._emit_stamp_settings()
+
+    def _emit_stamp_settings(self) -> None:
+        self._stamp_settings = SpawnStampSettings(
+            enabled=self._stamp_enabled.isChecked(),
+            count=self._stamp_count.value(),
+            longitudinal_spacing=self._stamp_long_spacing.value(),
+            lateral_spacing=self._stamp_lat_spacing.value(),
+        )
+        self.stampSettingsChanged.emit(self._stamp_settings)
+
+    def _update_stamp_controls_enabled(self) -> None:
+        enabled = self._stamp_enabled.isChecked()
+        for widget in (self._stamp_count, self._stamp_long_spacing, self._stamp_lat_spacing):
+            widget.setEnabled(enabled)
 
     def selected_index(self) -> Optional[int]:
         items = self._spawn_list.selectedIndexes()
@@ -158,14 +244,13 @@ class AnnotationPanel(QWidget):
             "Click to finish placement." if active else "Place centerline points by clicking on the map."
         )
 
-    def _build_centerline_section(self) -> QWidget:
-        container = QWidget(self)
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 12, 0, 0)
+    def _build_centerline_section(self) -> CollapsibleSection:
+        section = CollapsibleSection(
+            "Centerline", self, settings_key="annotations/centerline_section"
+        )
+        layout = section.content_layout()
         layout.setSpacing(6)
 
-        header = QLabel("Centerline")
-        header.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self._centerline_label = QLabel("No centerline")
         self._centerline_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
@@ -184,10 +269,9 @@ class AnnotationPanel(QWidget):
         button_row.addWidget(clear_button)
         button_row.addStretch(1)
 
-        layout.addWidget(header)
         layout.addWidget(self._centerline_label)
         layout.addLayout(button_row)
-        return container
+        return section
 
 
 class SpawnPointDialog(QDialog):

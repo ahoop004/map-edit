@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QUndoStack
 
 from map_editor.commands import (
+    AddSpawnBatchCommand,
     AddSpawnPointCommand,
     AnnotationContext,
     DeleteSpawnPointCommand,
@@ -38,6 +39,7 @@ from map_editor.models.annotations import (
     StartFinishLine,
 )
 from map_editor.models.map_bundle import MapBundle, MapMetadata
+from map_editor.models.spawn_stamp import SpawnStampSettings
 from map_editor.services.diagnostics import DiagnosticsReport, analyse_bundle
 from map_editor.exporters.centerline import (
     export_centerline_csv,
@@ -78,6 +80,7 @@ class MainWindow(QMainWindow):
         self._annotation_context: Optional[AnnotationContext] = None
         self._diagnostics_report: Optional[DiagnosticsReport] = None
         self._centerline_spacing: float = 0.2
+        self._spawn_stamp_settings: SpawnStampSettings = self._annotation_panel.stamp_settings()
 
         self._init_status_bar()
         self._init_central_widget()
@@ -85,6 +88,7 @@ class MainWindow(QMainWindow):
         self._create_menus()
         self._create_docks()
         self._connect_viewer_signals()
+        self._map_viewer.set_spawn_stamp_settings(self._spawn_stamp_settings)
 
     def _init_status_bar(self) -> None:
         status = QStatusBar(self)
@@ -225,6 +229,7 @@ class MainWindow(QMainWindow):
         self._annotation_panel.finishCenterlineRequested.connect(self._finish_centerline_placement)
         self._annotation_panel.editCenterlineRequested.connect(self._edit_centerline)
         self._annotation_panel.clearCenterlineRequested.connect(self._clear_centerline)
+        self._annotation_panel.stampSettingsChanged.connect(self._on_stamp_settings_changed)
 
         diagnostics_dock = QDockWidget("Diagnostics", self)
         diagnostics_dock.setObjectName("diagnosticsDock")
@@ -239,6 +244,7 @@ class MainWindow(QMainWindow):
 
     def _connect_viewer_signals(self) -> None:
         self._map_viewer.spawnPlacementCompleted.connect(self._finalize_spawn_point)
+        self._map_viewer.spawnStampPlacementCompleted.connect(self._finalize_spawn_stamp)
         self._map_viewer.startFinishPlacementCompleted.connect(self._finalize_start_finish_line)
         self._map_viewer.placementStatusChanged.connect(self.statusBar().showMessage)
         self._map_viewer.placementCancelled.connect(self._on_viewer_placement_cancelled)
@@ -371,6 +377,10 @@ class MainWindow(QMainWindow):
         )
         self._refresh_diagnostics()
 
+    def _on_stamp_settings_changed(self, settings: SpawnStampSettings) -> None:
+        self._spawn_stamp_settings = settings
+        self._map_viewer.set_spawn_stamp_settings(settings)
+
     def _ensure_annotation_context(self) -> Optional[AnnotationContext]:
         if self._annotation_context is None:
             QMessageBox.information(self, "No map", "Load a map before editing annotations.")
@@ -381,7 +391,9 @@ class MainWindow(QMainWindow):
         if self._annotation_context is None:
             if self._ensure_annotation_context() is None:
                 return
-        if not self._map_viewer.begin_spawn_placement():
+        self._map_viewer.set_spawn_stamp_settings(self._spawn_stamp_settings)
+        use_stamp = self._spawn_stamp_settings.enabled
+        if not self._map_viewer.begin_spawn_placement(use_stamp):
             return
 
     def _edit_selected_spawn_point(self) -> None:
@@ -557,6 +569,25 @@ class MainWindow(QMainWindow):
             )
         else:
             self.statusBar().showMessage("Spawn placement cancelled.")
+        self._refresh_diagnostics()
+
+    def _finalize_spawn_stamp(self, poses: list[Pose2D]) -> None:
+        context = self._annotation_context
+        if context is None:
+            return
+        if not poses:
+            self.statusBar().showMessage("Stamp placement cancelled.")
+            return
+
+        start_index = len(context.annotations.spawn_points) + 1
+        spawns = [
+            SpawnPoint(name=f"spawn_{start_index + idx}", pose=pose)
+            for idx, pose in enumerate(poses)
+        ]
+        self._undo_stack.push(AddSpawnBatchCommand(context, spawns))
+        self.statusBar().showMessage(
+            f"Added {len(spawns)} spawn point(s) via stamp placement."
+        )
         self._refresh_diagnostics()
 
     def _finalize_start_finish_line(self, sx: float, sy: float, ex: float, ey: float) -> None:

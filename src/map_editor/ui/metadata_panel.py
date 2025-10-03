@@ -8,7 +8,6 @@ from PySide6.QtCore import QSignalBlocker, Qt, Signal
 from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
-    QGroupBox,
     QLabel,
     QSizePolicy,
     QVBoxLayout,
@@ -16,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from map_editor.models.map_bundle import MapMetadata
+from map_editor.ui.collapsible_section import CollapsibleSection
 
 
 class MapMetadataPanel(QWidget):
@@ -42,24 +42,27 @@ class MapMetadataPanel(QWidget):
         root_layout.setSpacing(12)
 
         root_layout.addWidget(self._status_label)
-        self._group_box = self._build_metadata_group()
-        root_layout.addWidget(self._group_box)
+        section = CollapsibleSection(
+            "Map Metadata", self, settings_key="metadata/metadata_section"
+        )
+        self._metadata_content = QWidget(self)
+        section.content_layout().addWidget(self._metadata_content)
+        self._build_metadata_group(self._metadata_content)
+        root_layout.addWidget(section)
         root_layout.addStretch(1)
 
         self._connect_signals()
-        self._group_box.setEnabled(False)
+        self._metadata_content.setEnabled(False)
         self.set_metadata(None)
 
-    def _build_metadata_group(self) -> QWidget:
-        group = QGroupBox("Map Metadata", self)
-        form = QFormLayout(group)
+    def _build_metadata_group(self, container: QWidget) -> None:
+        form = QFormLayout(container)
         form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
         form.addRow("Resolution (m/pixel)", self._resolution)
         form.addRow("Origin X (m)", self._origin_x)
         form.addRow("Origin Y (m)", self._origin_y)
         form.addRow("Occupied threshold", self._occupied_thresh)
         form.addRow("Free threshold", self._free_thresh)
-        return group
 
     def _connect_signals(self) -> None:
         for spinbox in (
@@ -100,7 +103,7 @@ class MapMetadataPanel(QWidget):
             self._origin_y.setValue(defaults.origin_y)
             self._occupied_thresh.setValue(defaults.occupied_thresh)
             self._free_thresh.setValue(defaults.free_thresh)
-            self._group_box.setEnabled(False)
+            self._metadata_content.setEnabled(False)
             self._status_label.setText("No map loaded")
         else:
             self._current_metadata = metadata
@@ -109,7 +112,7 @@ class MapMetadataPanel(QWidget):
             self._origin_y.setValue(metadata.origin_y)
             self._occupied_thresh.setValue(metadata.occupied_thresh)
             self._free_thresh.setValue(metadata.free_thresh)
-            self._group_box.setEnabled(True)
+            self._metadata_content.setEnabled(True)
             self._status_label.setText("Editing metadata")
         del blockers
 

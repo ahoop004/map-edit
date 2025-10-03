@@ -7,7 +7,13 @@ from typing import Callable, Iterable, List, Optional
 
 from PySide6.QtGui import QUndoCommand
 
-from map_editor.models.annotations import MapAnnotations, Point2D, SpawnPoint, StartFinishLine
+from map_editor.models.annotations import (
+    MapAnnotations,
+    Point2D,
+    Pose2D,
+    SpawnPoint,
+    StartFinishLine,
+)
 
 
 @dataclass
@@ -56,6 +62,34 @@ class AddSpawnPointCommand(QUndoCommand):
     def undo(self) -> None:
         if self._spawn in self._context.annotations.spawn_points:
             self._context.annotations.spawn_points.remove(self._spawn)
+        self._context.on_annotations_changed(self._context.annotations)
+
+
+class AddSpawnBatchCommand(QUndoCommand):
+    """Add multiple spawn points in a single undoable action."""
+
+    def __init__(self, context: AnnotationContext, spawns: Iterable[SpawnPoint]) -> None:
+        super().__init__("Add spawn stamp")
+        self._context = context
+        self._insert_index = len(context.annotations.spawn_points)
+        self._spawns: List[SpawnPoint] = [
+            SpawnPoint(name=spawn.name, pose=Pose2D(spawn.pose.x, spawn.pose.y, spawn.pose.theta))
+            for spawn in spawns
+        ]
+
+    def redo(self) -> None:
+        self._context.annotations.spawn_points[
+            self._insert_index : self._insert_index
+        ] = [
+            SpawnPoint(name=spawn.name, pose=Pose2D(spawn.pose.x, spawn.pose.y, spawn.pose.theta))
+            for spawn in self._spawns
+        ]
+        self._context.on_annotations_changed(self._context.annotations)
+
+    def undo(self) -> None:
+        end_index = self._insert_index + len(self._spawns)
+        if end_index <= len(self._context.annotations.spawn_points):
+            del self._context.annotations.spawn_points[self._insert_index:end_index]
         self._context.on_annotations_changed(self._context.annotations)
 
 
