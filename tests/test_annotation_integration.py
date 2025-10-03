@@ -88,4 +88,4 @@ def test_annotation_commands_round_trip(tmp_path: Path):
     assert loaded.metadata == metadata
     assert loaded.annotations.start_finish_line == start_finish
     assert loaded.annotations.spawn_points == applied_annotations.spawn_points
-    assert loaded.annotations.centerline == centerline_points
+    assert loaded.annotations.centerline == []

@@ -256,8 +256,6 @@ def _annotations_to_dict(annotations: MapAnnotations) -> Dict[str, Any]:
             }
             for spawn in annotations.spawn_points
         ]
-    if annotations.centerline:
-        payload["centerline"] = [[point.x, point.y] for point in annotations.centerline]
     return payload
 
 

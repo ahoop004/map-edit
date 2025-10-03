@@ -27,6 +27,10 @@
 - [x] Persist collapsed state per section across sessions.
 - [x] Verify layout resizing and keyboard focus behave when sections expand/collapse.
 
+## Export & Feedback Enhancements
+- [x] Add bundled export action that writes PNG, PGM, YAML, centerline CSV, and wall CSV to a chosen folder.
+- [x] Provide a progress indicator/spinner for long-running tasks (centerline extraction, exports, diagnostics).
+
 ## Future Features
 - [ ] New map wizard.
   - [ ] Design wizard steps for metadata defaults, spawn grid presets, optional centerline seed.

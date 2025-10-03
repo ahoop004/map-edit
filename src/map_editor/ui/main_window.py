@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import csv
 
+import shutil
 from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
+    QApplication,
     QFileDialog,
     QDialog,
     QDockWidget,
@@ -59,6 +61,7 @@ from map_editor.ui.map_viewer import MapViewer
 from map_editor.ui.metadata_panel import MapMetadataPanel
 from map_editor.services.map_loader import MapBundleLoader
 from map_editor.services.yaml_serializer import MapYamlError
+from map_editor.ui.progress import show_busy_dialog
 
 
 class MainWindow(QMainWindow):
@@ -168,12 +171,16 @@ class MainWindow(QMainWindow):
         self._action_export_map_pgm.triggered.connect(self._export_map_as_pgm)
         self._action_export_walls_csv = QAction("Export Walls CSV…", self)
         self._action_export_walls_csv.triggered.connect(self._export_walls_csv)
+        self._action_export_bundle = QAction("Export Bundle Assets…", self)
+        self._action_export_bundle.triggered.connect(self._export_bundle_assets)
 
     def _create_menus(self) -> None:
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("&File")
         file_menu.addAction(self._action_open)
         file_menu.addAction(self._action_save)
+        file_menu.addSeparator()
+        file_menu.addAction(self._action_export_bundle)
         file_menu.addSeparator()
         file_menu.addAction(self._action_export_centerline_csv)
         file_menu.addAction(self._action_export_centerline_path)
@@ -535,11 +542,23 @@ class MainWindow(QMainWindow):
         if not self._current_bundle:
             QMessageBox.information(self, "No map", "Load a map before generating a centerline.")
             return
-        extraction = extract_walls(self._current_bundle.image_path, self._current_bundle.metadata)
-        if len(extraction.walls) < 2:
-            QMessageBox.warning(self, "Insufficient walls", "Need at least two wall contours to derive a centerline.")
-            return
-        centerline_points = derive_centerline_from_walls(extraction.walls)
+        with show_busy_dialog(self, "Generating centerline…", minimum_duration=0) as progress:
+            progress.setLabelText("Extracting walls…")
+            QApplication.processEvents()
+            extraction = extract_walls(
+                self._current_bundle.image_path,
+                self._current_bundle.metadata,
+            )
+            if len(extraction.walls) < 2:
+                QMessageBox.warning(
+                    self,
+                    "Insufficient walls",
+                    "Need at least two wall contours to derive a centerline.",
+                )
+                return
+            progress.setLabelText("Deriving centerline path…")
+            QApplication.processEvents()
+            centerline_points = derive_centerline_from_walls(extraction.walls)
         if len(centerline_points) < 2:
             QMessageBox.warning(self, "Centerline generation failed", "Could not derive a usable centerline from walls.")
             return
@@ -734,14 +753,98 @@ class MainWindow(QMainWindow):
             return
         self.statusBar().showMessage(f"Map exported as PGM: {Path(file_path).name}")
 
+    def _export_bundle_assets(self) -> None:
+        if not self._current_bundle:
+            QMessageBox.information(self, "No map", "Load a map before exporting.")
+            return
+
+        bundle = self._current_bundle
+        default_dir = str(bundle.image_path.parent)
+        target_dir = QFileDialog.getExistingDirectory(
+            self,
+            "Select export folder",
+            default_dir,
+        )
+        if not target_dir:
+            return
+
+        destination_root = Path(target_dir)
+        stem = bundle.stem
+        destination = destination_root / stem
+        try:
+            destination.mkdir(parents=True, exist_ok=True)
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.critical(self, "Export failed", f"Could not create folder '{destination}': {exc}")
+            return
+        exported: list[str] = []
+        skipped: list[str] = []
+
+        try:
+            with show_busy_dialog(self, "Exporting bundle assets…", minimum_duration=0) as progress:
+                progress.setLabelText("Copying map image…")
+                QApplication.processEvents()
+                image_target = destination / f"{stem}{bundle.image_path.suffix.lower()}"
+                shutil.copy2(bundle.image_path, image_target)
+                exported.append(image_target.name)
+
+                progress.setLabelText("Generating PGM…")
+                QApplication.processEvents()
+                pgm_target = destination / f"{stem}.pgm"
+                export_png_as_pgm(bundle.image_path, pgm_target)
+                exported.append(pgm_target.name)
+
+                progress.setLabelText("Writing YAML metadata…")
+                QApplication.processEvents()
+                yaml_target = destination / f"{stem}.yaml"
+                self._bundle_loader.save_bundle(bundle, destination=yaml_target, create_backup=False)
+                exported.append(yaml_target.name)
+
+                if bundle.annotations.centerline:
+                    progress.setLabelText("Exporting centerline CSV…")
+                    QApplication.processEvents()
+                    samples = resample_centerline(
+                        bundle.annotations.centerline,
+                        self._centerline_spacing,
+                    )
+                    if samples:
+                        centerline_target = destination / f"{stem}_centerline.csv"
+                        export_centerline_csv(samples, centerline_target)
+                        exported.append(centerline_target.name)
+                    else:
+                        skipped.append("centerline too short to export")
+                else:
+                    skipped.append("no centerline defined")
+
+                progress.setLabelText("Extracting walls…")
+                QApplication.processEvents()
+                extraction = extract_walls(bundle.image_path, bundle.metadata)
+                if extraction.walls:
+                    walls_target = destination / f"{stem}_walls.csv"
+                    export_walls_csv(extraction.walls, walls_target)
+                    exported.append(walls_target.name)
+                else:
+                    skipped.append("no walls detected")
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.critical(self, "Export failed", str(exc))
+            return
+
+        if exported:
+            summary = f"Exported to {destination.name}: {', '.join(exported)}"
+        else:
+            summary = f"No files exported to {destination.name}"
+        message_parts = [summary]
+        if skipped:
+            message_parts.append("Skipped: " + ", ".join(skipped))
+        self.statusBar().showMessage("; ".join(message_parts), 8000)
+
     def _refresh_diagnostics(self) -> None:
         if self._current_bundle is None:
             self._diagnostics_report = None
             self._diagnostics_panel.set_report(None)
             self._map_viewer.set_diagnostic_highlight(False, False)
             return
-
-        self._diagnostics_report = analyse_bundle(self._current_bundle)
+        with show_busy_dialog(self, "Analyzing diagnostics…"):
+            self._diagnostics_report = analyse_bundle(self._current_bundle)
         self._diagnostics_panel.set_report(self._diagnostics_report)
         self._map_viewer.set_diagnostic_highlight(
             self._diagnostics_panel.highlight_enabled,

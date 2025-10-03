@@ -56,4 +56,4 @@ def test_save_then_load_preserves_annotations(tmp_path: Path):
     assert loaded.metadata == metadata
     assert loaded.annotations.start_finish_line == annotations.start_finish_line
     assert loaded.annotations.spawn_points == annotations.spawn_points
-    assert loaded.annotations.centerline == annotations.centerline
+    assert loaded.annotations.centerline == []

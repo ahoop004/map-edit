@@ -488,34 +488,50 @@ class MapViewer(QGraphicsView):
     def _spawn_vehicle_polygon(self, x: float, y: float, theta: float) -> list[QPointF]:
         """Return scene-space polygon corners for the car footprint."""
 
-        scene_center = self._world_to_scene(x, y)
         if self._metadata:
-            pixels_per_meter = 1.0 / self._metadata.resolution
-            half_length = self._CAR_LENGTH_M * pixels_per_meter / 2.0
-            half_width = self._CAR_WIDTH_M * pixels_per_meter / 2.0
-        else:
-            # Fallback ensures a visible footprint even without metadata.
-            base_radius = self._marker_radius()
-            half_length = base_radius * 1.2
-            half_width = half_length * (self._CAR_WIDTH_M / self._CAR_LENGTH_M)
+            half_length_world = self._CAR_LENGTH_M / 2.0
+            half_width_world = self._CAR_WIDTH_M / 2.0
+
+            cos_theta = math.cos(theta)
+            sin_theta = math.sin(theta)
+
+            local_corners_world = (
+                (half_length_world, half_width_world),
+                (half_length_world, -half_width_world),
+                (-half_length_world, -half_width_world),
+                (-half_length_world, half_width_world),
+            )
+
+            scene_points = []
+            for local_x, local_y in local_corners_world:
+                world_x = x + local_x * cos_theta - local_y * sin_theta
+                world_y = y + local_x * sin_theta + local_y * cos_theta
+                scene_points.append(self._world_to_scene(world_x, world_y))
+            return scene_points
+
+        # Fallback: approximate footprint directly in scene space when metadata is missing.
+        scene_center = self._world_to_scene(x, y)
+        base_radius = self._marker_radius()
+        half_length_scene = base_radius * 1.2
+        half_width_scene = half_length_scene * (self._CAR_WIDTH_M / self._CAR_LENGTH_M)
 
         cos_theta = math.cos(theta)
         sin_theta = math.sin(theta)
 
-        local_corners = (
-            (half_length, half_width),
-            (half_length, -half_width),
-            (-half_length, -half_width),
-            (-half_length, half_width),
+        local_corners_scene = (
+            (half_length_scene, half_width_scene),
+            (half_length_scene, -half_width_scene),
+            (-half_length_scene, -half_width_scene),
+            (-half_length_scene, half_width_scene),
         )
 
-        scene_points: list[QPointF] = []
-        for local_x, local_y in local_corners:
-            scene_x = scene_center.x() + local_x * cos_theta - local_y * sin_theta
-            scene_y = scene_center.y() + local_x * sin_theta + local_y * cos_theta
-            scene_points.append(QPointF(scene_x, scene_y))
-
-        return scene_points
+        return [
+            QPointF(
+                scene_center.x() + local_x * cos_theta - local_y * sin_theta,
+                scene_center.y() + local_x * sin_theta + local_y * cos_theta,
+            )
+            for local_x, local_y in local_corners_scene
+        ]
 
     def _spawn_heading_points(self, x: float, y: float, theta: float) -> tuple[QPointF, QPointF]:
         start_scene = self._world_to_scene(x, y)
