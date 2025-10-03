@@ -31,6 +31,11 @@
 - [x] Add bundled export action that writes PNG, PGM, YAML, centerline CSV, and wall CSV to a chosen folder.
 - [x] Provide a progress indicator/spinner for long-running tasks (centerline extraction, exports, diagnostics).
 
+## Track Width Analysis
+- [x] Compute per-point track width by intersecting centerline normals with wall contours.
+- [x] Visualise width profile and summary stats in the UI with map highlights for out-of-spec regions.
+- [x] Add auto-scale option to adjust map resolution so average width equals 2.20 m.
+
 ## Future Features
 - [ ] New map wizard.
   - [ ] Design wizard steps for metadata defaults, spawn grid presets, optional centerline seed.

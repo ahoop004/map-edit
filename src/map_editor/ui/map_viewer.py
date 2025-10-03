@@ -71,6 +71,8 @@ class MapViewer(QGraphicsView):
         self._spawn_stamp_dragging: bool = False
         self._spawn_stamp_preview_poses: list[Pose2D] = []
         self._annotations_cache = MapAnnotations()
+        self._width_highlight_segments: list[tuple[Point2D, Point2D]] = []
+        self._width_threshold: float = 2.2
 
         self._zoom_factor = 1.25
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -95,6 +97,13 @@ class MapViewer(QGraphicsView):
             # Refresh preview using new settings.
             self._refresh_spawn_preview()
 
+    def set_track_width_highlights(
+        self, segments: Iterable[tuple[Point2D, Point2D]], threshold: float
+    ) -> None:
+        self._width_highlight_segments = list(segments)
+        self._width_threshold = threshold
+        self.update_annotations(self._annotations_cache)
+
     def show_message(self, text: str) -> None:
         """Display a centered informational message instead of an image."""
         self._scene.clear()
@@ -102,6 +111,7 @@ class MapViewer(QGraphicsView):
         self._overlay_items.clear()
         self.cancel_placement()
         self._remove_spawn_preview_items()
+        self._width_highlight_segments = []
 
         message_item = self._scene.addText(text)
         message_item.setDefaultTextColor(Qt.GlobalColor.lightGray)
@@ -128,6 +138,7 @@ class MapViewer(QGraphicsView):
         self._centerline_preview_items.clear()
         self._centerline_temp_points.clear()
         self._remove_spawn_preview_items()
+        self._width_highlight_segments = []
 
         self._pixmap_item = self._scene.addPixmap(pixmap)
         self._pixmap_width = float(pixmap.width())
@@ -238,6 +249,21 @@ class MapViewer(QGraphicsView):
                 segment.setZValue(8)
                 overlay_items.append(segment)
                 prev_scene = curr_scene
+
+        if self._width_highlight_segments:
+            highlight_pen = QPen(Qt.GlobalColor.red, max(2.0, marker_radius * 0.35))
+            for start, end in self._width_highlight_segments:
+                start_scene = self._world_to_scene(start.x, start.y)
+                end_scene = self._world_to_scene(end.x, end.y)
+                highlight = QGraphicsLineItem(
+                    start_scene.x(),
+                    start_scene.y(),
+                    end_scene.x(),
+                    end_scene.y(),
+                )
+                highlight.setPen(highlight_pen)
+                highlight.setZValue(8.5)
+                overlay_items.append(highlight)
 
         self.set_overlay_items(overlay_items)
         # Refresh diagnostic overlay to ensure Z-order remains consistent.

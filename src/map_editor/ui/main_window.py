@@ -59,9 +59,11 @@ from map_editor.ui.centerline_editor import CenterlineEditorDialog
 from map_editor.ui.diagnostics_panel import DiagnosticsPanel
 from map_editor.ui.map_viewer import MapViewer
 from map_editor.ui.metadata_panel import MapMetadataPanel
-from map_editor.services.map_loader import MapBundleLoader
+from map_editor.services.map_loader import MapBundleLoader, MapBundleLoadResult
 from map_editor.services.yaml_serializer import MapYamlError
 from map_editor.ui.progress import show_busy_dialog
+from map_editor.services.track_metrics import compute_track_width_profile, TrackWidthProfile
+from map_editor.ui.track_metrics_panel import TrackMetricsPanel
 
 
 class MainWindow(QMainWindow):
@@ -79,11 +81,14 @@ class MainWindow(QMainWindow):
         self._metadata_panel = MapMetadataPanel(self)
         self._annotation_panel = AnnotationPanel(self)
         self._diagnostics_panel = DiagnosticsPanel(self)
+        self._track_metrics_panel = TrackMetricsPanel(self)
         self._undo_stack = QUndoStack(self)
         self._annotation_context: Optional[AnnotationContext] = None
         self._diagnostics_report: Optional[DiagnosticsReport] = None
         self._centerline_spacing: float = 0.2
         self._spawn_stamp_settings: SpawnStampSettings = self._annotation_panel.stamp_settings()
+        self._track_width_profile: Optional[TrackWidthProfile] = None
+        self._track_width_target: float = 2.2
 
         self._init_status_bar()
         self._init_central_widget()
@@ -91,6 +96,7 @@ class MainWindow(QMainWindow):
         self._create_menus()
         self._create_docks()
         self._connect_viewer_signals()
+        self._track_metrics_panel.autoScaleRequested.connect(self._auto_scale_track_width)
         self._map_viewer.set_spawn_stamp_settings(self._spawn_stamp_settings)
 
     def _init_status_bar(self) -> None:
@@ -249,6 +255,14 @@ class MainWindow(QMainWindow):
         self._diagnostics_panel.highlightToggled.connect(self._on_diagnostics_highlight_changed)
         self._diagnostics_panel.refreshRequested.connect(self._refresh_diagnostics)
 
+        metrics_dock = QDockWidget("Track Metrics", self)
+        metrics_dock.setObjectName("metricsDock")
+        metrics_dock.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea | Qt.DockWidgetArea.LeftDockWidgetArea)
+        metrics_dock.setWidget(self._track_metrics_panel)
+        metrics_dock.setMinimumWidth(320)
+        metrics_dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, metrics_dock)
+
     def _connect_viewer_signals(self) -> None:
         self._map_viewer.spawnPlacementCompleted.connect(self._finalize_spawn_point)
         self._map_viewer.spawnStampPlacementCompleted.connect(self._finalize_spawn_stamp)
@@ -303,22 +317,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Failed to load map", str(exc))
             return
 
-        bundle = result.bundle
-        self._current_map = bundle.yaml_path or bundle.image_path
-        self._current_bundle = bundle
-        self._map_viewer.set_map_image(bundle.image_path)
-        self._map_viewer.set_metadata(bundle.metadata)
-        self._metadata_panel.set_metadata(bundle.metadata)
-        self._map_viewer.update_annotations(bundle.annotations)
-        self._annotation_panel.set_annotations(bundle.annotations)
-        self._undo_stack.clear()
-        self._refresh_annotation_context()
-        self._action_save.setEnabled(True)
-        message = f"Loaded bundle: {bundle.yaml_path.name}" if bundle.yaml_path else "Loaded bundle"
-        if result.warnings:
-            message += " (" + "; ".join(result.warnings) + ")"
-        self.statusBar().showMessage(message)
-        self._refresh_diagnostics()
+        self._apply_loaded_bundle(result)
 
     def _save_map_bundle(self) -> None:
         if not self._current_bundle:
@@ -372,6 +371,35 @@ class MainWindow(QMainWindow):
             on_annotations_changed=self._handle_annotation_change,
         )
         self._annotation_panel.set_annotations(self._current_bundle.annotations)
+
+    def _apply_loaded_bundle(
+        self,
+        result: MapBundleLoadResult,
+        message: Optional[str] = None,
+    ) -> None:
+        bundle = result.bundle
+        self._current_map = bundle.yaml_path or bundle.image_path
+        self._current_bundle = bundle
+        self._map_viewer.set_map_image(bundle.image_path)
+        self._map_viewer.set_metadata(bundle.metadata)
+        self._metadata_panel.set_metadata(bundle.metadata)
+        self._map_viewer.update_annotations(bundle.annotations)
+        self._annotation_panel.set_annotations(bundle.annotations)
+        self._undo_stack.clear()
+        self._refresh_annotation_context()
+        self._action_save.setEnabled(True)
+
+        if message is None:
+            message = (
+                f"Loaded bundle: {bundle.yaml_path.name}"
+                if bundle.yaml_path
+                else "Loaded bundle"
+            )
+        if result.warnings:
+            message += " (" + "; ".join(result.warnings) + ")"
+
+        self.statusBar().showMessage(message)
+        self._refresh_diagnostics()
 
     def _handle_annotation_change(self, annotations: MapAnnotations) -> None:
         if self._current_bundle is not None:
@@ -568,6 +596,22 @@ class MainWindow(QMainWindow):
         )
         self._refresh_diagnostics()
 
+        exported_yaml = self._export_bundle_assets(show_result=False)
+        if exported_yaml:
+            try:
+                result = self._bundle_loader.load_from_yaml(exported_yaml)
+            except MapYamlError as exc:
+                QMessageBox.critical(
+                    self,
+                    "Reload failed",
+                    f"Bundle exported but could not be reopened: {exc}",
+                )
+                return
+            self._apply_loaded_bundle(
+                result,
+                message=f"Reloaded bundle: {exported_yaml.name}",
+            )
+
     def _finalize_spawn_point(self, x: float, y: float) -> None:
         context = self._annotation_context
         if context is None:
@@ -753,31 +797,43 @@ class MainWindow(QMainWindow):
             return
         self.statusBar().showMessage(f"Map exported as PGM: {Path(file_path).name}")
 
-    def _export_bundle_assets(self) -> None:
+    def _export_bundle_assets(
+        self,
+        destination_dir: Optional[Path] = None,
+        *,
+        show_result: bool = True,
+    ) -> Optional[Path]:
         if not self._current_bundle:
-            QMessageBox.information(self, "No map", "Load a map before exporting.")
-            return
+            if show_result:
+                QMessageBox.information(self, "No map", "Load a map before exporting.")
+            return None
 
         bundle = self._current_bundle
-        default_dir = str(bundle.image_path.parent)
-        target_dir = QFileDialog.getExistingDirectory(
-            self,
-            "Select export folder",
-            default_dir,
-        )
-        if not target_dir:
-            return
+        if destination_dir is None:
+            default_dir = str(bundle.image_path.parent)
+            selected = QFileDialog.getExistingDirectory(
+                self,
+                "Select export folder",
+                default_dir,
+            )
+            if not selected:
+                return None
+            destination_root = Path(selected)
+        else:
+            destination_root = destination_dir
 
-        destination_root = Path(target_dir)
         stem = bundle.stem
         destination = destination_root / stem
         try:
             destination.mkdir(parents=True, exist_ok=True)
         except Exception as exc:  # noqa: BLE001
-            QMessageBox.critical(self, "Export failed", f"Could not create folder '{destination}': {exc}")
-            return
+            if show_result:
+                QMessageBox.critical(self, "Export failed", f"Could not create folder '{destination}': {exc}")
+            return None
+
         exported: list[str] = []
         skipped: list[str] = []
+        yaml_target: Optional[Path] = None
 
         try:
             with show_busy_dialog(self, "Exporting bundle assets…", minimum_duration=0) as progress:
@@ -825,17 +881,21 @@ class MainWindow(QMainWindow):
                 else:
                     skipped.append("no walls detected")
         except Exception as exc:  # noqa: BLE001
-            QMessageBox.critical(self, "Export failed", str(exc))
-            return
+            if show_result:
+                QMessageBox.critical(self, "Export failed", str(exc))
+            return None
 
-        if exported:
-            summary = f"Exported to {destination.name}: {', '.join(exported)}"
-        else:
-            summary = f"No files exported to {destination.name}"
-        message_parts = [summary]
-        if skipped:
-            message_parts.append("Skipped: " + ", ".join(skipped))
-        self.statusBar().showMessage("; ".join(message_parts), 8000)
+        if show_result:
+            if exported:
+                summary = f"Exported to {destination.name}: {', '.join(exported)}"
+            else:
+                summary = f"No files exported to {destination.name}"
+            message_parts = [summary]
+            if skipped:
+                message_parts.append("Skipped: " + ", ".join(skipped))
+            self.statusBar().showMessage("; ".join(message_parts), 8000)
+
+        return yaml_target
 
     def _refresh_diagnostics(self) -> None:
         if self._current_bundle is None:
@@ -843,14 +903,129 @@ class MainWindow(QMainWindow):
             self._diagnostics_panel.set_report(None)
             self._map_viewer.set_diagnostic_highlight(False, False)
             return
-        with show_busy_dialog(self, "Analyzing diagnostics…"):
+        with show_busy_dialog(self, "Analyzing diagnostics…") as progress:
+            progress.setLabelText("Extracting walls…")
+            QApplication.processEvents()
+            extraction = extract_walls(
+                self._current_bundle.image_path,
+                self._current_bundle.metadata,
+            )
+            progress.setLabelText("Computing width profile…")
+            QApplication.processEvents()
+            self._track_width_profile = compute_track_width_profile(
+                self._current_bundle.annotations.centerline,
+                extraction.walls,
+            )
+            progress.setLabelText("Running diagnostics…")
+            QApplication.processEvents()
             self._diagnostics_report = analyse_bundle(self._current_bundle)
         self._diagnostics_panel.set_report(self._diagnostics_report)
         self._map_viewer.set_diagnostic_highlight(
             self._diagnostics_panel.highlight_enabled,
             self._diagnostics_report.has_warnings,
         )
+        self._update_track_metrics()
 
     def _on_diagnostics_highlight_changed(self, enabled: bool) -> None:
         has_issues = self._diagnostics_report.has_warnings if self._diagnostics_report else False
         self._map_viewer.set_diagnostic_highlight(enabled, has_issues)
+
+    def _update_track_metrics(self) -> None:
+        profile = self._track_width_profile
+        self._track_metrics_panel.set_profile(profile, self._track_width_target)
+        highlights: list[tuple[Point2D, Point2D]] = []
+        if (
+            profile
+            and profile.samples
+            and self._current_bundle
+            and self._current_bundle.annotations.centerline
+        ):
+            centerline = self._current_bundle.annotations.centerline
+            for index in range(min(len(centerline) - 1, len(profile.samples) - 1)):
+                width_current = profile.samples[index].width
+                width_next = profile.samples[index + 1].width
+                if width_current is None and width_next is None:
+                    continue
+                if (
+                    (width_current is not None and width_current < self._track_width_target)
+                    or (width_next is not None and width_next < self._track_width_target)
+                ):
+                    highlights.append((centerline[index], centerline[index + 1]))
+        self._map_viewer.set_track_width_highlights(highlights, self._track_width_target)
+
+    def _auto_scale_track_width(self) -> None:
+        if not self._current_bundle or not self._track_width_profile:
+            QMessageBox.information(
+                self,
+                "Track width",
+                "Load a map with a centerline and walls before scaling.",
+            )
+            return
+
+        average_width = self._track_width_profile.average_width
+        if not average_width or average_width <= 0:
+            QMessageBox.information(
+                self,
+                "Track width",
+                "Unable to compute average width.",
+            )
+            return
+
+        scale_factor = self._track_width_target / average_width
+        if abs(scale_factor - 1.0) < 1e-3:
+            self.statusBar().showMessage("Track already at target width.")
+            return
+
+        bundle = self._current_bundle
+        metadata = bundle.metadata
+
+        new_metadata = MapMetadata(
+            resolution=metadata.resolution * scale_factor,
+            origin_x=metadata.origin_x * scale_factor,
+            origin_y=metadata.origin_y * scale_factor,
+            origin_theta=metadata.origin_theta,
+            occupied_thresh=metadata.occupied_thresh,
+            free_thresh=metadata.free_thresh,
+        )
+
+        annotations = bundle.annotations
+        scaled_centerline = [
+            Point2D(point.x * scale_factor, point.y * scale_factor)
+            for point in annotations.centerline
+        ]
+        scaled_spawns = [
+            SpawnPoint(
+                name=spawn.name,
+                pose=Pose2D(spawn.pose.x * scale_factor, spawn.pose.y * scale_factor, spawn.pose.theta),
+            )
+            for spawn in annotations.spawn_points
+        ]
+        scaled_start_finish = None
+        if annotations.start_finish_line is not None:
+            start = annotations.start_finish_line.segment.start
+            end = annotations.start_finish_line.segment.end
+            scaled_start_finish = StartFinishLine(
+                LineSegment(
+                    start=Point2D(start.x * scale_factor, start.y * scale_factor),
+                    end=Point2D(end.x * scale_factor, end.y * scale_factor),
+                )
+            )
+
+        new_annotations = MapAnnotations(
+            start_finish_line=scaled_start_finish,
+            spawn_points=scaled_spawns,
+            centerline=scaled_centerline,
+        )
+
+        self._current_bundle = bundle.with_metadata(new_metadata).with_annotations(new_annotations)
+        self._centerline_spacing *= scale_factor
+
+        self._metadata_panel.set_metadata(new_metadata)
+        self._map_viewer.set_metadata(new_metadata)
+        self._map_viewer.update_annotations(new_annotations)
+        self._annotation_panel.set_annotations(new_annotations)
+        self._refresh_annotation_context()
+        self._refresh_diagnostics()
+        self.statusBar().showMessage(
+            f"Scaled map by {scale_factor:.3f} to achieve {self._track_width_target:.2f} m width."
+        )
