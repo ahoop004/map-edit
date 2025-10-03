@@ -50,10 +50,13 @@ class AnnotationPanel(QWidget):
 
         self._add_button = QPushButton("Add")
         self._add_button.clicked.connect(self.addSpawnRequested.emit)
+        self._add_button.setToolTip("Enter placement mode, then left-click on the map to place a spawn point.")
         self._edit_button = QPushButton("Edit")
         self._edit_button.clicked.connect(self._emit_edit_requested)
+        self._edit_button.setToolTip("Edit the selected spawn point.")
         self._delete_button = QPushButton("Delete")
         self._delete_button.clicked.connect(self._emit_delete_requested)
+        self._delete_button.setToolTip("Delete the selected spawn point.")
 
         button_row = QHBoxLayout()
         button_row.addWidget(self._add_button)
@@ -68,8 +71,12 @@ class AnnotationPanel(QWidget):
         self._start_finish_label = QLabel("No start/finish line")
         self._set_start_finish_button = QPushButton("Set…")
         self._set_start_finish_button.clicked.connect(self.setStartFinishRequested.emit)
+        self._set_start_finish_button.setToolTip(
+            "Enter placement mode, then click start and end points for the start/finish line."
+        )
         self._clear_start_finish_button = QPushButton("Clear")
         self._clear_start_finish_button.clicked.connect(self.clearStartFinishRequested.emit)
+        self._clear_start_finish_button.setToolTip("Remove the start/finish line from the map.")
         start_button_row = QHBoxLayout()
         start_button_row.addWidget(self._set_start_finish_button)
         start_button_row.addWidget(self._clear_start_finish_button)

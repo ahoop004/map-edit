@@ -35,7 +35,9 @@ from map_editor.models.annotations import (
     StartFinishLine,
 )
 from map_editor.models.map_bundle import MapBundle, MapMetadata
+from map_editor.services.diagnostics import DiagnosticsReport, analyse_bundle
 from map_editor.ui.annotation_panel import AnnotationPanel, SpawnPointDialog, StartFinishDialog
+from map_editor.ui.diagnostics_panel import DiagnosticsPanel
 from map_editor.ui.map_viewer import MapViewer
 from map_editor.ui.metadata_panel import MapMetadataPanel
 from map_editor.services.map_loader import MapBundleLoader
@@ -56,8 +58,10 @@ class MainWindow(QMainWindow):
         self._map_viewer = MapViewer(self)
         self._metadata_panel = MapMetadataPanel(self)
         self._annotation_panel = AnnotationPanel(self)
+        self._diagnostics_panel = DiagnosticsPanel(self)
         self._undo_stack = QUndoStack(self)
         self._annotation_context: Optional[AnnotationContext] = None
+        self._diagnostics_report: Optional[DiagnosticsReport] = None
 
         self._init_status_bar()
         self._init_central_widget()
@@ -99,18 +103,25 @@ class MainWindow(QMainWindow):
 
         self._action_add_spawn = QAction("Add Spawn Point", self)
         self._action_add_spawn.triggered.connect(self._add_spawn_point)
+        self._action_add_spawn.setToolTip("Enter placement mode, then left-click on the map to add a spawn point.")
 
         self._action_edit_spawn = QAction("Edit Selected Spawn Point", self)
         self._action_edit_spawn.triggered.connect(self._edit_selected_spawn_point)
+        self._action_edit_spawn.setToolTip("Edit the highlighted spawn point in the annotations list.")
 
         self._action_delete_spawn = QAction("Delete Selected Spawn Point", self)
         self._action_delete_spawn.triggered.connect(self._delete_selected_spawn_point)
+        self._action_delete_spawn.setToolTip("Remove the highlighted spawn point.")
 
         self._action_set_start_finish = QAction("Set Start/Finish Line", self)
         self._action_set_start_finish.triggered.connect(self._set_start_finish_line)
+        self._action_set_start_finish.setToolTip(
+            "Enter placement mode, then left-click start and end points for the start/finish line."
+        )
 
         self._action_clear_start_finish = QAction("Clear Start/Finish Line", self)
         self._action_clear_start_finish.triggered.connect(self._clear_start_finish_line)
+        self._action_clear_start_finish.setToolTip("Remove the current start/finish line from the map.")
 
     def _create_menus(self) -> None:
         menu_bar = self.menuBar()
@@ -155,6 +166,17 @@ class MainWindow(QMainWindow):
         self._annotation_panel.setStartFinishRequested.connect(self._set_start_finish_line)
         self._annotation_panel.clearStartFinishRequested.connect(self._clear_start_finish_line)
 
+        diagnostics_dock = QDockWidget("Diagnostics", self)
+        diagnostics_dock.setObjectName("diagnosticsDock")
+        diagnostics_dock.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea)
+        diagnostics_dock.setWidget(self._diagnostics_panel)
+        diagnostics_dock.setMinimumWidth(300)
+        diagnostics_dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, diagnostics_dock)
+
+        self._diagnostics_panel.highlightToggled.connect(self._on_diagnostics_highlight_changed)
+        self._diagnostics_panel.refreshRequested.connect(self._refresh_diagnostics)
+
     def _connect_viewer_signals(self) -> None:
         self._map_viewer.spawnPlacementCompleted.connect(self._finalize_spawn_point)
         self._map_viewer.startFinishPlacementCompleted.connect(self._finalize_start_finish_line)
@@ -195,6 +217,7 @@ class MainWindow(QMainWindow):
                 self._refresh_annotation_context()
                 self._action_save.setEnabled(True)
                 self.statusBar().showMessage(f"Loaded image: {selected_path.name}")
+                self._refresh_diagnostics()
             else:
                 QMessageBox.warning(self, "Failed to load image", selected_path.name)
             return
@@ -221,6 +244,7 @@ class MainWindow(QMainWindow):
         if result.warnings:
             message += " (" + "; ".join(result.warnings) + ")"
         self.statusBar().showMessage(message)
+        self._refresh_diagnostics()
 
     def _save_map_bundle(self) -> None:
         if not self._current_bundle:
@@ -251,6 +275,7 @@ class MainWindow(QMainWindow):
         self._current_map = saved_path
         self._refresh_annotation_context()
         self.statusBar().showMessage(f"Saved: {saved_path.name}")
+        self._refresh_diagnostics()
 
     def _handle_metadata_changed(self, metadata: MapMetadata) -> None:
         if self._current_bundle is not None:
@@ -258,6 +283,7 @@ class MainWindow(QMainWindow):
         self._map_viewer.set_metadata(metadata)
         if self._current_bundle is not None:
             self._map_viewer.update_annotations(self._current_bundle.annotations)
+        self._refresh_diagnostics()
         self.statusBar().showMessage(
             f"Metadata updated: res={metadata.resolution:.3f}, origin=({metadata.origin_x:.2f}, {metadata.origin_y:.2f})"
         )
@@ -282,6 +308,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(
             f"Annotations updated (spawn points: {len(annotations.spawn_points)})"
         )
+        self._refresh_diagnostics()
 
     def _ensure_annotation_context(self) -> Optional[AnnotationContext]:
         if self._annotation_context is None:
@@ -375,6 +402,7 @@ class MainWindow(QMainWindow):
             )
         else:
             self.statusBar().showMessage("Spawn placement cancelled.")
+        self._refresh_diagnostics()
 
     def _finalize_start_finish_line(self, sx: float, sy: float, ex: float, ey: float) -> None:
         context = self._annotation_context
@@ -392,3 +420,23 @@ class MainWindow(QMainWindow):
             )
         else:
             self.statusBar().showMessage("Start/finish placement cancelled.")
+
+        self._refresh_diagnostics()
+
+    def _refresh_diagnostics(self) -> None:
+        if self._current_bundle is None:
+            self._diagnostics_report = None
+            self._diagnostics_panel.set_report(None)
+            self._map_viewer.set_diagnostic_highlight(False, False)
+            return
+
+        self._diagnostics_report = analyse_bundle(self._current_bundle)
+        self._diagnostics_panel.set_report(self._diagnostics_report)
+        self._map_viewer.set_diagnostic_highlight(
+            self._diagnostics_panel.highlight_enabled,
+            self._diagnostics_report.has_warnings,
+        )
+
+    def _on_diagnostics_highlight_changed(self, enabled: bool) -> None:
+        has_issues = self._diagnostics_report.has_warnings if self._diagnostics_report else False
+        self._map_viewer.set_diagnostic_highlight(enabled, has_issues)

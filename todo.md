@@ -1,20 +1,20 @@
 # Next Tasks (ordered simple → complex)
 
 ## Follow-up & Validation
-- [ ] Update documentation/tooltips to explain click-to-place behaviour.
-  - [ ] Document placement workflow in README.
-  - [ ] Add status bar/cursor hints summary to UX notes.
-  - [ ] Update any in-app tooltips or help dialogs.
+- [x] Update documentation/tooltips to explain click-to-place behaviour.
+  - [x] Document placement workflow in README.
+  - [x] Add status bar/cursor hints summary to UX notes.
+  - [x] Update any in-app tooltips or help dialogs.
 - [ ] Add regression checks (manual or automated) to confirm save/load still reflects new annotations accurately.
-  - [ ] Capture baseline round-trip using sample map bundles.
-  - [ ] Add unit tests for coordinate conversions in `map_viewer`.
+  - [x] Capture baseline round-trip using sample map bundles.
+  - [x] Add unit tests for coordinate conversions in `map_viewer`.
   - [ ] Add integration test covering click-to-place → undo → save → reload.
 
 ## Future Features
-- [ ] Map diagnostics tooling.
-  - [ ] Surface resolution/origin deltas and occupancy threshold sanity checks.
-  - [ ] Provide quick toggle/visual overlay for metadata mismatches.
-  - [ ] Summarize diagnostics in a dock or modal report.
+- [x] Map diagnostics tooling.
+  - [x] Surface resolution/origin deltas and occupancy threshold sanity checks.
+  - [x] Provide quick toggle/visual overlay for metadata mismatches.
+  - [x] Summarize diagnostics in a dock or modal report.
 - [ ] Centerline editing/generation.
   - [ ] Decide on centerline data model (polyline or spline representation) and sampling resolution (e.g., 0.1–0.25 m spacing).
   - [ ] Implement manual centerline editing tools (add/move/delete nodes, smoothing options).

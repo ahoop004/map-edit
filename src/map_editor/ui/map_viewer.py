@@ -48,6 +48,9 @@ class MapViewer(QGraphicsView):
         self._metadata: Optional[MapMetadata] = None
         self._pixmap_width: float = 0.0
         self._pixmap_height: float = 0.0
+        self._diagnostic_overlay: Optional[QGraphicsItem] = None
+        self._diagnostic_highlight_enabled: bool = True
+        self._diagnostic_has_issues: bool = False
 
         self._zoom_factor = 1.25
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -91,6 +94,7 @@ class MapViewer(QGraphicsView):
         self._message_item = None
         self._overlay_items.clear()
         self.cancel_placement()
+        self._diagnostic_overlay = None
 
         self._pixmap_item = self._scene.addPixmap(pixmap)
         self._pixmap_width = float(pixmap.width())
@@ -132,6 +136,10 @@ class MapViewer(QGraphicsView):
         for item in self._overlay_items:
             self._scene.removeItem(item)
         self._overlay_items.clear()
+
+    def set_diagnostic_highlight(self, enabled: bool, has_issues: bool) -> None:
+        self._diagnostic_highlight_enabled = enabled
+        self._update_diagnostic_overlay(has_issues)
 
     def update_annotations(self, annotations: MapAnnotations) -> None:
         """Refresh overlay items based on the current annotations."""
@@ -178,6 +186,8 @@ class MapViewer(QGraphicsView):
             overlay_items.append(heading)
 
         self.set_overlay_items(overlay_items)
+        # Refresh diagnostic overlay to ensure Z-order remains consistent.
+        self._update_diagnostic_overlay(self._diagnostic_has_issues)
 
     # Placement workflow -------------------------------------------------
 
@@ -329,3 +339,19 @@ class MapViewer(QGraphicsView):
             return 8.0
         pixels_per_meter = 1.0 / self._metadata.resolution
         return max(4.0, pixels_per_meter * 0.15)
+
+    def _update_diagnostic_overlay(self, has_issues: bool) -> None:
+        if not self._pixmap_item:
+            return
+        if self._diagnostic_overlay is not None:
+            self._scene.removeItem(self._diagnostic_overlay)
+            self._diagnostic_overlay = None
+
+        self._diagnostic_has_issues = has_issues
+
+        if self._diagnostic_highlight_enabled and self._diagnostic_has_issues:
+            rect = self._pixmap_item.boundingRect()
+            overlay = self._scene.addRect(rect, pen=QPen(Qt.GlobalColor.red, 2))
+            overlay.setBrush(Qt.GlobalColor.transparent)
+            overlay.setZValue(20)
+            self._diagnostic_overlay = overlay
