@@ -80,35 +80,3 @@ def export_centerline_csv(samples: Iterable[CenterlineSample], destination: Path
             row = [f"{sample.x:.6f}", f"{sample.y:.6f}", f"{sample.theta:.6f}"]
             row.append("" if sample.velocity is None else f"{sample.velocity:.3f}")
             writer.writerow(row)
-
-
-def export_centerline_path_yaml(
-    samples: Iterable[CenterlineSample],
-    destination: Path,
-    frame_id: str = "map",
-) -> None:
-    """Export centerline as a nav_msgs/Path-like YAML file."""
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    poses = []
-    for index, sample in enumerate(samples):
-        qw, qz = _yaw_to_quaternion(sample.theta)
-        poses.append(
-            {
-                "header": {"frame_id": frame_id, "seq": index},
-                "pose": {
-                    "position": {"x": float(sample.x), "y": float(sample.y), "z": 0.0},
-                    "orientation": {"x": 0.0, "y": 0.0, "z": qz, "w": qw},
-                },
-            }
-        )
-    path_dict = {"header": {"frame_id": frame_id}, "poses": poses}
-
-    import yaml  # local import to avoid hard dependency when unused
-
-    with destination.open("w", encoding="utf-8") as handle:
-        yaml.safe_dump(path_dict, handle, sort_keys=False)
-
-
-def _yaw_to_quaternion(yaw: float) -> tuple[float, float]:
-    half = yaw * 0.5
-    return math.cos(half), math.sin(half)

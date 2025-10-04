@@ -83,12 +83,14 @@ class TrackMetricsPanel(QWidget):
     """Displays track width statistics and controls."""
 
     autoScaleRequested = Signal()
+    computeRequested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
 
         self._profile: Optional[TrackWidthProfile] = None
         self._threshold: float = 2.2
+        self._controls_enabled = False
 
         root = QVBoxLayout(self)
         root.setContentsMargins(8, 8, 8, 8)
@@ -100,6 +102,10 @@ class TrackMetricsPanel(QWidget):
         section = CollapsibleSection("Track Width", self, settings_key="metrics/track_width_section")
         content = section.content_layout()
         content.setSpacing(6)
+        self._compute_button = QPushButton("Compute track metrics", self)
+        self._compute_button.clicked.connect(self.computeRequested.emit)
+        content.addWidget(self._compute_button)
+
         content.addWidget(self._summary_label)
 
         self._profile_view = WidthProfileView(self)
@@ -132,8 +138,14 @@ class TrackMetricsPanel(QWidget):
         self._update_state()
 
     def _update_state(self) -> None:
-        enabled = bool(self._profile and self._profile.valid_samples)
-        self._auto_scale_button.setEnabled(enabled)
+        self._compute_button.setEnabled(self._controls_enabled)
+        can_scale = self._controls_enabled and bool(self._profile and self._profile.valid_samples)
+        self._auto_scale_button.setEnabled(can_scale)
+
+    def set_controls_enabled(self, enabled: bool) -> None:
+        """Enable/disable panel controls based on map availability."""
+        self._controls_enabled = enabled
+        self._update_state()
 
 
 __all__ = ["TrackMetricsPanel"]

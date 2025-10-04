@@ -8,8 +8,8 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QAction, QDesktopServices, QUndoStack
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -21,7 +21,6 @@ from PySide6.QtWidgets import (
     QStatusBar,
     QWidget,
 )
-from PySide6.QtGui import QUndoStack
 
 from map_editor.commands import (
     AddSpawnBatchCommand,
@@ -43,11 +42,7 @@ from map_editor.models.annotations import (
 from map_editor.models.map_bundle import MapBundle, MapMetadata
 from map_editor.models.spawn_stamp import SpawnStampSettings
 from map_editor.services.diagnostics import DiagnosticsReport, analyse_bundle
-from map_editor.exporters.centerline import (
-    export_centerline_csv,
-    export_centerline_path_yaml,
-    resample_centerline,
-)
+from map_editor.exporters.centerline import export_centerline_csv, resample_centerline
 from map_editor.services.wall_extraction import (
     derive_centerline_from_walls,
     export_walls_csv,
@@ -82,6 +77,7 @@ class MainWindow(QMainWindow):
         self._annotation_panel = AnnotationPanel(self)
         self._diagnostics_panel = DiagnosticsPanel(self)
         self._track_metrics_panel = TrackMetricsPanel(self)
+        self._track_metrics_panel.set_controls_enabled(False)
         self._undo_stack = QUndoStack(self)
         self._annotation_context: Optional[AnnotationContext] = None
         self._diagnostics_report: Optional[DiagnosticsReport] = None
@@ -97,6 +93,7 @@ class MainWindow(QMainWindow):
         self._create_docks()
         self._connect_viewer_signals()
         self._track_metrics_panel.autoScaleRequested.connect(self._auto_scale_track_width)
+        self._track_metrics_panel.computeRequested.connect(self._compute_track_metrics)
         self._map_viewer.set_spawn_stamp_settings(self._spawn_stamp_settings)
 
     def _init_status_bar(self) -> None:
@@ -171,14 +168,24 @@ class MainWindow(QMainWindow):
 
         self._action_export_centerline_csv = QAction("Export Centerline CSV…", self)
         self._action_export_centerline_csv.triggered.connect(self._export_centerline_csv)
-        self._action_export_centerline_path = QAction("Export Centerline Path YAML…", self)
-        self._action_export_centerline_path.triggered.connect(self._export_centerline_path)
         self._action_export_map_pgm = QAction("Export Map as PGM…", self)
         self._action_export_map_pgm.triggered.connect(self._export_map_as_pgm)
         self._action_export_walls_csv = QAction("Export Walls CSV…", self)
         self._action_export_walls_csv.triggered.connect(self._export_walls_csv)
         self._action_export_bundle = QAction("Export Bundle Assets…", self)
         self._action_export_bundle.triggered.connect(self._export_bundle_assets)
+
+        self._action_generate_map_pgm = QAction("Generate Map PGM", self)
+        self._action_generate_map_pgm.triggered.connect(self._generate_map_pgm)
+
+        self._action_view_map_pgm = QAction("View Map PGM", self)
+        self._action_view_map_pgm.triggered.connect(self._view_map_pgm)
+
+        self._action_generate_walls_csv = QAction("Generate Walls CSV", self)
+        self._action_generate_walls_csv.triggered.connect(self._generate_walls_csv)
+
+        self._action_view_walls_csv = QAction("View Walls CSV", self)
+        self._action_view_walls_csv.triggered.connect(self._view_walls_csv)
 
     def _create_menus(self) -> None:
         menu_bar = self.menuBar()
@@ -188,8 +195,12 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(self._action_export_bundle)
         file_menu.addSeparator()
+        file_menu.addAction(self._action_generate_map_pgm)
+        file_menu.addAction(self._action_view_map_pgm)
+        file_menu.addAction(self._action_generate_walls_csv)
+        file_menu.addAction(self._action_view_walls_csv)
+        file_menu.addSeparator()
         file_menu.addAction(self._action_export_centerline_csv)
-        file_menu.addAction(self._action_export_centerline_path)
         file_menu.addAction(self._action_export_walls_csv)
         file_menu.addAction(self._action_export_map_pgm)
         file_menu.addSeparator()
@@ -723,30 +734,6 @@ class MainWindow(QMainWindow):
         export_centerline_csv(samples, Path(file_path))
         self.statusBar().showMessage(f"Centerline CSV exported: {Path(file_path).name}")
 
-    def _export_centerline_path(self) -> None:
-        if not self._current_bundle or not self._current_bundle.annotations.centerline:
-            QMessageBox.information(self, "No centerline", "Create a centerline before exporting.")
-            return
-        samples = resample_centerline(
-            self._current_bundle.annotations.centerline,
-            self._centerline_spacing,
-        )
-        if not samples:
-            QMessageBox.warning(self, "Centerline too short", "Not enough points to export.")
-            return
-        default_path = self._suggest_export_path("centerline_path.yaml")
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Export centerline Path YAML",
-            default_path,
-            "YAML files (*.yaml);;All files (*)",
-        )
-        if not file_path:
-            return
-        frame = "map"
-        export_centerline_path_yaml(samples, Path(file_path), frame_id=frame)
-        self.statusBar().showMessage(f"Centerline Path exported: {Path(file_path).name}")
-
     def _export_walls_csv(self) -> None:
         if not self._current_bundle:
             QMessageBox.information(self, "No map", "Load a map before exporting walls.")
@@ -766,6 +753,55 @@ class MainWindow(QMainWindow):
             return
         export_walls_csv(extraction.walls, Path(file_path))
         self.statusBar().showMessage(f"Walls CSV exported: {Path(file_path).name}")
+
+    def _generate_walls_csv(self) -> None:
+        if not self._current_bundle:
+            QMessageBox.information(self, "Generate Walls CSV", "Load a map before generating walls data.")
+            return
+
+        bundle = self._current_bundle
+        with show_busy_dialog(self, "Extracting walls…", minimum_duration=0) as progress:
+            progress.setLabelText("Detecting walls…")
+            QApplication.processEvents()
+            extraction = extract_walls(bundle.image_path, bundle.metadata)
+
+        if not extraction.walls:
+            QMessageBox.warning(
+                self,
+                "Generate Walls CSV",
+                "No occupied contours detected; walls CSV was not created.",
+            )
+            return
+
+        target = bundle.image_path.with_name(f"{bundle.stem}_walls.csv")
+        try:
+            export_walls_csv(extraction.walls, target)
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.critical(self, "Generate Walls CSV failed", str(exc))
+            return
+
+        self.statusBar().showMessage(f"Walls CSV generated: {target.name}", 6000)
+
+    def _view_walls_csv(self) -> None:
+        if not self._current_bundle:
+            QMessageBox.information(self, "View Walls CSV", "Load a map before viewing derived files.")
+            return
+
+        target = self._current_bundle.image_path.with_name(f"{self._current_bundle.stem}_walls.csv")
+        if not target.exists():
+            QMessageBox.information(
+                self,
+                "View Walls CSV",
+                f"No walls CSV found at {target.name}. Generate it first.",
+            )
+            return
+
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(target))):
+            QMessageBox.warning(
+                self,
+                "View Walls CSV",
+                "Unable to open the walls CSV in the desktop viewer.",
+            )
 
     def _suggest_export_path(self, suffix: str) -> str:
         if self._current_map:
@@ -796,6 +832,41 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Export failed", str(exc))
             return
         self.statusBar().showMessage(f"Map exported as PGM: {Path(file_path).name}")
+
+    def _generate_map_pgm(self) -> None:
+        if not self._current_bundle:
+            QMessageBox.information(self, "Generate PGM", "Load a map before generating a PGM file.")
+            return
+        source = self._current_bundle.image_path
+        if not source.exists():
+            QMessageBox.warning(self, "Generate PGM", f"Image file not found: {source}")
+            return
+        target = source.with_suffix(".pgm")
+        try:
+            export_png_as_pgm(source, target)
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.critical(self, "Generate PGM failed", str(exc))
+            return
+        self.statusBar().showMessage(f"Generated PGM at {target.name}", 6000)
+
+    def _view_map_pgm(self) -> None:
+        if not self._current_bundle:
+            QMessageBox.information(self, "View PGM", "Load a map before viewing derived files.")
+            return
+        target = self._current_bundle.image_path.with_suffix(".pgm")
+        if not target.exists():
+            QMessageBox.information(
+                self,
+                "View PGM",
+                f"No PGM found at {target.name}. Generate it first.",
+            )
+            return
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(target))):
+            QMessageBox.warning(
+                self,
+                "View PGM",
+                "Unable to open the PGM file in the desktop viewer.",
+            )
 
     def _export_bundle_assets(
         self,
@@ -902,20 +973,11 @@ class MainWindow(QMainWindow):
             self._diagnostics_report = None
             self._diagnostics_panel.set_report(None)
             self._map_viewer.set_diagnostic_highlight(False, False)
+            self._track_width_profile = None
+            self._track_metrics_panel.set_controls_enabled(False)
+            self._update_track_metrics()
             return
         with show_busy_dialog(self, "Analyzing diagnostics…") as progress:
-            progress.setLabelText("Extracting walls…")
-            QApplication.processEvents()
-            extraction = extract_walls(
-                self._current_bundle.image_path,
-                self._current_bundle.metadata,
-            )
-            progress.setLabelText("Computing width profile…")
-            QApplication.processEvents()
-            self._track_width_profile = compute_track_width_profile(
-                self._current_bundle.annotations.centerline,
-                extraction.walls,
-            )
             progress.setLabelText("Running diagnostics…")
             QApplication.processEvents()
             self._diagnostics_report = analyse_bundle(self._current_bundle)
@@ -924,11 +986,77 @@ class MainWindow(QMainWindow):
             self._diagnostics_panel.highlight_enabled,
             self._diagnostics_report.has_warnings,
         )
+        self._track_width_profile = None
+        self._track_metrics_panel.set_controls_enabled(True)
         self._update_track_metrics()
 
     def _on_diagnostics_highlight_changed(self, enabled: bool) -> None:
         has_issues = self._diagnostics_report.has_warnings if self._diagnostics_report else False
         self._map_viewer.set_diagnostic_highlight(enabled, has_issues)
+
+    def _compute_track_metrics(self) -> None:
+        if not self._current_bundle:
+            QMessageBox.information(
+                self,
+                "Track metrics",
+                "Load a map before computing track metrics.",
+            )
+            return
+
+        bundle = self._current_bundle
+        if not bundle.annotations.centerline:
+            QMessageBox.information(
+                self,
+                "Track metrics",
+                "Create a centerline before computing track metrics.",
+            )
+            return
+
+        extraction = None
+        try:
+            with show_busy_dialog(self, "Computing track metrics…", minimum_duration=0) as progress:
+                progress.setLabelText("Extracting walls…")
+                QApplication.processEvents()
+                extraction = extract_walls(bundle.image_path, bundle.metadata)
+
+                if not extraction.walls:
+                    self._track_width_profile = TrackWidthProfile(samples=[])
+                else:
+                    progress.setLabelText("Measuring widths…")
+                    QApplication.processEvents()
+                    self._track_width_profile = compute_track_width_profile(
+                        bundle.annotations.centerline,
+                        extraction.walls,
+                    )
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.critical(self, "Track metrics", str(exc))
+            self._track_width_profile = None
+            self._update_track_metrics()
+            return
+
+        profile = self._track_width_profile
+        if profile is None or extraction is None or not extraction.walls:
+            QMessageBox.warning(
+                self,
+                "Track metrics",
+                "No walls detected; unable to compute track width metrics.",
+            )
+            self._track_width_profile = None
+        elif not profile.valid_samples:
+            QMessageBox.warning(
+                self,
+                "Track metrics",
+                "Could not compute usable width measurements for the current centerline.",
+            )
+            self._track_width_profile = None
+        else:
+            average = profile.average_width or 0.0
+            self.statusBar().showMessage(
+                f"Track metrics computed (average width {average:.2f} m)",
+                6000,
+            )
+
+        self._update_track_metrics()
 
     def _update_track_metrics(self) -> None:
         profile = self._track_width_profile
