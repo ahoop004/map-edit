@@ -98,7 +98,10 @@ def export_walls_csv(walls: Sequence[Sequence[Point2D]], destination: Path) -> N
         writer = csv.writer(handle)
         writer.writerow(["wall_id", "vertex_id", "x", "y"])
         for wall_id, wall in enumerate(walls):
-            for vertex_id, point in enumerate(wall):
+            points = list(wall)
+            if len(points) >= 2 and not _points_close(points[0], points[-1]):
+                points.append(Point2D(points[0].x, points[0].y))
+            for vertex_id, point in enumerate(points):
                 writer.writerow([wall_id, vertex_id, f"{point.x:.6f}", f"{point.y:.6f}"])
 
 
@@ -163,6 +166,10 @@ def _find_boundary_start(component: set[tuple[int, int]]) -> Optional[tuple[int,
             if (px + dx, py + dy) not in component:
                 return (px, py)
     return next(iter(component))
+
+
+def _points_close(a: Point2D, b: Point2D, tol: float = 1e-6) -> bool:
+    return abs(a.x - b.x) <= tol and abs(a.y - b.y) <= tol
 
 
 def _grid_to_world(x: int, y: int, metadata: MapMetadata, height: int) -> Point2D:
@@ -301,4 +308,3 @@ def _project_point_to_segment(p: Point2D, a: Point2D, b: Point2D) -> Point2D:
     t = ((p.x - ax) * abx + (p.y - ay) * aby) / denom
     t = max(0.0, min(1.0, t))
     return Point2D(ax + abx * t, ay + aby * t)
-
