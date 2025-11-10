@@ -18,12 +18,13 @@ def test_export_walls_csv_closes_loops(tmp_path: Path) -> None:
     output = tmp_path / "walls.csv"
     export_walls_csv([wall], output)
 
-    lines = output.read_text().strip().splitlines()
+    lines = output.read_text().splitlines()
     assert lines[0] == "wall_id,vertex_id,x,y"
-    first = lines[1].split(",")
-    last = lines[-1].split(",")
+    assert lines[1] == "0,BEGIN,NaN,NaN"
+    assert lines[-1] == "0,END,NaN,NaN"
+    first = lines[2].split(",")
+    last = lines[-2].split(",")
 
     assert first[0] == "0" and last[0] == "0", "Should remain the same wall"
     assert first[2] == last[2]
     assert first[3] == last[3]
-

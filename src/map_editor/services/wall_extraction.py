@@ -101,8 +101,10 @@ def export_walls_csv(walls: Sequence[Sequence[Point2D]], destination: Path) -> N
             points = list(wall)
             if len(points) >= 2 and not _points_close(points[0], points[-1]):
                 points.append(Point2D(points[0].x, points[0].y))
+            writer.writerow([wall_id, "BEGIN", "NaN", "NaN"])
             for vertex_id, point in enumerate(points):
                 writer.writerow([wall_id, vertex_id, f"{point.x:.6f}", f"{point.y:.6f}"])
+            writer.writerow([wall_id, "END", "NaN", "NaN"])
 
 
 def _collect_component(mask: List[List[bool]], visited: List[List[bool]], sx: int, sy: int) -> List[tuple[int, int]]:
