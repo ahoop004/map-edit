@@ -47,6 +47,7 @@ class AnnotationPanel(QWidget):
     finishCenterlineRequested = Signal()
     editCenterlineRequested = Signal()
     clearCenterlineRequested = Signal()
+    createCenterlineCsvRequested = Signal()
     stampSettingsChanged = Signal(SpawnStampSettings)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -264,9 +265,13 @@ class AnnotationPanel(QWidget):
         clear_button = QPushButton("Clear")
         clear_button.setToolTip("Remove all centerline nodes.")
         clear_button.clicked.connect(self.clearCenterlineRequested.emit)
+        create_csv_button = QPushButton("Create CSV")
+        create_csv_button.setToolTip("Create a centerline CSV in the map folder.")
+        create_csv_button.clicked.connect(self.createCenterlineCsvRequested.emit)
         button_row.addWidget(self._place_button)
         button_row.addWidget(edit_button)
         button_row.addWidget(clear_button)
+        button_row.addWidget(create_csv_button)
         button_row.addStretch(1)
 
         layout.addWidget(self._centerline_label)

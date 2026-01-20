@@ -259,6 +259,7 @@ class MainWindow(QMainWindow):
         self._annotation_panel.finishCenterlineRequested.connect(self._finish_centerline_placement)
         self._annotation_panel.editCenterlineRequested.connect(self._edit_centerline)
         self._annotation_panel.clearCenterlineRequested.connect(self._clear_centerline)
+        self._annotation_panel.createCenterlineCsvRequested.connect(self._create_centerline_csv)
         self._annotation_panel.stampSettingsChanged.connect(self._on_stamp_settings_changed)
 
         diagnostics_dock = QDockWidget("Diagnostics", self)
@@ -722,6 +723,35 @@ class MainWindow(QMainWindow):
         self._undo_stack.push(SetCenterlineCommand(context, []))
         self.statusBar().showMessage("Centerline cleared.")
         self._refresh_diagnostics()
+
+    def _create_centerline_csv(self) -> None:
+        if not self._current_bundle or not self._current_bundle.annotations.centerline:
+            QMessageBox.information(self, "No centerline", "Create a centerline before exporting.")
+            return
+        samples = resample_centerline(
+            self._current_bundle.annotations.centerline,
+            self._centerline_spacing,
+        )
+        if not samples:
+            QMessageBox.warning(self, "Centerline too short", "Not enough points to export.")
+            return
+        target = Path(self._suggest_export_path("centerline.csv"))
+        if target.exists():
+            choice = QMessageBox.question(
+                self,
+                "Overwrite centerline CSV?",
+                f"{target.name} already exists. Replace it?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if choice != QMessageBox.StandardButton.Yes:
+                self.statusBar().showMessage("Centerline CSV creation cancelled.")
+                return
+        try:
+            export_centerline_csv(samples, target)
+        except OSError as exc:
+            QMessageBox.critical(self, "Centerline CSV failed", str(exc))
+            return
+        self.statusBar().showMessage(f"Centerline CSV created: {target.name}")
 
     def _export_centerline_csv(self) -> None:
         if not self._current_bundle or not self._current_bundle.annotations.centerline:
