@@ -62,7 +62,7 @@ from map_editor.ui.map_viewer import MapViewer
 from map_editor.ui.metadata_panel import MapMetadataPanel
 from map_editor.services.map_loader import MapBundleLoader, MapBundleLoadResult
 from map_editor.services.yaml_serializer import MapYamlError
-from map_editor.ui.progress import show_busy_dialog
+from map_editor.ui.progress import run_in_thread, show_busy_dialog
 from map_editor.services.track_metrics import compute_track_width_profile, TrackWidthProfile
 from map_editor.ui.track_metrics_panel import TrackMetricsPanel
 
@@ -590,9 +590,12 @@ class MainWindow(QMainWindow):
         with show_busy_dialog(self, "Generating centerline…", minimum_duration=0) as progress:
             progress.setLabelText("Extracting walls…")
             QApplication.processEvents()
-            extraction = extract_walls(
-                self._current_bundle.image_path,
-                self._current_bundle.metadata,
+            extraction = run_in_thread(
+                lambda: extract_walls(
+                    self._current_bundle.image_path,
+                    self._current_bundle.metadata,
+                ),
+                parent=self,
             )
             if len(extraction.walls) < 2:
                 QMessageBox.warning(
@@ -603,7 +606,10 @@ class MainWindow(QMainWindow):
                 return
             progress.setLabelText("Deriving centerline path…")
             QApplication.processEvents()
-            centerline_points = derive_centerline_from_walls(extraction.walls)
+            centerline_points = run_in_thread(
+                lambda: derive_centerline_from_walls(extraction.walls),
+                parent=self,
+            )
         if len(centerline_points) < 2:
             QMessageBox.warning(self, "Centerline generation failed", "Could not derive a usable centerline from walls.")
             return
@@ -769,7 +775,10 @@ class MainWindow(QMainWindow):
         with show_busy_dialog(self, "Extracting walls…", minimum_duration=0) as progress:
             progress.setLabelText("Detecting walls…")
             QApplication.processEvents()
-            extraction = extract_walls(bundle.image_path, bundle.metadata)
+            extraction = run_in_thread(
+                lambda: extract_walls(bundle.image_path, bundle.metadata),
+                parent=self,
+            )
 
         if not extraction.walls:
             QMessageBox.warning(
@@ -917,31 +926,50 @@ class MainWindow(QMainWindow):
                 progress.setLabelText("Copying map image…")
                 QApplication.processEvents()
                 image_target = destination / f"{stem}{bundle.image_path.suffix.lower()}"
-                shutil.copy2(bundle.image_path, image_target)
+                run_in_thread(
+                    lambda: shutil.copy2(bundle.image_path, image_target),
+                    parent=self,
+                )
                 exported.append(image_target.name)
 
                 progress.setLabelText("Generating PGM…")
                 QApplication.processEvents()
                 pgm_target = destination / f"{stem}.pgm"
-                export_png_as_pgm(bundle.image_path, pgm_target)
+                run_in_thread(
+                    lambda: export_png_as_pgm(bundle.image_path, pgm_target),
+                    parent=self,
+                )
                 exported.append(pgm_target.name)
 
                 progress.setLabelText("Writing YAML metadata…")
                 QApplication.processEvents()
                 yaml_target = destination / f"{stem}.yaml"
-                self._bundle_loader.save_bundle(bundle, destination=yaml_target, create_backup=False)
+                run_in_thread(
+                    lambda: self._bundle_loader.save_bundle(
+                        bundle,
+                        destination=yaml_target,
+                        create_backup=False,
+                    ),
+                    parent=self,
+                )
                 exported.append(yaml_target.name)
 
                 if bundle.annotations.centerline:
                     progress.setLabelText("Exporting centerline CSV…")
                     QApplication.processEvents()
-                    samples = resample_centerline(
-                        bundle.annotations.centerline,
-                        self._centerline_spacing,
+                    samples = run_in_thread(
+                        lambda: resample_centerline(
+                            bundle.annotations.centerline,
+                            self._centerline_spacing,
+                        ),
+                        parent=self,
                     )
                     if samples:
                         centerline_target = destination / f"{stem}_centerline.csv"
-                        export_centerline_csv(samples, centerline_target)
+                        run_in_thread(
+                            lambda: export_centerline_csv(samples, centerline_target),
+                            parent=self,
+                        )
                         exported.append(centerline_target.name)
                     else:
                         skipped.append("centerline too short to export")
@@ -950,10 +978,16 @@ class MainWindow(QMainWindow):
 
                 progress.setLabelText("Extracting walls…")
                 QApplication.processEvents()
-                extraction = extract_walls(bundle.image_path, bundle.metadata)
+                extraction = run_in_thread(
+                    lambda: extract_walls(bundle.image_path, bundle.metadata),
+                    parent=self,
+                )
                 if extraction.walls:
                     walls_target = destination / f"{stem}_walls.csv"
-                    export_walls_csv(extraction.walls, walls_target)
+                    run_in_thread(
+                        lambda: export_walls_csv(extraction.walls, walls_target),
+                        parent=self,
+                    )
                     exported.append(walls_target.name)
                 else:
                     skipped.append("no walls detected")
@@ -986,7 +1020,10 @@ class MainWindow(QMainWindow):
         with show_busy_dialog(self, "Analyzing diagnostics…") as progress:
             progress.setLabelText("Running diagnostics…")
             QApplication.processEvents()
-            self._diagnostics_report = analyse_bundle(self._current_bundle)
+            self._diagnostics_report = run_in_thread(
+                lambda: analyse_bundle(self._current_bundle),
+                parent=self,
+            )
         self._diagnostics_panel.set_report(self._diagnostics_report)
         self._map_viewer.set_diagnostic_highlight(
             self._diagnostics_panel.highlight_enabled,
@@ -1023,16 +1060,22 @@ class MainWindow(QMainWindow):
             with show_busy_dialog(self, "Computing track metrics…", minimum_duration=0) as progress:
                 progress.setLabelText("Extracting walls…")
                 QApplication.processEvents()
-                extraction = extract_walls(bundle.image_path, bundle.metadata)
+                extraction = run_in_thread(
+                    lambda: extract_walls(bundle.image_path, bundle.metadata),
+                    parent=self,
+                )
 
                 if not extraction.walls:
                     self._track_width_profile = TrackWidthProfile(samples=[])
                 else:
                     progress.setLabelText("Measuring widths…")
                     QApplication.processEvents()
-                    self._track_width_profile = compute_track_width_profile(
-                        bundle.annotations.centerline,
-                        extraction.walls,
+                    self._track_width_profile = run_in_thread(
+                        lambda: compute_track_width_profile(
+                            bundle.annotations.centerline,
+                            extraction.walls,
+                        ),
+                        parent=self,
                     )
         except (WallExtractionError, ValueError) as exc:
             QMessageBox.critical(self, "Track metrics", str(exc))
