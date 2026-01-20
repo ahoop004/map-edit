@@ -6,7 +6,6 @@ import csv
 
 import shutil
 from pathlib import Path
-from typing import Optional
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QAction, QDesktopServices, QUndoStack
@@ -22,6 +21,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from map_editor.constants import (
+    DEFAULT_CENTERLINE_SPACING,
+    DEFAULT_TRACK_WIDTH_TARGET,
+    DEFAULT_WINDOW_HEIGHT,
+    DEFAULT_WINDOW_WIDTH,
+)
 from map_editor.commands import (
     AddSpawnBatchCommand,
     AddSpawnPointCommand,
@@ -44,6 +49,7 @@ from map_editor.models.spawn_stamp import SpawnStampSettings
 from map_editor.services.diagnostics import DiagnosticsReport, analyse_bundle
 from map_editor.exporters.centerline import export_centerline_csv, resample_centerline
 from map_editor.services.wall_extraction import (
+    WallExtractionError,
     derive_centerline_from_walls,
     export_walls_csv,
     extract_walls,
@@ -67,10 +73,10 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("ROS Map Editor")
-        self.resize(1280, 720)
+        self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
-        self._current_map: Optional[Path] = None
-        self._current_bundle: Optional[MapBundle] = None
+        self._current_map: Path | None = None
+        self._current_bundle: MapBundle | None = None
         self._bundle_loader = MapBundleLoader()
         self._map_viewer = MapViewer(self)
         self._metadata_panel = MapMetadataPanel(self)
@@ -79,12 +85,12 @@ class MainWindow(QMainWindow):
         self._track_metrics_panel = TrackMetricsPanel(self)
         self._track_metrics_panel.set_controls_enabled(False)
         self._undo_stack = QUndoStack(self)
-        self._annotation_context: Optional[AnnotationContext] = None
-        self._diagnostics_report: Optional[DiagnosticsReport] = None
-        self._centerline_spacing: float = 0.2
+        self._annotation_context: AnnotationContext | None = None
+        self._diagnostics_report: DiagnosticsReport | None = None
+        self._centerline_spacing: float = DEFAULT_CENTERLINE_SPACING
         self._spawn_stamp_settings: SpawnStampSettings = self._annotation_panel.stamp_settings()
-        self._track_width_profile: Optional[TrackWidthProfile] = None
-        self._track_width_target: float = 2.2
+        self._track_width_profile: TrackWidthProfile | None = None
+        self._track_width_target: float = DEFAULT_TRACK_WIDTH_TARGET
 
         self._init_status_bar()
         self._init_central_widget()
@@ -351,7 +357,7 @@ class MainWindow(QMainWindow):
 
         try:
             saved_path = self._bundle_loader.save_bundle(bundle)
-        except Exception as exc:  # noqa: BLE001 - surface all errors to the user
+        except (OSError, MapYamlError) as exc:
             QMessageBox.critical(self, "Failed to save map", str(exc))
             return
 
@@ -386,7 +392,7 @@ class MainWindow(QMainWindow):
     def _apply_loaded_bundle(
         self,
         result: MapBundleLoadResult,
-        message: Optional[str] = None,
+        message: str | None = None,
     ) -> None:
         bundle = result.bundle
         self._current_map = bundle.yaml_path or bundle.image_path
@@ -427,7 +433,7 @@ class MainWindow(QMainWindow):
         self._spawn_stamp_settings = settings
         self._map_viewer.set_spawn_stamp_settings(settings)
 
-    def _ensure_annotation_context(self) -> Optional[AnnotationContext]:
+    def _ensure_annotation_context(self) -> AnnotationContext | None:
         if self._annotation_context is None:
             QMessageBox.information(self, "No map", "Load a map before editing annotations.")
             return None
@@ -546,7 +552,7 @@ class MainWindow(QMainWindow):
             return
         try:
             points = self._read_centerline_csv(Path(file_path))
-        except Exception as exc:  # noqa: BLE001
+        except (OSError, ValueError) as exc:
             QMessageBox.critical(self, "Import failed", f"Could not read centerline CSV: {exc}")
             return
         if len(points) < 2:
@@ -776,7 +782,7 @@ class MainWindow(QMainWindow):
         target = bundle.image_path.with_name(f"{bundle.stem}_walls.csv")
         try:
             export_walls_csv(extraction.walls, target)
-        except Exception as exc:  # noqa: BLE001
+        except OSError as exc:
             QMessageBox.critical(self, "Generate Walls CSV failed", str(exc))
             return
 
@@ -828,7 +834,7 @@ class MainWindow(QMainWindow):
             return
         try:
             export_png_as_pgm(source, Path(file_path))
-        except Exception as exc:  # noqa: BLE001
+        except OSError as exc:
             QMessageBox.critical(self, "Export failed", str(exc))
             return
         self.statusBar().showMessage(f"Map exported as PGM: {Path(file_path).name}")
@@ -844,7 +850,7 @@ class MainWindow(QMainWindow):
         target = source.with_suffix(".pgm")
         try:
             export_png_as_pgm(source, target)
-        except Exception as exc:  # noqa: BLE001
+        except OSError as exc:
             QMessageBox.critical(self, "Generate PGM failed", str(exc))
             return
         self.statusBar().showMessage(f"Generated PGM at {target.name}", 6000)
@@ -870,10 +876,10 @@ class MainWindow(QMainWindow):
 
     def _export_bundle_assets(
         self,
-        destination_dir: Optional[Path] = None,
+        destination_dir: Path | None = None,
         *,
         show_result: bool = True,
-    ) -> Optional[Path]:
+    ) -> Path | None:
         if not self._current_bundle:
             if show_result:
                 QMessageBox.information(self, "No map", "Load a map before exporting.")
@@ -897,14 +903,14 @@ class MainWindow(QMainWindow):
         destination = destination_root / stem
         try:
             destination.mkdir(parents=True, exist_ok=True)
-        except Exception as exc:  # noqa: BLE001
+        except OSError as exc:
             if show_result:
                 QMessageBox.critical(self, "Export failed", f"Could not create folder '{destination}': {exc}")
             return None
 
         exported: list[str] = []
         skipped: list[str] = []
-        yaml_target: Optional[Path] = None
+        yaml_target: Path | None = None
 
         try:
             with show_busy_dialog(self, "Exporting bundle assets…", minimum_duration=0) as progress:
@@ -951,7 +957,7 @@ class MainWindow(QMainWindow):
                     exported.append(walls_target.name)
                 else:
                     skipped.append("no walls detected")
-        except Exception as exc:  # noqa: BLE001
+        except (OSError, MapYamlError, WallExtractionError) as exc:
             if show_result:
                 QMessageBox.critical(self, "Export failed", str(exc))
             return None
@@ -1028,7 +1034,7 @@ class MainWindow(QMainWindow):
                         bundle.annotations.centerline,
                         extraction.walls,
                     )
-        except Exception as exc:  # noqa: BLE001
+        except (WallExtractionError, ValueError) as exc:
             QMessageBox.critical(self, "Track metrics", str(exc))
             self._track_width_profile = None
             self._update_track_metrics()

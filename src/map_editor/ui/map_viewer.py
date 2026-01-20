@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from enum import Enum, auto
 from pathlib import Path
-from typing import Iterable, Optional
 
 from PySide6.QtCore import QPointF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QCursor, QPen, QPainter, QPixmap, QWheelEvent, QPolygonF
@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QGraphicsView,
 )
 
+from map_editor.constants import CAR_LENGTH_M, CAR_WIDTH_M, SPAWN_HEADING_LENGTH_M
 from map_editor.models.annotations import MapAnnotations, Point2D, Pose2D
 from map_editor.models.map_bundle import MapMetadata
 from map_editor.models.spawn_stamp import SpawnStampSettings
@@ -26,10 +27,6 @@ from map_editor.models.spawn_stamp import SpawnStampSettings
 
 class MapViewer(QGraphicsView):
     """Graphics view that renders the map image with support for overlays."""
-
-    _CAR_LENGTH_M = 0.434  # F1TENTH F110 RC car nose-to-tail length
-    _CAR_WIDTH_M = 0.1738  # F1TENTH F110 RC car side-to-side width
-    _SPAWN_HEADING_LENGTH_M = 0.5
 
     class PlacementMode(Enum):
         IDLE = auto()
@@ -50,14 +47,14 @@ class MapViewer(QGraphicsView):
         self.setScene(self._scene)
 
         self._pixmap_item = None
-        self._message_item: Optional[QGraphicsTextItem] = None
+        self._message_item: QGraphicsTextItem | None = None
         self._overlay_items: list[QGraphicsItem] = []
         self._placement_mode = MapViewer.PlacementMode.IDLE
-        self._pending_line_start: Optional[QPointF] = None
-        self._metadata: Optional[MapMetadata] = None
+        self._pending_line_start: QPointF | None = None
+        self._metadata: MapMetadata | None = None
         self._pixmap_width: float = 0.0
         self._pixmap_height: float = 0.0
-        self._diagnostic_overlay: Optional[QGraphicsItem] = None
+        self._diagnostic_overlay: QGraphicsItem | None = None
         self._diagnostic_highlight_enabled: bool = True
         self._diagnostic_has_issues: bool = False
         self._centerline_preview_items: list[QGraphicsItem] = []
@@ -67,7 +64,7 @@ class MapViewer(QGraphicsView):
         self._spawn_preview_theta: float = 0.0
         self._spawn_stamp_settings = SpawnStampSettings()
         self._spawn_stamp_active: bool = False
-        self._spawn_stamp_anchor: Optional[tuple[float, float]] = None
+        self._spawn_stamp_anchor: tuple[float, float] | None = None
         self._spawn_stamp_dragging: bool = False
         self._spawn_stamp_preview_poses: list[Pose2D] = []
         self._annotations_cache = MapAnnotations()
@@ -87,7 +84,7 @@ class MapViewer(QGraphicsView):
 
     # Public API ---------------------------------------------------------
 
-    def set_metadata(self, metadata: Optional[MapMetadata]) -> None:
+    def set_metadata(self, metadata: MapMetadata | None) -> None:
         self._metadata = metadata
 
     def set_spawn_stamp_settings(self, settings: SpawnStampSettings) -> None:
@@ -191,83 +188,98 @@ class MapViewer(QGraphicsView):
             return
 
         self._annotations_cache = annotations
-
-        overlay_items: list[QGraphicsItem] = []
         marker_radius = self._marker_radius()
 
-        if annotations.start_finish_line is not None:
-            line = annotations.start_finish_line.segment
-            start_scene = self._world_to_scene(line.start.x, line.start.y)
-            end_scene = self._world_to_scene(line.end.x, line.end.y)
-            item = QGraphicsLineItem(start_scene.x(), start_scene.y(), end_scene.x(), end_scene.y())
-            pen = QPen(Qt.GlobalColor.red, max(2.0, marker_radius * 0.3))
-            item.setPen(pen)
-            item.setZValue(10)
-            overlay_items.append(item)
+        overlay_items: list[QGraphicsItem] = []
+        overlay_items.extend(self._build_start_finish_overlay(annotations, marker_radius))
+        overlay_items.extend(self._build_spawn_overlays(annotations, marker_radius))
+        overlay_items.extend(self._build_centerline_overlay(annotations, marker_radius))
+        overlay_items.extend(self._build_width_highlight_overlays(marker_radius))
+
+        self.set_overlay_items(overlay_items)
+        self._update_diagnostic_overlay(self._diagnostic_has_issues)
+
+    def _build_start_finish_overlay(
+        self, annotations: MapAnnotations, marker_radius: float
+    ) -> list[QGraphicsItem]:
+        """Build overlay items for the start/finish line."""
+        if annotations.start_finish_line is None:
+            return []
+        line = annotations.start_finish_line.segment
+        start_scene = self._world_to_scene(line.start.x, line.start.y)
+        end_scene = self._world_to_scene(line.end.x, line.end.y)
+        item = QGraphicsLineItem(start_scene.x(), start_scene.y(), end_scene.x(), end_scene.y())
+        item.setPen(QPen(Qt.GlobalColor.red, max(2.0, marker_radius * 0.3)))
+        item.setZValue(10)
+        return [item]
+
+    def _build_spawn_overlays(
+        self, annotations: MapAnnotations, marker_radius: float
+    ) -> list[QGraphicsItem]:
+        """Build overlay items for spawn points."""
+        items: list[QGraphicsItem] = []
+        pen_width = max(1.2, marker_radius * 0.25)
+        fill_color = QColor(Qt.GlobalColor.green)
+        fill_color.setAlpha(64)
 
         for spawn in annotations.spawn_points:
             car_polygon = self._spawn_vehicle_polygon(spawn.pose.x, spawn.pose.y, spawn.pose.theta)
             polygon_item = QGraphicsPolygonItem(QPolygonF(car_polygon))
-            pen_width = max(1.2, marker_radius * 0.25)
             polygon_item.setPen(QPen(Qt.GlobalColor.green, pen_width))
-            fill_color = QColor(Qt.GlobalColor.green)
-            fill_color.setAlpha(64)
             polygon_item.setBrush(QBrush(fill_color))
             polygon_item.setZValue(9)
-            overlay_items.append(polygon_item)
+            items.append(polygon_item)
 
-            heading_start_scene, heading_end_scene = self._spawn_heading_points(
-                spawn.pose.x,
-                spawn.pose.y,
-                spawn.pose.theta,
+            heading_start, heading_end = self._spawn_heading_points(
+                spawn.pose.x, spawn.pose.y, spawn.pose.theta
             )
             heading = QGraphicsLineItem(
-                heading_start_scene.x(),
-                heading_start_scene.y(),
-                heading_end_scene.x(),
-                heading_end_scene.y(),
+                heading_start.x(), heading_start.y(), heading_end.x(), heading_end.y()
             )
             heading.setPen(QPen(Qt.GlobalColor.yellow, max(1.0, marker_radius * 0.2)))
             heading.setZValue(9.5)
-            overlay_items.append(heading)
+            items.append(heading)
+        return items
 
-        if len(annotations.centerline) >= 2:
-            pen = QPen(Qt.GlobalColor.cyan, max(1.5, marker_radius * 0.25))
-            pen.setStyle(Qt.PenStyle.DashLine)
-            prev_scene = self._world_to_scene(
-                annotations.centerline[0].x, annotations.centerline[0].y
+    def _build_centerline_overlay(
+        self, annotations: MapAnnotations, marker_radius: float
+    ) -> list[QGraphicsItem]:
+        """Build overlay items for the centerline."""
+        if len(annotations.centerline) < 2:
+            return []
+        items: list[QGraphicsItem] = []
+        pen = QPen(Qt.GlobalColor.cyan, max(1.5, marker_radius * 0.25))
+        pen.setStyle(Qt.PenStyle.DashLine)
+        prev_scene = self._world_to_scene(
+            annotations.centerline[0].x, annotations.centerline[0].y
+        )
+        for point in annotations.centerline[1:]:
+            curr_scene = self._world_to_scene(point.x, point.y)
+            segment = QGraphicsLineItem(
+                prev_scene.x(), prev_scene.y(), curr_scene.x(), curr_scene.y()
             )
-            for point in annotations.centerline[1:]:
-                curr_scene = self._world_to_scene(point.x, point.y)
-                segment = QGraphicsLineItem(
-                    prev_scene.x(),
-                    prev_scene.y(),
-                    curr_scene.x(),
-                    curr_scene.y(),
-                )
-                segment.setPen(pen)
-                segment.setZValue(8)
-                overlay_items.append(segment)
-                prev_scene = curr_scene
+            segment.setPen(pen)
+            segment.setZValue(8)
+            items.append(segment)
+            prev_scene = curr_scene
+        return items
 
-        if self._width_highlight_segments:
-            highlight_pen = QPen(Qt.GlobalColor.red, max(2.0, marker_radius * 0.35))
-            for start, end in self._width_highlight_segments:
-                start_scene = self._world_to_scene(start.x, start.y)
-                end_scene = self._world_to_scene(end.x, end.y)
-                highlight = QGraphicsLineItem(
-                    start_scene.x(),
-                    start_scene.y(),
-                    end_scene.x(),
-                    end_scene.y(),
-                )
-                highlight.setPen(highlight_pen)
-                highlight.setZValue(8.5)
-                overlay_items.append(highlight)
-
-        self.set_overlay_items(overlay_items)
-        # Refresh diagnostic overlay to ensure Z-order remains consistent.
-        self._update_diagnostic_overlay(self._diagnostic_has_issues)
+    def _build_width_highlight_overlays(self, marker_radius: float) -> list[QGraphicsItem]:
+        """Build overlay items for track width highlights."""
+        if not self._width_highlight_segments:
+            return []
+        items: list[QGraphicsItem] = []
+        highlight_pen = QPen(Qt.GlobalColor.red, max(2.0, marker_radius * 0.35))
+        for start, end in self._width_highlight_segments:
+            start_scene = self._world_to_scene(start.x, start.y)
+            end_scene = self._world_to_scene(end.x, end.y)
+            highlight = QGraphicsLineItem(
+                start_scene.x(), start_scene.y(), end_scene.x(), end_scene.y()
+            )
+            highlight.setPen(highlight_pen)
+            highlight.setZValue(8.5)
+            items.append(highlight)
+        return items
 
     # Placement workflow -------------------------------------------------
 
@@ -495,7 +507,7 @@ class MapViewer(QGraphicsView):
         scene_y = self._pixmap_height - pixel_y_from_origin
         return QPointF(scene_x, scene_y)
 
-    def _scene_to_world(self, scene_pos: QPointF) -> Optional[tuple[float, float]]:
+    def _scene_to_world(self, scene_pos: QPointF) -> tuple[float, float] | None:
         if not self._metadata or self._pixmap_height == 0:
             return None
         pixel_x = scene_pos.x()
@@ -515,8 +527,8 @@ class MapViewer(QGraphicsView):
         """Return scene-space polygon corners for the car footprint."""
 
         if self._metadata:
-            half_length_world = self._CAR_LENGTH_M / 2.0
-            half_width_world = self._CAR_WIDTH_M / 2.0
+            half_length_world = CAR_LENGTH_M / 2.0
+            half_width_world = CAR_WIDTH_M / 2.0
 
             cos_theta = math.cos(theta)
             sin_theta = math.sin(theta)
@@ -539,7 +551,7 @@ class MapViewer(QGraphicsView):
         scene_center = self._world_to_scene(x, y)
         base_radius = self._marker_radius()
         half_length_scene = base_radius * 1.2
-        half_width_scene = half_length_scene * (self._CAR_WIDTH_M / self._CAR_LENGTH_M)
+        half_width_scene = half_length_scene * (CAR_WIDTH_M / CAR_LENGTH_M)
 
         cos_theta = math.cos(theta)
         sin_theta = math.sin(theta)
@@ -561,7 +573,7 @@ class MapViewer(QGraphicsView):
 
     def _spawn_heading_points(self, x: float, y: float, theta: float) -> tuple[QPointF, QPointF]:
         start_scene = self._world_to_scene(x, y)
-        length = self._SPAWN_HEADING_LENGTH_M
+        length = SPAWN_HEADING_LENGTH_M
         end_scene = self._world_to_scene(
             x + math.cos(theta) * length,
             y + math.sin(theta) * length,
@@ -650,13 +662,13 @@ class MapViewer(QGraphicsView):
 
     def _closest_centerline_frame(
         self, x: float, y: float
-    ) -> Optional[tuple[float, float, float, float]]:
+    ) -> tuple[float, float, float, float] | None:
         points = self._annotations_cache.centerline
         if len(points) < 2:
             return None
 
         best_distance = float("inf")
-        best_point: Optional[tuple[float, float]] = None
+        best_point: tuple[float, float] | None = None
         best_theta = 0.0
 
         for start, end in zip(points[:-1], points[1:]):

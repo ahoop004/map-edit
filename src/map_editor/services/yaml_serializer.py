@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 
 import yaml
 
@@ -32,11 +33,11 @@ class MapYamlDocument:
     metadata: MapMetadata
     annotations: MapAnnotations = field(default_factory=MapAnnotations)
     negate: int = 0
-    extra_fields: Dict[str, Any] = field(default_factory=dict)
+    extra_fields: dict[str, Any] = field(default_factory=dict)
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         """Convert the document back into a serializable mapping."""
-        data: Dict[str, Any] = {
+        data: dict[str, Any] = {
             "image": self.image,
             "resolution": self.metadata.resolution,
             "origin": [
@@ -119,7 +120,7 @@ def load_map_yaml(yaml_path: Path) -> MapYamlDocument:
     )
 
 
-def dump_map_yaml(document: MapYamlDocument, destination: Optional[Path] = None) -> str:
+def dump_map_yaml(document: MapYamlDocument, destination: Path | None = None) -> str:
     """Serialize the map document to YAML, optionally writing to disk."""
     data = document.as_dict()
     yaml_text = yaml.safe_dump(data, sort_keys=False)
@@ -131,14 +132,14 @@ def dump_map_yaml(document: MapYamlDocument, destination: Optional[Path] = None)
     return yaml_text
 
 
-def _expect_str(mapping: Dict[str, Any], key: str) -> str:
+def _expect_str(mapping: dict[str, Any], key: str) -> str:
     value = mapping[key]
     if not isinstance(value, str):
         raise MapYamlError(f"Field '{key}' must be a string")
     return value
 
 
-def _expect_float(mapping: Dict[str, Any], key: str, default: Optional[float] = None) -> float:
+def _expect_float(mapping: dict[str, Any], key: str, default: float | None = None) -> float:
     if key not in mapping:
         if default is None:
             raise KeyError(key)
@@ -149,7 +150,7 @@ def _expect_float(mapping: Dict[str, Any], key: str, default: Optional[float] = 
     return float(value)
 
 
-def _expect_sequence(mapping: Dict[str, Any], key: str, length: Optional[int] = None) -> List[Any]:
+def _expect_sequence(mapping: dict[str, Any], key: str, length: int | None = None) -> list[Any]:
     if key not in mapping:
         raise KeyError(key)
     value = mapping[key]
@@ -195,7 +196,7 @@ def _parse_spawn_points(raw: Any) -> Iterable[SpawnPoint]:
     if not isinstance(raw, list):
         raise MapYamlError("spawn_points must be a list")
 
-    result: List[SpawnPoint] = []
+    result: list[SpawnPoint] = []
     for index, entry in enumerate(raw):
         if not isinstance(entry, dict):
             raise MapYamlError("Each spawn point must be a mapping")
@@ -226,17 +227,17 @@ def _parse_pose(raw: Any, field_name: str) -> Pose2D:
     return Pose2D(float(x), float(y), float(theta))
 
 
-def _parse_centerline(raw: Any) -> List[Point2D]:
+def _parse_centerline(raw: Any) -> list[Point2D]:
     if not isinstance(raw, list):
         raise MapYamlError("centerline must be a list of [x, y] points")
-    points: List[Point2D] = []
+    points: list[Point2D] = []
     for index, point in enumerate(raw):
         points.append(_parse_point(point, f"centerline[{index}]"))
     return points
 
 
-def _annotations_to_dict(annotations: MapAnnotations) -> Dict[str, Any]:
-    payload: Dict[str, Any] = {}
+def _annotations_to_dict(annotations: MapAnnotations) -> dict[str, Any]:
+    payload: dict[str, Any] = {}
     if annotations.start_finish_line is not None:
         payload["start_finish"] = {
             "start": [

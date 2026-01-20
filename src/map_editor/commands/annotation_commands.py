@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Callable, Iterable, List, Optional
 
 from PySide6.QtGui import QUndoCommand
 
@@ -14,6 +14,14 @@ from map_editor.models.annotations import (
     SpawnPoint,
     StartFinishLine,
 )
+
+
+def _copy_spawn_point(spawn: SpawnPoint) -> SpawnPoint:
+    """Create a defensive copy of a spawn point."""
+    return SpawnPoint(
+        name=spawn.name,
+        pose=Pose2D(spawn.pose.x, spawn.pose.y, spawn.pose.theta),
+    )
 
 
 @dataclass
@@ -30,7 +38,7 @@ class SetStartFinishLineCommand(QUndoCommand):
     def __init__(
         self,
         context: AnnotationContext,
-        new_value: Optional[StartFinishLine],
+        new_value: StartFinishLine | None,
         description: str = "Set start/finish line",
     ) -> None:
         super().__init__(description)
@@ -72,18 +80,12 @@ class AddSpawnBatchCommand(QUndoCommand):
         super().__init__("Add spawn stamp")
         self._context = context
         self._insert_index = len(context.annotations.spawn_points)
-        self._spawns: List[SpawnPoint] = [
-            SpawnPoint(name=spawn.name, pose=Pose2D(spawn.pose.x, spawn.pose.y, spawn.pose.theta))
-            for spawn in spawns
-        ]
+        self._spawns: list[SpawnPoint] = [_copy_spawn_point(spawn) for spawn in spawns]
 
     def redo(self) -> None:
         self._context.annotations.spawn_points[
             self._insert_index : self._insert_index
-        ] = [
-            SpawnPoint(name=spawn.name, pose=Pose2D(spawn.pose.x, spawn.pose.y, spawn.pose.theta))
-            for spawn in self._spawns
-        ]
+        ] = [_copy_spawn_point(spawn) for spawn in self._spawns]
         self._context.on_annotations_changed(self._context.annotations)
 
     def undo(self) -> None:
@@ -119,7 +121,7 @@ class DeleteSpawnPointCommand(QUndoCommand):
         super().__init__("Delete spawn point")
         self._context = context
         self._index = index
-        self._removed: Optional[SpawnPoint] = None
+        self._removed: SpawnPoint | None = None
 
     def redo(self) -> None:
         if 0 <= self._index < len(self._context.annotations.spawn_points):
@@ -138,8 +140,8 @@ class SetCenterlineCommand(QUndoCommand):
     def __init__(self, context: AnnotationContext, points: Iterable[Point2D]) -> None:
         super().__init__("Set centerline")
         self._context = context
-        self._new_points: List[Point2D] = [Point2D(p.x, p.y) for p in points]
-        self._old_points: List[Point2D] = [Point2D(p.x, p.y) for p in context.annotations.centerline]
+        self._new_points: list[Point2D] = [Point2D(p.x, p.y) for p in points]
+        self._old_points: list[Point2D] = [Point2D(p.x, p.y) for p in context.annotations.centerline]
 
     def redo(self) -> None:
         self._context.annotations.centerline = [Point2D(p.x, p.y) for p in self._new_points]

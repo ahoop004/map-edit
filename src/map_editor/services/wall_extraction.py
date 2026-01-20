@@ -2,32 +2,49 @@
 
 from __future__ import annotations
 
+import csv
+import logging
 import math
 from collections import deque
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence
-
-import csv
 
 from PySide6.QtGui import QImage
 
 from map_editor.models.annotations import Point2D
 from map_editor.models.map_bundle import MapMetadata
 
+_logger = logging.getLogger(__name__)
+
 
 @dataclass
 class WallExtractionResult:
-    walls: List[List[Point2D]]
+    walls: list[list[Point2D]]
     grid_width: int
     grid_height: int
 
 
+class WallExtractionError(Exception):
+    """Raised when wall extraction fails."""
+
+
 def extract_walls(image_path: Path, metadata: MapMetadata) -> WallExtractionResult:
-    """Extract wall components as ordered contours in map coordinates."""
+    """Extract wall components as ordered contours in map coordinates.
+
+    Raises:
+        WallExtractionError: If the image cannot be loaded.
+    """
+    if not image_path.exists():
+        msg = f"Image file not found: {image_path}"
+        _logger.error(msg)
+        raise WallExtractionError(msg)
+
     image = QImage(str(image_path))
     if image.isNull():
-        return WallExtractionResult([], 0, 0)
+        msg = f"Failed to load image: {image_path}"
+        _logger.error(msg)
+        raise WallExtractionError(msg)
     width = image.width()
     height = image.height()
 
@@ -40,7 +57,7 @@ def extract_walls(image_path: Path, metadata: MapMetadata) -> WallExtractionResu
                 mask[y][x] = True
 
     visited = [[False for _ in range(width)] for _ in range(height)]
-    walls: List[List[Point2D]] = []
+    walls: list[list[Point2D]] = []
 
     for y in range(height):
         for x in range(width):
@@ -58,7 +75,7 @@ def extract_walls(image_path: Path, metadata: MapMetadata) -> WallExtractionResu
     return WallExtractionResult(walls=walls, grid_width=width, grid_height=height)
 
 
-def derive_centerline_from_walls(walls: Sequence[Sequence[Point2D]]) -> List[Point2D]:
+def derive_centerline_from_walls(walls: Sequence[Sequence[Point2D]]) -> list[Point2D]:
     """Derive a smooth centerline from the two dominant wall contours."""
     if len(walls) < 2:
         return []
@@ -79,7 +96,7 @@ def derive_centerline_from_walls(walls: Sequence[Sequence[Point2D]]) -> List[Poi
     outer_resampled = _resample_closed_polyline(outer, sample_count)
     inner_polyline = _resample_closed_polyline(inner, len(inner) * 2)
 
-    centerline: List[Point2D] = []
+    centerline: list[Point2D] = []
     for outer_point in outer_resampled:
         corresponding = _project_point_to_polyline(outer_point, inner_polyline)
         centerline.append(
@@ -107,11 +124,11 @@ def export_walls_csv(walls: Sequence[Sequence[Point2D]], destination: Path) -> N
             writer.writerow([wall_id, "END", "NaN", "NaN"])
 
 
-def _collect_component(mask: List[List[bool]], visited: List[List[bool]], sx: int, sy: int) -> List[tuple[int, int]]:
+def _collect_component(mask: list[list[bool]], visited: list[list[bool]], sx: int, sy: int) -> list[tuple[int, int]]:
     height = len(mask)
     width = len(mask[0]) if height else 0
     queue = deque([(sx, sy)])
-    component: List[tuple[int, int]] = []
+    component: list[tuple[int, int]] = []
     visited[sy][sx] = True
     while queue:
         x, y = queue.popleft()
@@ -123,7 +140,7 @@ def _collect_component(mask: List[List[bool]], visited: List[List[bool]], sx: in
     return component
 
 
-def _trace_perimeter(component: set[tuple[int, int]]) -> List[tuple[int, int]]:
+def _trace_perimeter(component: set[tuple[int, int]]) -> list[tuple[int, int]]:
     if not component:
         return []
     start = _find_boundary_start(component)
@@ -131,7 +148,7 @@ def _trace_perimeter(component: set[tuple[int, int]]) -> List[tuple[int, int]]:
         return list(component)
 
     dirs = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
-    contour: List[tuple[int, int]] = []
+    contour: list[tuple[int, int]] = []
     current = start
     direction = 0
     visited = set()
@@ -160,7 +177,7 @@ def _trace_perimeter(component: set[tuple[int, int]]) -> List[tuple[int, int]]:
     return contour
 
 
-def _find_boundary_start(component: set[tuple[int, int]]) -> Optional[tuple[int, int]]:
+def _find_boundary_start(component: set[tuple[int, int]]) -> tuple[int, int] | None:
     if not component:
         return None
     for px, py in sorted(component, key=lambda p: (p[1], p[0])):
@@ -190,7 +207,7 @@ def _polygon_area(points: Sequence[Point2D]) -> float:
     return abs(area) * 0.5
 
 
-def _sort_points_by_angle(points: Sequence[Point2D]) -> List[Point2D]:
+def _sort_points_by_angle(points: Sequence[Point2D]) -> list[Point2D]:
     if not points:
         return []
     cx = sum(p.x for p in points) / len(points)
@@ -198,7 +215,7 @@ def _sort_points_by_angle(points: Sequence[Point2D]) -> List[Point2D]:
     return sorted(points, key=lambda p: math.atan2(p.y - cy, p.x - cx))
 
 
-def _smooth_polyline(points: Sequence[Point2D], passes: int = 1) -> List[Point2D]:
+def _smooth_polyline(points: Sequence[Point2D], passes: int = 1) -> list[Point2D]:
     if len(points) < 3 or passes <= 0:
         return list(points)
     smoothed = list(points)
@@ -219,7 +236,7 @@ def _smooth_polyline(points: Sequence[Point2D], passes: int = 1) -> List[Point2D
     return smoothed
 
 
-def _ensure_closed_loop(points: Sequence[Point2D]) -> List[Point2D]:
+def _ensure_closed_loop(points: Sequence[Point2D]) -> list[Point2D]:
     pts = list(points)
     if not pts:
         return pts
@@ -228,7 +245,7 @@ def _ensure_closed_loop(points: Sequence[Point2D]) -> List[Point2D]:
     return pts
 
 
-def _ensure_orientation(points: Sequence[Point2D], clockwise: bool) -> List[Point2D]:
+def _ensure_orientation(points: Sequence[Point2D], clockwise: bool) -> list[Point2D]:
     if len(points) < 3:
         return list(points)
     area = _signed_area(points)
@@ -246,7 +263,7 @@ def _signed_area(points: Sequence[Point2D]) -> float:
     return area * 0.5
 
 
-def _cumulative_lengths(points: Sequence[Point2D]) -> List[float]:
+def _cumulative_lengths(points: Sequence[Point2D]) -> list[float]:
     lengths = [0.0]
     for i in range(1, len(points)):
         prev = points[i - 1]
@@ -255,14 +272,14 @@ def _cumulative_lengths(points: Sequence[Point2D]) -> List[float]:
     return lengths
 
 
-def _resample_closed_polyline(points: Sequence[Point2D], sample_count: int) -> List[Point2D]:
+def _resample_closed_polyline(points: Sequence[Point2D], sample_count: int) -> list[Point2D]:
     if sample_count <= 0 or len(points) < 2:
         return list(points)
     lengths = _cumulative_lengths(points)
     total_length = lengths[-1]
     if total_length <= 0:
         return [Point2D(pt.x, pt.y) for pt in points[:sample_count]]
-    result: List[Point2D] = []
+    result: list[Point2D] = []
     target_step = total_length / sample_count
     target = 0.0
     idx = 0

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Sequence, Tuple
 
 from map_editor.models.annotations import Point2D
 
@@ -14,37 +14,37 @@ class TrackWidthSample:
     """Width measurement at a specific point along the centerline."""
 
     distance: float
-    width: Optional[float]
-    left: Optional[float]
-    right: Optional[float]
+    width: float | None
+    left: float | None
+    right: float | None
 
 
 @dataclass
 class TrackWidthProfile:
     """Collection of width samples with helper statistics."""
 
-    samples: List[TrackWidthSample]
+    samples: list[TrackWidthSample]
 
     @property
-    def valid_samples(self) -> List[TrackWidthSample]:
+    def valid_samples(self) -> list[TrackWidthSample]:
         return [sample for sample in self.samples if sample.width is not None]
 
     @property
-    def average_width(self) -> Optional[float]:
+    def average_width(self) -> float | None:
         valid = self.valid_samples
         if not valid:
             return None
         return sum(sample.width for sample in valid if sample.width is not None) / len(valid)
 
     @property
-    def minimum_width(self) -> Optional[float]:
+    def minimum_width(self) -> float | None:
         valid = self.valid_samples
         if not valid:
             return None
         return min(sample.width for sample in valid if sample.width is not None)
 
     @property
-    def maximum_width(self) -> Optional[float]:
+    def maximum_width(self) -> float | None:
         valid = self.valid_samples
         if not valid:
             return None
@@ -63,7 +63,7 @@ def compute_track_width_profile(
     if not wall_segments:
         return TrackWidthProfile(samples=[])
 
-    samples: List[TrackWidthSample] = []
+    samples: list[TrackWidthSample] = []
     cumulative_distance = 0.0
 
     for index, point in enumerate(centerline):
@@ -99,7 +99,7 @@ def compute_track_width_profile(
     return TrackWidthProfile(samples=samples)
 
 
-def _centerline_tangent(points: Sequence[Point2D], index: int) -> Optional[Tuple[float, float]]:
+def _centerline_tangent(points: Sequence[Point2D], index: int) -> tuple[float, float] | None:
     if len(points) < 2:
         return None
     if index == 0:
@@ -122,8 +122,8 @@ def _centerline_tangent(points: Sequence[Point2D], index: int) -> Optional[Tuple
     return dx / length, dy / length
 
 
-def _wall_segments(walls: Sequence[Sequence[Point2D]]) -> List[Tuple[Point2D, Point2D]]:
-    segments: List[Tuple[Point2D, Point2D]] = []
+def _wall_segments(walls: Sequence[Sequence[Point2D]]) -> list[tuple[Point2D, Point2D]]:
+    segments: list[tuple[Point2D, Point2D]] = []
     for wall in walls:
         if len(wall) < 2:
             continue
@@ -134,10 +134,10 @@ def _wall_segments(walls: Sequence[Sequence[Point2D]]) -> List[Tuple[Point2D, Po
 
 def _ray_wall_distance(
     origin: Point2D,
-    direction: Tuple[float, float],
-    segments: Iterable[Tuple[Point2D, Point2D]],
-) -> Optional[float]:
-    min_distance: Optional[float] = None
+    direction: tuple[float, float],
+    segments: Iterable[tuple[Point2D, Point2D]],
+) -> float | None:
+    min_distance: float | None = None
     for start, end in segments:
         distance = _ray_segment_intersection(origin, direction, start, end)
         if distance is None:
@@ -151,10 +151,10 @@ def _ray_wall_distance(
 
 def _ray_segment_intersection(
     origin: Point2D,
-    direction: Tuple[float, float],
+    direction: tuple[float, float],
     start: Point2D,
     end: Point2D,
-) -> Optional[float]:
+) -> float | None:
     dir_x, dir_y = direction
     seg_dx = end.x - start.x
     seg_dy = end.y - start.y
