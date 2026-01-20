@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import os
 from typing import Callable, Generator, Optional, TypeVar, cast
 
 from PySide6.QtCore import QEventLoop, QObject, Qt, QThread, Signal, Slot
@@ -54,6 +55,9 @@ def show_busy_dialog(
 
 def run_in_thread(task: Callable[[], T], *, parent: Optional[QObject] = None) -> T:
     """Run a task in a worker thread while keeping the UI responsive."""
+    if os.environ.get("MAP_EDITOR_BACKGROUND_TASKS") != "1":
+        return task()
+
     thread = QThread(parent)
     runner = _TaskRunner(task)
     runner.moveToThread(thread)

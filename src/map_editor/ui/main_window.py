@@ -665,22 +665,7 @@ class MainWindow(QMainWindow):
             f"Generated centerline from occupancy map ({len(centerline_points)} point(s))."
         )
         self._refresh_diagnostics()
-
-        exported_yaml = self._export_bundle_assets(show_result=False)
-        if exported_yaml:
-            try:
-                result = self._bundle_loader.load_from_yaml(exported_yaml)
-            except MapYamlError as exc:
-                QMessageBox.critical(
-                    self,
-                    "Reload failed",
-                    f"Bundle exported but could not be reopened: {exc}",
-                )
-                return
-            self._apply_loaded_bundle(
-                result,
-                message=f"Reloaded bundle: {exported_yaml.name}",
-            )
+        self._create_centerline_csv()
 
     def _finalize_spawn_point(self, x: float, y: float) -> None:
         context = self._annotation_context
