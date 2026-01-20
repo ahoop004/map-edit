@@ -5,8 +5,8 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Callable, Generator, Optional, TypeVar, cast
 
-from PySide6.QtCore import QEventLoop, QObject, QThread, Signal, Slot
-from PySide6.QtWidgets import QProgressDialog, QWidget
+from PySide6.QtCore import QEventLoop, QObject, Qt, QThread, Signal, Slot
+from PySide6.QtWidgets import QApplication, QProgressDialog, QWidget
 
 T = TypeVar("T")
 
@@ -41,12 +41,18 @@ def show_busy_dialog(
     dialog.setMinimum(0)
     dialog.setMaximum(0)  # Indeterminate
     dialog.setWindowTitle("Working…")
-    dialog.setModal(True)
+    dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+    dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
     dialog.show()
     try:
         yield dialog
     finally:
-        dialog.cancel()
+        dialog.reset()
+        dialog.close()
+        dialog.deleteLater()
+        if parent is not None:
+            parent.repaint()
+        QApplication.processEvents()
 
 def run_in_thread(task: Callable[[], T], *, parent: Optional[QObject] = None) -> T:
     """Run a task in a worker thread while keeping the UI responsive."""

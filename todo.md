@@ -1,58 +1,55 @@
-## Code Quality & Refactoring
+## TODO
 
-### Critical Priority
+### Procedural Track Generation
+- Define input format for procedural tracks.
+  - Choose file type (JSON or YAML).
+  - Specify schema (control points, optional tangents, track width, resolution, padding).
+  - Decide how to express closed loops (implicit close or explicit last point).
+  - Add metadata defaults to match sample bundles (occupied/free thresholds, negate, resolution).
+  - Define origin placement to mirror existing negative origin offsets.
+  - Specify output naming conventions (stem, folder layout) to match sample bundles.
+  - Use implicit loop closure (connect last point to first).
+  - Default values: track width 2.2 m, centerline spacing 0.2 m, resolution 0.06 m/px, padding 5 m.
+  - Origin formula: origin = (-min_x, -min_y, 0) after padding.
+  - Threshold defaults: occupied_thresh 0.45, free_thresh 0.196, negate 0.
+  - Raster wall thickness default: 2 px.
+  - Constraints defaults: min curvature radius 3 m, min wall separation 1.5 m.
+  - Deterministic-only generation (seed optional later).
+  - Bundle layout: `stem_map/` with `stem.{png,pgm,yaml}`, `stem_centerline.csv`, `stem_walls.csv`.
+  - CLI draft: `generate_track --input track.yaml --output sample_maps/stem_map --preset sample_default`.
 
-- [x] Extract duplicate spawn point copying logic in `annotation_commands.py:75-86`
+- Implement closed-loop spline evaluation.
+  - Use cubic B-spline for the closed-loop curve.
+  - Enforce C1 continuity at loop closure.
+  - Add arc-length resampling (e.g., spacing = 0.2 m).
+  - Output centerline samples as (x, y, theta).
 
-- [x] Add error handling/logging in `wall_extraction.py` for image load failures
+- Generate walls from centerline.
+  - Compute local tangents and normals.
+  - Offset left/right by half-width (configurable or per-point).
+  - Smooth wall polylines (optional).
+  - Detect/self-correct self-intersections.
+  - Export `*_walls.csv`.
+  - Enforce minimum wall separation and curvature constraints.
+  - Add optional noise/smoothing controls for track feel.
 
-- [x] Replace 8 bare `except Exception` catches in `main_window.py`
-  - Lines: 354, 549, 779, 831, 847, 900, 954, 1031
-  - Replace with specific exceptions: `OSError`, `MapYamlError`, `ValueError`
+- Rasterize to occupancy map.
+  - Convert world coords to pixel grid using resolution.
+  - Draw walls into a grayscale image (tunable wall thickness).
+  - Add padding/margins.
+  - Export PNG and PGM.
+  - Enforce 8-bit grayscale PNG and raw grayscale PGM output.
+  - Generate a preview overlay image for quick validation.
 
-- [x] Light refactor of `map_viewer.py`
-  - [x] Update type hints to modern style (`list[T]`, `X | None`)
-  - Skipped coordinate extraction: transforms are simple, Qt-specific, and only used internally
+- Emit bundle metadata.
+  - Write YAML with image, resolution, origin, thresholds, negate.
+  - Embed annotations (centerline, optional spawn/start-finish defaults).
+  - Ensure YAML field order and values align with sample bundles.
 
-- [x] Light refactor of `main_window.py`
-  - [x] Update type hints to modern style (`list[T]`, `X | None`)
-
-### Moderate Priority
-
-- [x] Add `__all__` exports to package `__init__.py` files
-  - `ui/__init__.py`
-  - `models/__init__.py`
-  - `services/__init__.py`
-
-- [x] Standardize type hints to modern style (`list[T]` instead of `List[T]`)
-  - Files: `yaml_serializer.py`, `track_metrics.py`
-
-- [x] Move magic numbers to constants module
-  - Car dimensions in `map_viewer.py`
-  - Default window size, spacing values in `main_window.py`
-
-- [x] Extract large nested methods
-  - `main_window.py._export_bundle_assets()` - kept as-is (linear sequence, readable)
-  - `map_viewer.py.update_annotations()` - extracted 4 helper methods
-
-### Low Priority
-
-- [ ] Document complex geometry algorithms in `wall_extraction.py`
-- [ ] Add logging infrastructure
-- [ ] Expand test coverage for services and commands
-
-### Deferred
-
-- [ ] Full split of `map_viewer.py` into placement_handler.py and overlay_builder.py
-  - Deferred: Code is cohesive and tightly coupled to viewer state
-- [ ] Full split of `main_window.py` into separate operation modules
-  - Deferred: Would require complex state sharing between modules
-
----
-
-## Future Features
-
-- [ ] New map wizard
-  - [ ] Design wizard steps for metadata defaults, spawn grid presets, optional centerline seed
-  - [ ] Implement wizard UI and integrate with project bootstrap
-  - [ ] Provide starter templates and sample outputs for validation
+- Bundle outputs.
+  - Save `map.png`, `map.pgm`, `map.yaml`.
+  - Save `map_centerline.csv`, `map_walls.csv`.
+  - Match CSV headers/formatting used in existing bundles.
+  - Add CLI entrypoint to generate bundles from input file.
+  - Support deterministic seeds for reproducible outputs.
+  - Add scale-to-width step to hit target track width exactly.

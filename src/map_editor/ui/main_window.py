@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QStatusBar,
     QWidget,
@@ -211,6 +212,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self._action_export_map_pgm)
         file_menu.addSeparator()
         file_menu.addAction(self._action_exit)
+        self._install_menu_refresh(file_menu)
 
         edit_menu = menu_bar.addMenu("&Edit")
         edit_menu.addAction(self._action_undo)
@@ -231,6 +233,9 @@ class MainWindow(QMainWindow):
         self._action_generate_centerline = QAction("Generate Centerline from Map", self)
         self._action_generate_centerline.triggered.connect(self._generate_centerline_from_walls)
         edit_menu.addAction(self._action_generate_centerline)
+        self._install_menu_refresh(edit_menu)
+
+        menu_bar.triggered.connect(self._refresh_after_menu)
 
     def _create_docks(self) -> None:
         metadata_dock = QDockWidget("Metadata", self)
@@ -919,6 +924,8 @@ class MainWindow(QMainWindow):
         *,
         show_result: bool = True,
     ) -> Path | None:
+        if isinstance(destination_dir, bool):
+            destination_dir = None
         if not self._current_bundle:
             if show_result:
                 QMessageBox.information(self, "No map", "Load a map before exporting.")
@@ -939,7 +946,10 @@ class MainWindow(QMainWindow):
             destination_root = destination_dir
 
         stem = bundle.stem
-        destination = destination_root / stem
+        if destination_root.name == stem:
+            destination = destination_root
+        else:
+            destination = destination_root / stem
         try:
             destination.mkdir(parents=True, exist_ok=True)
         except OSError as exc:
@@ -1062,6 +1072,17 @@ class MainWindow(QMainWindow):
         self._track_width_profile = None
         self._track_metrics_panel.set_controls_enabled(True)
         self._update_track_metrics()
+
+    def _install_menu_refresh(self, menu: QMenu) -> None:
+        menu.aboutToHide.connect(self._refresh_after_menu)
+        menu.triggered.connect(self._refresh_after_menu)
+
+    def _refresh_after_menu(self, *_: object) -> None:
+        viewport = self._map_viewer.viewport()
+        viewport.update()
+        viewport.repaint()
+        self._map_viewer.scene().update()
+        self.repaint()
 
     def _on_diagnostics_highlight_changed(self, enabled: bool) -> None:
         has_issues = self._diagnostics_report.has_warnings if self._diagnostics_report else False

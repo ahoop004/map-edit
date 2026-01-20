@@ -79,6 +79,7 @@ class MapViewer(QGraphicsView):
         self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setBackgroundBrush(Qt.GlobalColor.darkGray)
+        self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
 
         self.show_message("Load a map to begin")
 
