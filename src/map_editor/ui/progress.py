@@ -42,12 +42,10 @@ def show_busy_dialog(
     dialog.setMaximum(0)  # Indeterminate
     dialog.setWindowTitle("Working…")
     dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-    dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
     dialog.show()
     try:
         yield dialog
     finally:
-        dialog.reset()
         dialog.close()
         dialog.deleteLater()
         if parent is not None:

@@ -66,6 +66,8 @@ from map_editor.services.yaml_serializer import MapYamlError
 from map_editor.ui.progress import run_in_thread, show_busy_dialog
 from map_editor.services.track_metrics import compute_track_width_profile, TrackWidthProfile
 from map_editor.ui.track_metrics_panel import TrackMetricsPanel
+from map_editor.ui.track_generator import TrackGeneratorDialog
+from map_editor.services.procedural_track import TrackSpecError, generate_track_bundle
 
 
 class MainWindow(QMainWindow):
@@ -182,6 +184,9 @@ class MainWindow(QMainWindow):
         self._action_export_bundle = QAction("Export Bundle Assets…", self)
         self._action_export_bundle.triggered.connect(self._export_bundle_assets)
 
+        self._action_generate_track = QAction("Generate Track…", self)
+        self._action_generate_track.triggered.connect(self._open_track_generator)
+
         self._action_generate_map_pgm = QAction("Generate Map PGM", self)
         self._action_generate_map_pgm.triggered.connect(self._generate_map_pgm)
 
@@ -199,6 +204,8 @@ class MainWindow(QMainWindow):
         file_menu = menu_bar.addMenu("&File")
         file_menu.addAction(self._action_open)
         file_menu.addAction(self._action_save)
+        file_menu.addSeparator()
+        file_menu.addAction(self._action_generate_track)
         file_menu.addSeparator()
         file_menu.addAction(self._action_export_bundle)
         file_menu.addSeparator()
@@ -423,6 +430,40 @@ class MainWindow(QMainWindow):
 
         self.statusBar().showMessage(message)
         self._refresh_diagnostics()
+
+    def _open_track_generator(self) -> None:
+        dialog = TrackGeneratorDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        try:
+            spec = dialog.spec()
+            output_dir = dialog.output_dir()
+        except TrackSpecError as exc:
+            QMessageBox.critical(self, "Generate Track failed", str(exc))
+            return
+
+        try:
+            with show_busy_dialog(self, "Generating track…", minimum_duration=0) as progress:
+                progress.setLabelText("Building bundle…")
+                QApplication.processEvents()
+                yaml_path = run_in_thread(
+                    lambda: generate_track_bundle(spec, output_dir),
+                    parent=self,
+                )
+        except (TrackSpecError, OSError) as exc:
+            QMessageBox.critical(self, "Generate Track failed", str(exc))
+            return
+
+        try:
+            result = self._bundle_loader.load_from_yaml(yaml_path)
+        except MapYamlError as exc:
+            QMessageBox.critical(
+                self,
+                "Generate Track failed",
+                f"Bundle created but could not be loaded: {exc}",
+            )
+            return
+        self._apply_loaded_bundle(result, message=f"Generated track: {yaml_path.name}")
 
     def _handle_annotation_change(self, annotations: MapAnnotations) -> None:
         if self._current_bundle is not None:

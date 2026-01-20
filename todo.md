@@ -1,55 +1,53 @@
 ## TODO
 
 ### Procedural Track Generation
-- Define input format for procedural tracks.
-  - Choose file type (JSON or YAML).
-  - Specify schema (control points, optional tangents, track width, resolution, padding).
-  - Decide how to express closed loops (implicit close or explicit last point).
-  - Add metadata defaults to match sample bundles (occupied/free thresholds, negate, resolution).
-  - Define origin placement to mirror existing negative origin offsets.
-  - Specify output naming conventions (stem, folder layout) to match sample bundles.
-  - Use implicit loop closure (connect last point to first).
-  - Default values: track width 2.2 m, centerline spacing 0.2 m, resolution 0.06 m/px, padding 5 m.
-  - Origin formula: origin = (-min_x, -min_y, 0) after padding.
-  - Threshold defaults: occupied_thresh 0.45, free_thresh 0.196, negate 0.
-  - Raster wall thickness default: 2 px.
-  - Constraints defaults: min curvature radius 3 m, min wall separation 1.5 m.
-  - Deterministic-only generation (seed optional later).
-  - Bundle layout: `stem_map/` with `stem.{png,pgm,yaml}`, `stem_centerline.csv`, `stem_walls.csv`.
-  - CLI draft: `generate_track --input track.yaml --output sample_maps/stem_map --preset sample_default`.
+- [x] Define YAML schema for procedural tracks.
+  - [x] Required: `stem`, `control_points` (x, y).
+  - [x] Optional overrides: `track_width`, `centerline_spacing`, `resolution`, `padding`, `wall_thickness_px`.
+  - [x] Defaults: track width 2.2 m, centerline spacing 0.2 m, resolution 0.06 m/px, padding 5 m.
+  - [x] Threshold defaults: occupied_thresh 0.45, free_thresh 0.196, negate 0.
+  - [x] Implicit loop closure (connect last point to first).
+  - [x] Origin formula: origin = (-min_x, -min_y, 0) after padding.
+  - [x] Bundle layout: `stem_map/` with `stem.{png,pgm,yaml}`, `stem_centerline.csv`, `stem_walls.csv`.
+  - [x] CLI: `generate_track --input track.yaml --output sample_maps/stem_map --preset sample_default`.
 
-- Implement closed-loop spline evaluation.
-  - Use cubic B-spline for the closed-loop curve.
-  - Enforce C1 continuity at loop closure.
-  - Add arc-length resampling (e.g., spacing = 0.2 m).
-  - Output centerline samples as (x, y, theta).
+- [x] Implement closed-loop spline evaluation.
+  - [x] Use cubic B-spline for the closed-loop curve.
+  - [x] Enforce continuity at loop closure.
+  - [x] Arc-length resampling (default spacing 0.2 m).
+  - [x] Output centerline samples as (x, y, theta).
 
-- Generate walls from centerline.
-  - Compute local tangents and normals.
-  - Offset left/right by half-width (configurable or per-point).
-  - Smooth wall polylines (optional).
-  - Detect/self-correct self-intersections.
-  - Export `*_walls.csv`.
-  - Enforce minimum wall separation and curvature constraints.
-  - Add optional noise/smoothing controls for track feel.
+- [x] Generate walls from centerline.
+  - [x] Compute local tangents and normals.
+  - [x] Offset left/right by half-width.
+  - [x] Smooth wall polylines (optional) and prevent self-intersections.
+  - [x] Enforce constraints: min curvature radius 3 m, min wall separation 1.5 m.
+  - [x] Export `*_walls.csv`.
 
-- Rasterize to occupancy map.
-  - Convert world coords to pixel grid using resolution.
-  - Draw walls into a grayscale image (tunable wall thickness).
-  - Add padding/margins.
-  - Export PNG and PGM.
-  - Enforce 8-bit grayscale PNG and raw grayscale PGM output.
-  - Generate a preview overlay image for quick validation.
+- [x] Rasterize to occupancy map.
+  - [x] Convert world coords to pixel grid using resolution.
+  - [x] Draw walls into 8-bit grayscale image (default thickness 2 px).
+  - [x] Add padding/margins.
+  - [x] Export PNG and raw PGM.
+  - [x] Generate a preview overlay image for quick validation.
 
-- Emit bundle metadata.
-  - Write YAML with image, resolution, origin, thresholds, negate.
-  - Embed annotations (centerline, optional spawn/start-finish defaults).
-  - Ensure YAML field order and values align with sample bundles.
+- [x] Emit bundle metadata.
+  - [x] Write YAML with image, resolution, origin, thresholds, negate.
+  - [x] Embed annotations (centerline, optional spawn/start-finish defaults).
+  - [x] Align YAML field order/values with sample bundles.
 
-- Bundle outputs.
-  - Save `map.png`, `map.pgm`, `map.yaml`.
-  - Save `map_centerline.csv`, `map_walls.csv`.
-  - Match CSV headers/formatting used in existing bundles.
-  - Add CLI entrypoint to generate bundles from input file.
-  - Support deterministic seeds for reproducible outputs.
-  - Add scale-to-width step to hit target track width exactly.
+- [x] Bundle outputs.
+  - [x] Save `stem.png`, `stem.pgm`, `stem.yaml`.
+  - [x] Save `stem_centerline.csv`, `stem_walls.csv` with existing headers.
+  - [x] Add CLI entrypoint to generate bundles from input file.
+  - [x] Add scale-to-width step to hit target track width exactly.
+
+### GUI Integration
+- [x] Add File → "Generate Track…" menu action.
+- [x] Build a modal wizard/dialog:
+  - [x] Select YAML input file and output folder.
+  - [x] Expose preset overrides (width, resolution, padding).
+  - [x] Show preview overlay (centerline + walls).
+  - [x] Confirm + run generation.
+- [x] Run generation in background thread with busy/progress dialog.
+- [x] Auto-load generated bundle into the editor.

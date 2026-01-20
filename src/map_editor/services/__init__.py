@@ -4,6 +4,7 @@ __all__ = [
     "diagnostics",
     "map_loader",
     "track_metrics",
+    "procedural_track",
     "wall_extraction",
     "yaml_serializer",
 ]
