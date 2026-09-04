@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QGraphicsView,
 )
 
-from map_editor.constants import CAR_LENGTH_M, CAR_WIDTH_M, SPAWN_HEADING_LENGTH_M
+from map_editor.constants import CAR_LENGTH_M, CAR_WIDTH_M, DEFAULT_TRACK_WIDTH_TARGET, SPAWN_HEADING_LENGTH_M
 from map_editor.models.annotations import MapAnnotations, Point2D, Pose2D
 from map_editor.models.map_bundle import MapMetadata
 from map_editor.models.spawn_stamp import SpawnStampSettings
@@ -69,7 +69,7 @@ class MapViewer(QGraphicsView):
         self._spawn_stamp_preview_poses: list[Pose2D] = []
         self._annotations_cache = MapAnnotations()
         self._width_highlight_segments: list[tuple[Point2D, Point2D]] = []
-        self._width_threshold: float = 2.2
+        self._width_threshold: float = DEFAULT_TRACK_WIDTH_TARGET
 
         self._zoom_factor = 1.25
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)

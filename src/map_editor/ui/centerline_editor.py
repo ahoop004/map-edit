@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -22,7 +21,7 @@ from map_editor.models.annotations import Point2D
 class CenterlineEditorDialog(QDialog):
     """Provides manual editing controls for centerline nodes."""
 
-    def __init__(self, points: List[Point2D], parent=None) -> None:
+    def __init__(self, points: list[Point2D], parent=None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Centerline Editor")
         self.resize(420, 360)
@@ -156,7 +155,7 @@ class CenterlineEditorDialog(QDialog):
         smoothed.append(points[-1])
         self._populate_table(smoothed)
 
-    def _selected_row(self) -> Optional[int]:
+    def _selected_row(self) -> int | None:
         indexes = self._table.selectionModel().selectedRows()
         if not indexes:
             return None

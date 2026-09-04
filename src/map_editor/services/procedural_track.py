@@ -15,6 +15,8 @@ from map_editor.models.annotations import MapAnnotations, Point2D
 from map_editor.services.wall_extraction import export_walls_csv
 from map_editor.services.yaml_serializer import MapYamlDocument, dump_map_yaml
 
+EPSILON = 1e-9  # floating-point near-zero threshold used throughout this module
+
 
 @dataclass(frozen=True)
 class TrackSpec:
@@ -79,6 +81,120 @@ def load_track_spec(path: Path) -> TrackSpec:
     )
 
 
+def build_oval_control_points(
+    length: float,
+    width: float,
+    *,
+    curve_amplitude: float = 0.0,
+    curve_frequency: int = 2,
+    point_count: int = 32,
+) -> list[Point2D]:
+    """Generate control points for an oval-like track centerline.
+
+    Args:
+        length: Bounding-box length of the oval in meters (end-to-end, positive).
+        width: Bounding-box width of the oval in meters (side-to-side, positive).
+        curve_amplitude: Sinusoidal offset applied normal to the oval (meters).
+            0 = plain ellipse; typical range 0–10 m. Larger values create chicane-like shapes.
+        curve_frequency: Number of full sine cycles around the oval (integer >= 1).
+            2 = two bumps per lap (typical S-shape); higher values add more chicanes.
+        point_count: Minimum number of sample points to generate (>= 8).
+    """
+    if length <= 0 or width <= 0:
+        raise TrackSpecError("Oval length and width must be positive.")
+    if point_count < 8:
+        raise TrackSpecError("Oval point_count must be >= 8.")
+    if curve_frequency < 1:
+        raise TrackSpecError("curve_frequency must be >= 1.")
+
+    a = length * 0.5
+    b = width * 0.5
+    points: list[Point2D] = []
+    sample_count = max(point_count, curve_frequency * 16)
+    for idx in range(sample_count):
+        t = 2.0 * math.pi * idx / sample_count
+        base_x = a * math.cos(t)
+        base_y = b * math.sin(t)
+        dx = -a * math.sin(t)
+        dy = b * math.cos(t)
+        normal_len = math.hypot(dx, dy)
+        if normal_len <= EPSILON:
+            nx, ny = 0.0, 0.0
+        else:
+            nx, ny = -dy / normal_len, dx / normal_len
+        offset = curve_amplitude * math.sin(curve_frequency * t)
+        points.append(Point2D(base_x + nx * offset, base_y + ny * offset))
+    return points
+
+
+def adjust_control_points_for_min_radius(
+    control_points: Sequence[Point2D],
+    min_curvature_radius: float,
+    *,
+    centerline_spacing: float = 0.2,
+    max_iterations: int = 8,
+) -> tuple[list[Point2D], float]:
+    """Scale control points about their centroid to satisfy minimum curvature radius."""
+    if not control_points:
+        return [], 1.0
+    points = [Point2D(pt.x, pt.y) for pt in control_points]
+    centroid = Point2D(
+        sum(pt.x for pt in points) / len(points),
+        sum(pt.y for pt in points) / len(points),
+    )
+    total_scale = 1.0
+    for _ in range(max_iterations):
+        polyline = _sample_closed_bspline(points)
+        samples = _resample_closed_polyline(polyline, centerline_spacing)
+        if not samples:
+            break
+        centerline = [Point2D(sample.x, sample.y) for sample in samples]
+        min_radius = _min_curvature_radius(centerline)
+        if min_radius is None or min_radius >= min_curvature_radius:
+            return points, total_scale
+        scale = (min_curvature_radius / min_radius) * 1.05  # 5 % overshoot so next iteration satisfies the check
+        points = [_scale_point(pt, centroid, scale) for pt in points]
+        total_scale *= scale
+    return points, total_scale
+
+
+def adjust_oval_parameters_for_min_radius(
+    length: float,
+    width: float,
+    *,
+    curve_amplitude: float,
+    curve_frequency: int,
+    min_curvature_radius: float,
+    centerline_spacing: float = 0.2,
+    point_count: int = 32,
+    max_iterations: int = 8,
+) -> tuple[float, float, float, float]:
+    """Scale oval parameters to satisfy minimum curvature radius."""
+    total_scale = 1.0
+    for _ in range(max_iterations):
+        control_points = build_oval_control_points(
+            length,
+            width,
+            curve_amplitude=curve_amplitude,
+            curve_frequency=curve_frequency,
+            point_count=point_count,
+        )
+        polyline = _sample_closed_bspline(control_points)
+        samples = _resample_closed_polyline(polyline, centerline_spacing)
+        if not samples:
+            break
+        centerline = [Point2D(sample.x, sample.y) for sample in samples]
+        min_radius = _min_curvature_radius(centerline)
+        if min_radius is None or min_radius >= min_curvature_radius:
+            return length, width, curve_amplitude, total_scale
+        scale = (min_curvature_radius / min_radius) * 1.02  # 2 % overshoot; smaller than control-point version because oval scaling is more predictable
+        length *= scale
+        width *= scale
+        curve_amplitude *= scale
+        total_scale *= scale
+    return length, width, curve_amplitude, total_scale
+
+
 def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
     """Generate a full map bundle for the given track spec."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -93,7 +209,7 @@ def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
     walls = _build_walls(centerline_points, spec.track_width)
     if spec.wall_smoothing_passes > 0:
         walls = [_smooth_closed_polyline(wall, spec.wall_smoothing_passes) for wall in walls]
-    _ensure_wall_constraints(centerline_points, walls, spec)
+    _ensure_wall_constraints(walls, spec)
     walls = _scale_walls_to_width(centerline_points, walls, spec.track_width)
 
     image_bytes, width, height, origin_x, origin_y = _rasterize_walls(
@@ -146,7 +262,7 @@ def generate_preview_image(spec: TrackSpec) -> QImage:
     walls = _build_walls(centerline_points, spec.track_width)
     if spec.wall_smoothing_passes > 0:
         walls = [_smooth_closed_polyline(wall, spec.wall_smoothing_passes) for wall in walls]
-    _ensure_wall_constraints(centerline_points, walls, spec)
+    _ensure_wall_constraints(walls, spec)
     walls = _scale_walls_to_width(centerline_points, walls, spec.track_width)
 
     width, height, origin_x, origin_y = _compute_raster_bounds(
@@ -203,6 +319,8 @@ def _resample_closed_polyline(points: Sequence[Point2D], spacing: float) -> list
     if len(points) < 2:
         return []
     closed = list(points)
+    # _sample_closed_bspline already appends a closing duplicate; this guard handles
+    # callers that supply a polyline without one.
     if closed[0].x != closed[-1].x or closed[0].y != closed[-1].y:
         closed.append(Point2D(closed[0].x, closed[0].y))
     samples = resample_centerline(closed, spacing)
@@ -237,7 +355,7 @@ def _compute_normals(points: Sequence[Point2D]) -> list[tuple[float, float]]:
         dx = next_pt.x - prev_pt.x
         dy = next_pt.y - prev_pt.y
         length = math.hypot(dx, dy)
-        if length == 0:
+        if length <= EPSILON:
             normals.append((0.0, 0.0))
         else:
             normals.append((-dy / length, dx / length))
@@ -282,6 +400,9 @@ def _world_to_pixel(
     return px, py
 
 
+_MAX_IMAGE_PIXELS = 32_768  # cap per dimension to prevent runaway memory with tiny resolution values
+
+
 def _compute_raster_bounds(
     walls: Iterable[Sequence[Point2D]],
     *,
@@ -297,6 +418,11 @@ def _compute_raster_bounds(
     max_y = max(p.y for p in points) + padding
     width = max(1, math.ceil((max_x - min_x) / resolution))
     height = max(1, math.ceil((max_y - min_y) / resolution))
+    if width > _MAX_IMAGE_PIXELS or height > _MAX_IMAGE_PIXELS:
+        raise TrackSpecError(
+            f"Raster image would be {width}×{height} px, exceeding the "
+            f"{_MAX_IMAGE_PIXELS} px limit. Increase resolution or reduce track size."
+        )
     return width, height, min_x, min_y
 
 
@@ -492,6 +618,9 @@ def _read_int(
 
 
 __all__ = [
+    "adjust_control_points_for_min_radius",
+    "adjust_oval_parameters_for_min_radius",
+    "build_oval_control_points",
     "TrackSpec",
     "TrackSpecError",
     "generate_track_bundle",
@@ -510,7 +639,7 @@ def _validate_centerline(points: Sequence[Point2D], spec: TrackSpec) -> None:
         cur_pt = points[index]
         next_pt = points[(index + 1) % len(points)]
         radius = _curvature_radius(prev_pt, cur_pt, next_pt)
-        if radius is not None and radius < spec.min_curvature_radius:
+        if radius is not None and radius < spec.min_curvature_radius - 1e-3:
             raise TrackSpecError(
                 f"Curvature radius {radius:.2f} m below minimum {spec.min_curvature_radius:.2f} m."
             )
@@ -520,16 +649,38 @@ def _curvature_radius(a: Point2D, b: Point2D, c: Point2D) -> float | None:
     ab = math.hypot(b.x - a.x, b.y - a.y)
     bc = math.hypot(c.x - b.x, c.y - b.y)
     ca = math.hypot(a.x - c.x, a.y - c.y)
-    if ab <= 1e-9 or bc <= 1e-9 or ca <= 1e-9:
+    if ab <= EPSILON or bc <= EPSILON or ca <= EPSILON:
         return None
     area = abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) * 0.5
-    if area <= 1e-9:
+    if area <= EPSILON:
         return None
     return (ab * bc * ca) / (4.0 * area)
 
 
+def _scale_point(point: Point2D, origin: Point2D, scale: float) -> Point2D:
+    return Point2D(
+        origin.x + (point.x - origin.x) * scale,
+        origin.y + (point.y - origin.y) * scale,
+    )
+
+
+def _min_curvature_radius(points: Sequence[Point2D]) -> float | None:
+    if len(points) < 3:
+        return None
+    min_radius: float | None = None
+    for index in range(len(points)):
+        prev_pt = points[index - 1]
+        cur_pt = points[index]
+        next_pt = points[(index + 1) % len(points)]
+        radius = _curvature_radius(prev_pt, cur_pt, next_pt)
+        if radius is None:
+            continue
+        if min_radius is None or radius < min_radius:
+            min_radius = radius
+    return min_radius
+
+
 def _ensure_wall_constraints(
-    centerline: Sequence[Point2D],
     walls: Sequence[Sequence[Point2D]],
     spec: TrackSpec,
 ) -> None:
@@ -538,7 +689,15 @@ def _ensure_wall_constraints(
     for wall in walls:
         if _polyline_self_intersects(wall):
             raise TrackSpecError("Wall polyline self-intersects; adjust control points or width.")
-    _ = centerline
+    left, right = walls[0], walls[1]
+    if len(left) == len(right):
+        for i in range(len(left)):
+            separation = math.hypot(left[i].x - right[i].x, left[i].y - right[i].y)
+            if separation < spec.min_wall_separation:
+                raise TrackSpecError(
+                    f"Wall separation {separation:.3f} m at point {i} is below "
+                    f"minimum {spec.min_wall_separation:.3f} m; increase track width or reduce curvature."
+                )
 
 
 def _polyline_self_intersects(points: Sequence[Point2D]) -> bool:
@@ -552,7 +711,7 @@ def _polyline_self_intersects(points: Sequence[Point2D]) -> bool:
         a1 = closed[i]
         a2 = closed[i + 1]
         for j in range(i + 1, seg_count):
-            if j in (i, i - 1, i + 1):
+            if j == i + 1:
                 continue
             if i == 0 and j == seg_count - 1:
                 continue
@@ -566,7 +725,7 @@ def _polyline_self_intersects(points: Sequence[Point2D]) -> bool:
 def _segments_intersect(a1: Point2D, a2: Point2D, b1: Point2D, b2: Point2D) -> bool:
     def orientation(p: Point2D, q: Point2D, r: Point2D) -> int:
         val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y)
-        if abs(val) < 1e-9:
+        if abs(val) < EPSILON:
             return 0
         return 1 if val > 0 else 2
 
@@ -622,7 +781,10 @@ def _scale_walls_to_width(
     half_width = target_width * 0.5
     left, right = walls[0], walls[1]
     if len(left) != len(centerline) or len(right) != len(centerline):
-        return [list(left), list(right)]
+        raise TrackSpecError(
+            f"Wall arrays (len {len(left)}, {len(right)}) do not match "
+            f"centerline length ({len(centerline)}); cannot scale walls."
+        )
     scaled_left: list[Point2D] = []
     scaled_right: list[Point2D] = []
     for idx, point in enumerate(centerline):
@@ -635,7 +797,7 @@ def _scale_walls_to_width(
 
 def _scale_vector(origin: Point2D, vector: Point2D, target_length: float) -> Point2D:
     length = math.hypot(vector.x, vector.y)
-    if length <= 1e-9:
+    if length <= EPSILON:
         return Point2D(origin.x, origin.y)
     scale = target_length / length
     return Point2D(origin.x + vector.x * scale, origin.y + vector.y * scale)

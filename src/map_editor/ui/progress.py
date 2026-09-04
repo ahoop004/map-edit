@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import os
-from typing import Callable, Generator, Optional, TypeVar, cast
+from typing import Callable, Generator, TypeVar, cast
 
 from PySide6.QtCore import QEventLoop, QObject, Qt, QThread, Signal, Slot
 from PySide6.QtWidgets import QApplication, QProgressDialog, QWidget
@@ -31,7 +31,7 @@ class _TaskRunner(QObject):
 
 @contextmanager
 def show_busy_dialog(
-    parent: Optional[QWidget], message: str, *, minimum_duration: int = 200
+    parent: QWidget | None, message: str, *, minimum_duration: int = 200
 ) -> Generator[QProgressDialog, None, None]:
     """Context manager that displays a busy indicator until the block exits."""
 
@@ -53,7 +53,7 @@ def show_busy_dialog(
             parent.repaint()
         QApplication.processEvents()
 
-def run_in_thread(task: Callable[[], T], *, parent: Optional[QObject] = None) -> T:
+def run_in_thread(task: Callable[[], T], *, parent: QObject | None = None) -> T:
     """Run a task in a worker thread while keeping the UI responsive."""
     if os.environ.get("MAP_EDITOR_BACKGROUND_TASKS") != "1":
         return task()
@@ -82,7 +82,7 @@ def run_in_thread(task: Callable[[], T], *, parent: Optional[QObject] = None) ->
     if thread.isRunning():
         thread.wait()
 
-    error = cast(Optional[BaseException], result["error"])
+    error = cast(BaseException | None, result["error"])
     if error is not None:
         raise error
     return cast(T, result["value"])

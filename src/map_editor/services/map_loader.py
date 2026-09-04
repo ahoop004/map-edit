@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from PySide6.QtGui import QPixmap
 
@@ -55,7 +54,7 @@ class MapBundleLoader:
     def save_bundle(
         self,
         bundle: MapBundle,
-        destination: Optional[Path] = None,
+        destination: Path | None = None,
         create_backup: bool = True,
     ) -> Path:
         """Serialize the bundle metadata + annotations to YAML and return the saved path."""

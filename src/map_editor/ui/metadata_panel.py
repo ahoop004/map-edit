@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
 
 from PySide6.QtCore import QSignalBlocker, Qt, Signal
 from PySide6.QtWidgets import (
@@ -23,7 +22,7 @@ class MapMetadataPanel(QWidget):
 
     metadataChanged = Signal(MapMetadata)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._current_metadata = MapMetadata.default()
@@ -83,7 +82,7 @@ class MapMetadataPanel(QWidget):
         spin.setKeyboardTracking(False)
         return spin
 
-    def set_metadata(self, metadata: Optional[MapMetadata]) -> None:
+    def set_metadata(self, metadata: MapMetadata | None) -> None:
         """Populate the form and enable interaction."""
         blockers = [
             QSignalBlocker(widget)

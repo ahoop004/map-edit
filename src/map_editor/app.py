@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import sys
-from typing import Iterable, Optional
+from typing import Iterable
 
 from PySide6.QtWidgets import QApplication
 
 
-def create_application(argv: Optional[Iterable[str]] = None) -> QApplication:
+def create_application(argv: Iterable[str] | None = None) -> QApplication:
     """Create and configure the QApplication instance."""
     args = list(argv) if argv is not None else sys.argv
     app = QApplication(args)
@@ -18,7 +18,7 @@ def create_application(argv: Optional[Iterable[str]] = None) -> QApplication:
     return app
 
 
-def main(argv: Optional[Iterable[str]] = None) -> int:
+def main(argv: Iterable[str] | None = None) -> int:
     """Entry point that boots the GUI event loop."""
     app = create_application(argv)
 

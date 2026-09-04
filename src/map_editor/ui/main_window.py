@@ -7,8 +7,8 @@ import csv
 import shutil
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QAction, QDesktopServices, QUndoStack
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QUndoStack
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -175,32 +175,18 @@ class MainWindow(QMainWindow):
         self._action_clear_centerline.triggered.connect(self._clear_centerline)
         self._action_clear_centerline.setToolTip("Remove all centerline nodes from the map.")
 
-        self._action_export_centerline_csv = QAction("Export Centerline CSV…", self)
-        self._action_export_centerline_csv.triggered.connect(self._export_centerline_csv)
-        self._action_export_map_pgm = QAction("Export Map as PGM…", self)
-        self._action_export_map_pgm.triggered.connect(self._export_map_as_pgm)
-        self._action_export_walls_csv = QAction("Export Walls CSV…", self)
-        self._action_export_walls_csv.triggered.connect(self._export_walls_csv)
         self._action_export_bundle = QAction("Export Bundle Assets…", self)
         self._action_export_bundle.triggered.connect(self._export_bundle_assets)
 
         self._action_generate_track = QAction("Generate Track…", self)
         self._action_generate_track.triggered.connect(self._open_track_generator)
 
-        self._action_generate_map_pgm = QAction("Generate Map PGM", self)
-        self._action_generate_map_pgm.triggered.connect(self._generate_map_pgm)
-
-        self._action_view_map_pgm = QAction("View Map PGM", self)
-        self._action_view_map_pgm.triggered.connect(self._view_map_pgm)
-
-        self._action_generate_walls_csv = QAction("Generate Walls CSV", self)
-        self._action_generate_walls_csv.triggered.connect(self._generate_walls_csv)
-
-        self._action_view_walls_csv = QAction("View Walls CSV", self)
-        self._action_view_walls_csv.triggered.connect(self._view_walls_csv)
+        self._action_generate_centerline = QAction("Generate Centerline from Map", self)
+        self._action_generate_centerline.triggered.connect(self._generate_centerline_from_walls)
 
     def _create_menus(self) -> None:
         menu_bar = self.menuBar()
+
         file_menu = menu_bar.addMenu("&File")
         file_menu.addAction(self._action_open)
         file_menu.addAction(self._action_save)
@@ -208,15 +194,6 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self._action_generate_track)
         file_menu.addSeparator()
         file_menu.addAction(self._action_export_bundle)
-        file_menu.addSeparator()
-        file_menu.addAction(self._action_generate_map_pgm)
-        file_menu.addAction(self._action_view_map_pgm)
-        file_menu.addAction(self._action_generate_walls_csv)
-        file_menu.addAction(self._action_view_walls_csv)
-        file_menu.addSeparator()
-        file_menu.addAction(self._action_export_centerline_csv)
-        file_menu.addAction(self._action_export_walls_csv)
-        file_menu.addAction(self._action_export_map_pgm)
         file_menu.addSeparator()
         file_menu.addAction(self._action_exit)
         self._install_menu_refresh(file_menu)
@@ -237,8 +214,6 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self._action_edit_centerline)
         edit_menu.addAction(self._action_clear_centerline)
         edit_menu.addSeparator()
-        self._action_generate_centerline = QAction("Generate Centerline from Map", self)
-        self._action_generate_centerline.triggered.connect(self._generate_centerline_from_walls)
         edit_menu.addAction(self._action_generate_centerline)
         self._install_menu_refresh(edit_menu)
 
@@ -487,9 +462,8 @@ class MainWindow(QMainWindow):
         return self._annotation_context
 
     def _add_spawn_point(self) -> None:
-        if self._annotation_context is None:
-            if self._ensure_annotation_context() is None:
-                return
+        if self._ensure_annotation_context() is None:
+            return
         self._map_viewer.set_spawn_stamp_settings(self._spawn_stamp_settings)
         use_stamp = self._spawn_stamp_settings.enabled
         if not self._map_viewer.begin_spawn_placement(use_stamp):
@@ -537,9 +511,8 @@ class MainWindow(QMainWindow):
         self._undo_stack.push(DeleteSpawnPointCommand(context, index))
 
     def _set_start_finish_line(self) -> None:
-        if self._annotation_context is None:
-            if self._ensure_annotation_context() is None:
-                return
+        if self._ensure_annotation_context() is None:
+            return
         if not self._map_viewer.begin_start_finish_placement():
             return
 
@@ -613,11 +586,9 @@ class MainWindow(QMainWindow):
         points: list[Point2D] = []
         with path.open("r", encoding="utf-8") as handle:
             reader = csv.reader(handle)
-            headers = next(reader, None)
+            next(reader, None)  # skip header row
             for row in reader:
                 if not row:
-                    continue
-                if headers and row == headers:
                     continue
                 try:
                     x = float(row[0])
@@ -665,7 +636,6 @@ class MainWindow(QMainWindow):
             f"Generated centerline from occupancy map ({len(centerline_points)} point(s))."
         )
         self._refresh_diagnostics()
-        self._create_centerline_csv()
 
     def _finalize_spawn_point(self, x: float, y: float) -> None:
         context = self._annotation_context
@@ -784,100 +754,6 @@ class MainWindow(QMainWindow):
             return
         self.statusBar().showMessage(f"Centerline CSV created: {target.name}")
 
-    def _export_centerline_csv(self) -> None:
-        if not self._current_bundle or not self._current_bundle.annotations.centerline:
-            QMessageBox.information(self, "No centerline", "Create a centerline before exporting.")
-            return
-        samples = resample_centerline(
-            self._current_bundle.annotations.centerline,
-            self._centerline_spacing,
-        )
-        if not samples:
-            QMessageBox.warning(self, "Centerline too short", "Not enough points to export.")
-            return
-        default_path = self._suggest_export_path("centerline.csv")
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Export centerline CSV",
-            default_path,
-            "CSV files (*.csv);;All files (*)",
-        )
-        if not file_path:
-            return
-        export_centerline_csv(samples, Path(file_path))
-        self.statusBar().showMessage(f"Centerline CSV exported: {Path(file_path).name}")
-
-    def _export_walls_csv(self) -> None:
-        if not self._current_bundle:
-            QMessageBox.information(self, "No map", "Load a map before exporting walls.")
-            return
-        extraction = extract_walls(self._current_bundle.image_path, self._current_bundle.metadata)
-        if not extraction.walls:
-            QMessageBox.warning(self, "No walls detected", "Could not find occupied regions to export.")
-            return
-        default_path = self._suggest_export_path("walls.csv")
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Export walls CSV",
-            default_path,
-            "CSV files (*.csv);;All files (*)",
-        )
-        if not file_path:
-            return
-        export_walls_csv(extraction.walls, Path(file_path))
-        self.statusBar().showMessage(f"Walls CSV exported: {Path(file_path).name}")
-
-    def _generate_walls_csv(self) -> None:
-        if not self._current_bundle:
-            QMessageBox.information(self, "Generate Walls CSV", "Load a map before generating walls data.")
-            return
-
-        bundle = self._current_bundle
-        with show_busy_dialog(self, "Extracting walls…", minimum_duration=0) as progress:
-            progress.setLabelText("Detecting walls…")
-            QApplication.processEvents()
-            extraction = run_in_thread(
-                lambda: extract_walls(bundle.image_path, bundle.metadata),
-                parent=self,
-            )
-
-        if not extraction.walls:
-            QMessageBox.warning(
-                self,
-                "Generate Walls CSV",
-                "No occupied contours detected; walls CSV was not created.",
-            )
-            return
-
-        target = bundle.image_path.with_name(f"{bundle.stem}_walls.csv")
-        try:
-            export_walls_csv(extraction.walls, target)
-        except OSError as exc:
-            QMessageBox.critical(self, "Generate Walls CSV failed", str(exc))
-            return
-
-        self.statusBar().showMessage(f"Walls CSV generated: {target.name}", 6000)
-
-    def _view_walls_csv(self) -> None:
-        if not self._current_bundle:
-            QMessageBox.information(self, "View Walls CSV", "Load a map before viewing derived files.")
-            return
-
-        target = self._current_bundle.image_path.with_name(f"{self._current_bundle.stem}_walls.csv")
-        if not target.exists():
-            QMessageBox.information(
-                self,
-                "View Walls CSV",
-                f"No walls CSV found at {target.name}. Generate it first.",
-            )
-            return
-
-        if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(target))):
-            QMessageBox.warning(
-                self,
-                "View Walls CSV",
-                "Unable to open the walls CSV in the desktop viewer.",
-            )
 
     def _suggest_export_path(self, suffix: str) -> str:
         if self._current_map:
@@ -885,73 +761,15 @@ class MainWindow(QMainWindow):
             return str(base.with_name(f"{base.stem}_{suffix}"))
         return str(Path.home() / suffix)
 
-    def _export_map_as_pgm(self) -> None:
-        if not self._current_bundle:
-            QMessageBox.information(self, "No map", "Load a map before exporting.")
-            return
-        source = self._current_bundle.image_path
-        if not source.exists():
-            QMessageBox.warning(self, "Missing image", f"Image file not found: {source}")
-            return
-        default_path = self._suggest_export_path("map.pgm")
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Export map as PGM",
-            default_path,
-            "PGM files (*.pgm);;All files (*)",
-        )
-        if not file_path:
-            return
-        try:
-            export_png_as_pgm(source, Path(file_path))
-        except OSError as exc:
-            QMessageBox.critical(self, "Export failed", str(exc))
-            return
-        self.statusBar().showMessage(f"Map exported as PGM: {Path(file_path).name}")
+    def _export_bundle_assets(self) -> None:
+        self._run_export_bundle_assets()
 
-    def _generate_map_pgm(self) -> None:
-        if not self._current_bundle:
-            QMessageBox.information(self, "Generate PGM", "Load a map before generating a PGM file.")
-            return
-        source = self._current_bundle.image_path
-        if not source.exists():
-            QMessageBox.warning(self, "Generate PGM", f"Image file not found: {source}")
-            return
-        target = source.with_suffix(".pgm")
-        try:
-            export_png_as_pgm(source, target)
-        except OSError as exc:
-            QMessageBox.critical(self, "Generate PGM failed", str(exc))
-            return
-        self.statusBar().showMessage(f"Generated PGM at {target.name}", 6000)
-
-    def _view_map_pgm(self) -> None:
-        if not self._current_bundle:
-            QMessageBox.information(self, "View PGM", "Load a map before viewing derived files.")
-            return
-        target = self._current_bundle.image_path.with_suffix(".pgm")
-        if not target.exists():
-            QMessageBox.information(
-                self,
-                "View PGM",
-                f"No PGM found at {target.name}. Generate it first.",
-            )
-            return
-        if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(target))):
-            QMessageBox.warning(
-                self,
-                "View PGM",
-                "Unable to open the PGM file in the desktop viewer.",
-            )
-
-    def _export_bundle_assets(
+    def _run_export_bundle_assets(
         self,
         destination_dir: Path | None = None,
         *,
         show_result: bool = True,
     ) -> Path | None:
-        if isinstance(destination_dir, bool):
-            destination_dir = None
         if not self._current_bundle:
             if show_result:
                 QMessageBox.information(self, "No map", "Load a map before exporting.")

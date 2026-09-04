@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
@@ -25,9 +24,9 @@ class DiagnosticsPanel(QWidget):
     highlightToggled = Signal(bool)
     refreshRequested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._report: Optional[DiagnosticsReport] = None
+        self._report: DiagnosticsReport | None = None
 
         self._summary_label = QLabel("Diagnostics pending", self)
         self._summary_label.setWordWrap(True)
@@ -59,7 +58,7 @@ class DiagnosticsPanel(QWidget):
         layout.addWidget(section)
         layout.addStretch(1)
 
-    def set_report(self, report: Optional[DiagnosticsReport]) -> None:
+    def set_report(self, report: DiagnosticsReport | None) -> None:
         self._report = report
         self._issues_list.clear()
 

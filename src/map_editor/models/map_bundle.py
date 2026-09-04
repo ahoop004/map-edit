@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Optional
 
 from map_editor.models.annotations import MapAnnotations
 
@@ -44,7 +43,7 @@ class MapBundle:
     """Bundle tying together the bitmap, YAML metadata, and annotations."""
 
     image_path: Path
-    yaml_path: Optional[Path]
+    yaml_path: Path | None
     metadata: MapMetadata
     annotations: MapAnnotations
 

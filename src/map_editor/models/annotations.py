@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Iterable, List, Optional
+from typing import Iterable
 
 
 @dataclass(frozen=True)
@@ -50,9 +50,9 @@ class SpawnPoint:
 class MapAnnotations:
     """Container for map-level annotations."""
 
-    start_finish_line: Optional[StartFinishLine] = None
-    spawn_points: List[SpawnPoint] = field(default_factory=list)
-    centerline: List[Point2D] = field(default_factory=list)
+    start_finish_line: StartFinishLine | None = None
+    spawn_points: list[SpawnPoint] = field(default_factory=list)
+    centerline: list[Point2D] = field(default_factory=list)
 
     def replace_spawn_points(self, points: Iterable[SpawnPoint]) -> None:
         """Replace the spawn point list in-place."""

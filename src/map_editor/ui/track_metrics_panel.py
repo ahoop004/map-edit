@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Iterable, Optional
+from typing import Iterable
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPainter, QPen
@@ -14,6 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from map_editor.constants import DEFAULT_TRACK_WIDTH_TARGET
 from map_editor.services.track_metrics import TrackWidthProfile, TrackWidthSample
 from map_editor.ui.collapsible_section import CollapsibleSection
 
@@ -21,13 +21,13 @@ from map_editor.ui.collapsible_section import CollapsibleSection
 class WidthProfileView(QWidget):
     """Minimal line chart showing width vs distance."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._samples: list[TrackWidthSample] = []
-        self._threshold: Optional[float] = None
+        self._threshold: float | None = None
         self.setMinimumHeight(120)
 
-    def set_profile(self, samples: Iterable[TrackWidthSample], threshold: Optional[float]) -> None:
+    def set_profile(self, samples: Iterable[TrackWidthSample], threshold: float | None) -> None:
         self._samples = [sample for sample in samples if sample.width is not None]
         self._threshold = threshold
         self.update()
@@ -85,11 +85,11 @@ class TrackMetricsPanel(QWidget):
     autoScaleRequested = Signal()
     computeRequested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self._profile: Optional[TrackWidthProfile] = None
-        self._threshold: float = 2.2
+        self._profile: TrackWidthProfile | None = None
+        self._threshold: float = DEFAULT_TRACK_WIDTH_TARGET
         self._controls_enabled = False
 
         root = QVBoxLayout(self)
@@ -111,7 +111,7 @@ class TrackMetricsPanel(QWidget):
         self._profile_view = WidthProfileView(self)
         content.addWidget(self._profile_view)
 
-        self._auto_scale_button = QPushButton("Scale map to 2.20 m", self)
+        self._auto_scale_button = QPushButton(f"Scale map to {DEFAULT_TRACK_WIDTH_TARGET:.2f} m", self)
         self._auto_scale_button.clicked.connect(self.autoScaleRequested.emit)
         content.addWidget(self._auto_scale_button)
 
@@ -119,7 +119,7 @@ class TrackMetricsPanel(QWidget):
         root.addStretch(1)
         self._update_state()
 
-    def set_profile(self, profile: Optional[TrackWidthProfile], threshold: float) -> None:
+    def set_profile(self, profile: TrackWidthProfile | None, threshold: float) -> None:
         self._profile = profile
         self._threshold = threshold
         if profile and profile.valid_samples:

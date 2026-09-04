@@ -6,7 +6,7 @@ import csv
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Iterable
 
 from map_editor.models.annotations import Point2D
 
@@ -16,16 +16,16 @@ class CenterlineSample:
     x: float
     y: float
     theta: float
-    velocity: Optional[float] = None
+    velocity: float | None = None
 
 
-def resample_centerline(points: Iterable[Point2D], spacing: float) -> List[CenterlineSample]:
+def resample_centerline(points: Iterable[Point2D], spacing: float) -> list[CenterlineSample]:
     """Resample polyline points so samples are roughly `spacing` meters apart."""
     pts = list(points)
     if len(pts) < 2 or spacing <= 0:
         return []
 
-    samples: List[CenterlineSample] = []
+    samples: list[CenterlineSample] = []
     accumulated = 0.0
     prev = pts[0]
 

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
 
 from PySide6.QtCore import QSettings, Qt, Signal
 from PySide6.QtWidgets import QFrame, QToolButton, QVBoxLayout, QWidget
@@ -16,9 +15,9 @@ class CollapsibleSection(QWidget):
     def __init__(
         self,
         title: str,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         *,
-        settings_key: Optional[str] = None,
+        settings_key: str | None = None,
         default_expanded: bool = True,
     ) -> None:
         super().__init__(parent)

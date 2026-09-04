@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
@@ -50,7 +49,7 @@ class AnnotationPanel(QWidget):
     createCenterlineCsvRequested = Signal()
     stampSettingsChanged = Signal(SpawnStampSettings)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._annotations = MapAnnotations()
         self._stamp_settings = SpawnStampSettings()
@@ -210,7 +209,7 @@ class AnnotationPanel(QWidget):
         for widget in (self._stamp_count, self._stamp_long_spacing, self._stamp_lat_spacing):
             widget.setEnabled(enabled)
 
-    def selected_index(self) -> Optional[int]:
+    def selected_index(self) -> int | None:
         items = self._spawn_list.selectedIndexes()
         if not items:
             return None
@@ -284,11 +283,11 @@ class SpawnPointDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         *,
         title: str = "Spawn Point",
         default_name: str = "spawn",
-        spawn: Optional[SpawnPoint] = None,
+        spawn: SpawnPoint | None = None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -332,10 +331,10 @@ class StartFinishDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         *,
         title: str = "Start/Finish Line",
-        line: Optional[StartFinishLine] = None,
+        line: StartFinishLine | None = None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
