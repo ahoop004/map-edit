@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, List
+from typing import List
 
 from PySide6.QtGui import QImage
 

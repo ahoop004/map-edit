@@ -8,7 +8,16 @@ from enum import Enum, auto
 from pathlib import Path
 
 from PySide6.QtCore import QPointF, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QCursor, QPen, QPainter, QPixmap, QWheelEvent, QPolygonF
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QCursor,
+    QPainter,
+    QPen,
+    QPixmap,
+    QPolygonF,
+    QWheelEvent,
+)
 from PySide6.QtWidgets import (
     QGraphicsEllipseItem,
     QGraphicsItem,
@@ -19,7 +28,12 @@ from PySide6.QtWidgets import (
     QGraphicsView,
 )
 
-from map_editor.constants import CAR_LENGTH_M, CAR_WIDTH_M, DEFAULT_TRACK_WIDTH_TARGET, SPAWN_HEADING_LENGTH_M
+from map_editor.constants import (
+    CAR_LENGTH_M,
+    CAR_WIDTH_M,
+    DEFAULT_TRACK_WIDTH_TARGET,
+    SPAWN_HEADING_LENGTH_M,
+)
 from map_editor.models.annotations import MapAnnotations, Point2D, Pose2D
 from map_editor.models.map_bundle import MapMetadata
 from map_editor.models.spawn_stamp import SpawnStampSettings
@@ -72,6 +86,7 @@ class MapViewer(QGraphicsView):
         self._width_threshold: float = DEFAULT_TRACK_WIDTH_TARGET
 
         self._zoom_factor = 1.25
+        self._auto_fit = True
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
 
@@ -104,12 +119,7 @@ class MapViewer(QGraphicsView):
 
     def show_message(self, text: str) -> None:
         """Display a centered informational message instead of an image."""
-        self._scene.clear()
-        self._pixmap_item = None
-        self._overlay_items.clear()
-        self.cancel_placement()
-        self._remove_spawn_preview_items()
-        self._width_highlight_segments = []
+        self._clear_scene()
 
         message_item = self._scene.addText(text)
         message_item.setDefaultTextColor(Qt.GlobalColor.lightGray)
@@ -123,20 +133,9 @@ class MapViewer(QGraphicsView):
         """Load and display a map image from disk."""
         pixmap = QPixmap(str(image_path))
         if pixmap.isNull():
-            self.show_message(f"Failed to load image: {image_path.name}")
             return False
 
-        self._scene.clear()
-        self._message_item = None
-        self._overlay_items.clear()
-        self.cancel_placement()
-        self._diagnostic_overlay = None
-        for item in self._centerline_preview_items:
-            self._scene.removeItem(item)
-        self._centerline_preview_items.clear()
-        self._centerline_temp_points.clear()
-        self._remove_spawn_preview_items()
-        self._width_highlight_segments = []
+        self._clear_scene()
 
         self._pixmap_item = self._scene.addPixmap(pixmap)
         self._pixmap_width = float(pixmap.width())
@@ -146,14 +145,37 @@ class MapViewer(QGraphicsView):
         self.fit_to_view()
         return True
 
+    def _clear_scene(self) -> None:
+        # Remove previews while their C++ items still belong to a live scene.
+        self.cancel_placement()
+        self._scene.clear()
+        self._pixmap_item = None
+        self._message_item = None
+        self._diagnostic_overlay = None
+        self._diagnostic_has_issues = False
+        self._overlay_items.clear()
+        self._centerline_preview_items.clear()
+        self._centerline_temp_points.clear()
+        self._spawn_preview_polygons.clear()
+        self._spawn_preview_headings.clear()
+        self._width_highlight_segments.clear()
+        self._annotations_cache = MapAnnotations()
+        self._pixmap_width = self._pixmap_height = 0.0
+
     def clear_map(self) -> None:
         """Remove the current map display and show the default message."""
         self.show_message("Load a map to begin")
 
     def fit_to_view(self) -> None:
         """Fit the current pixmap into the viewport maintaining aspect ratio."""
+        self._auto_fit = True
         if self._pixmap_item:
             self.fitInView(self._pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if self._auto_fit:
+            self.fit_to_view()
 
     @property
     def has_map(self) -> bool:
@@ -357,6 +379,7 @@ class MapViewer(QGraphicsView):
 
         zoom_in = delta > 0
         factor = self._zoom_factor if zoom_in else 1 / self._zoom_factor
+        self._auto_fit = False
         self.scale(factor, factor)
         event.accept()
 
@@ -366,10 +389,7 @@ class MapViewer(QGraphicsView):
             return
 
         if event.button() == Qt.MouseButton.RightButton:
-            if self._placement_mode is MapViewer.PlacementMode.CENTERLINE and self._centerline_temp_points:
-                self._finish_centerline_placement()
-            else:
-                self.cancel_placement()
+            self.cancel_placement()
             event.accept()
             return
 
@@ -414,7 +434,7 @@ class MapViewer(QGraphicsView):
             self._centerline_temp_points.append(point)
             self._update_centerline_preview()
             self.placementStatusChanged.emit(
-                f"Centerline points: {len(self._centerline_temp_points)} (Enter/right-click to finish, Esc to cancel)."
+                f"Centerline points: {len(self._centerline_temp_points)} (Enter to finish, Esc/right-click to cancel)."
             )
         event.accept()
 
@@ -469,7 +489,17 @@ class MapViewer(QGraphicsView):
     # Internal helpers ---------------------------------------------------
 
     def _set_placement_mode(self, mode: PlacementMode) -> None:
+        previous = self._placement_mode
         self._placement_mode = mode
+        self.setMouseTracking(mode is not MapViewer.PlacementMode.IDLE)
+        self.setDragMode(
+            QGraphicsView.DragMode.ScrollHandDrag if mode is MapViewer.PlacementMode.IDLE
+            else QGraphicsView.DragMode.NoDrag
+        )
+        if mode is not MapViewer.PlacementMode.IDLE:
+            self.setFocus(Qt.FocusReason.OtherFocusReason)
+        if previous is not MapViewer.PlacementMode.IDLE and mode not in (previous, MapViewer.PlacementMode.IDLE):
+            self.placementCancelled.emit()
         if mode is MapViewer.PlacementMode.IDLE:
             self.unsetCursor()
         else:
@@ -502,21 +532,12 @@ class MapViewer(QGraphicsView):
     def _world_to_scene(self, x: float, y: float) -> QPointF:
         if not self._metadata or self._pixmap_height == 0:
             return QPointF(x, -y)
-        pixel_x = (x - self._metadata.origin_x) / self._metadata.resolution
-        pixel_y_from_origin = (y - self._metadata.origin_y) / self._metadata.resolution
-        scene_x = pixel_x
-        scene_y = self._pixmap_height - pixel_y_from_origin
-        return QPointF(scene_x, scene_y)
+        return QPointF(*self._metadata.world_to_pixel(x, y, self._pixmap_height))
 
     def _scene_to_world(self, scene_pos: QPointF) -> tuple[float, float] | None:
         if not self._metadata or self._pixmap_height == 0:
             return None
-        pixel_x = scene_pos.x()
-        pixel_y_top = scene_pos.y()
-        pixel_y_from_origin = self._pixmap_height - pixel_y_top
-        world_x = self._metadata.origin_x + pixel_x * self._metadata.resolution
-        world_y = self._metadata.origin_y + pixel_y_from_origin * self._metadata.resolution
-        return world_x, world_y
+        return self._metadata.pixel_to_world(scene_pos.x(), scene_pos.y(), self._pixmap_height)
 
     def _marker_radius(self) -> float:
         if not self._metadata:

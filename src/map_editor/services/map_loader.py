@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import os
+import shutil
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
 from PySide6.QtGui import QPixmap
 
-from map_editor.models.annotations import MapAnnotations
-from map_editor.models.map_bundle import MapBundle, MapMetadata
+from map_editor.models.map_bundle import MapBundle
 from map_editor.services.yaml_serializer import (
     MapYamlDocument,
     MapYamlError,
@@ -46,6 +48,8 @@ class MapBundleLoader:
             yaml_path=yaml_path,
             metadata=document.metadata,
             annotations=document.annotations,
+            negate=document.negate,
+            extra_fields=document.extra_fields,
         )
 
         warnings = self._collect_warnings(document)
@@ -64,17 +68,31 @@ class MapBundleLoader:
         target = destination or bundle.yaml_path
         assert target is not None
 
-        if create_backup and target.exists():
-            backup_path = target.with_suffix(target.suffix + ".bak")
-            target.replace(backup_path)
-
         document = MapYamlDocument(
             yaml_path=target,
-            image=bundle.image_path.name,
+            image=Path(os.path.relpath(bundle.image_path.resolve(), target.parent.resolve())).as_posix(),
             metadata=bundle.metadata,
             annotations=bundle.annotations,
+            negate=bundle.negate,
+            extra_fields=bundle.extra_fields,
         )
-        dump_map_yaml(document, destination=target)
+        yaml_text = dump_map_yaml(document)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=target.parent, suffix=".tmp", delete=False
+            ) as handle:
+                temporary_path = Path(handle.name)
+                handle.write(yaml_text)
+            if target.exists():
+                shutil.copymode(target, temporary_path)
+                if create_backup:
+                    shutil.copy2(target, target.with_suffix(target.suffix + ".bak"))
+            temporary_path.replace(target)
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
         return target
 
     def _resolve_image_path(self, yaml_path: Path, image_value: Path) -> Path:

@@ -3,31 +3,27 @@
 from __future__ import annotations
 
 import csv
-
 import shutil
+from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QUndoStack
 from PySide6.QtWidgets import (
     QApplication,
-    QFileDialog,
     QDialog,
     QDockWidget,
+    QFileDialog,
     QHBoxLayout,
     QMainWindow,
     QMenu,
     QMessageBox,
+    QScrollArea,
     QStatusBar,
     QWidget,
 )
 
-from map_editor.constants import (
-    DEFAULT_CENTERLINE_SPACING,
-    DEFAULT_TRACK_WIDTH_TARGET,
-    DEFAULT_WINDOW_HEIGHT,
-    DEFAULT_WINDOW_WIDTH,
-)
 from map_editor.commands import (
     AddSpawnBatchCommand,
     AddSpawnPointCommand,
@@ -37,6 +33,14 @@ from map_editor.commands import (
     SetStartFinishLineCommand,
     UpdateSpawnPointCommand,
 )
+from map_editor.constants import (
+    DEFAULT_CENTERLINE_SPACING,
+    DEFAULT_TRACK_WIDTH_TARGET,
+    DEFAULT_WINDOW_HEIGHT,
+    DEFAULT_WINDOW_WIDTH,
+)
+from map_editor.exporters.centerline import export_centerline_csv, resample_centerline
+from map_editor.exporters.image import export_png_as_pgm
 from map_editor.models.annotations import (
     LineSegment,
     MapAnnotations,
@@ -48,26 +52,31 @@ from map_editor.models.annotations import (
 from map_editor.models.map_bundle import MapBundle, MapMetadata
 from map_editor.models.spawn_stamp import SpawnStampSettings
 from map_editor.services.diagnostics import DiagnosticsReport, analyse_bundle
-from map_editor.exporters.centerline import export_centerline_csv, resample_centerline
+from map_editor.services.map_loader import MapBundleLoader, MapBundleLoadResult
+from map_editor.services.procedural_track import TrackSpecError, generate_track_bundle
+from map_editor.services.track_metrics import (
+    TrackWidthProfile,
+    compute_track_width_profile,
+)
 from map_editor.services.wall_extraction import (
     WallExtractionError,
     derive_centerline_from_walls,
     export_walls_csv,
     extract_walls,
 )
-from map_editor.exporters.image import export_png_as_pgm
-from map_editor.ui.annotation_panel import AnnotationPanel, SpawnPointDialog, StartFinishDialog
+from map_editor.services.yaml_serializer import MapYamlError
+from map_editor.ui.annotation_panel import (
+    AnnotationPanel,
+    SpawnPointDialog,
+    StartFinishDialog,
+)
 from map_editor.ui.centerline_editor import CenterlineEditorDialog
 from map_editor.ui.diagnostics_panel import DiagnosticsPanel
 from map_editor.ui.map_viewer import MapViewer
 from map_editor.ui.metadata_panel import MapMetadataPanel
-from map_editor.services.map_loader import MapBundleLoader, MapBundleLoadResult
-from map_editor.services.yaml_serializer import MapYamlError
 from map_editor.ui.progress import run_in_thread, show_busy_dialog
-from map_editor.services.track_metrics import compute_track_width_profile, TrackWidthProfile
-from map_editor.ui.track_metrics_panel import TrackMetricsPanel
 from map_editor.ui.track_generator import TrackGeneratorDialog
-from map_editor.services.procedural_track import TrackSpecError, generate_track_bundle
+from map_editor.ui.track_metrics_panel import TrackMetricsPanel
 
 
 class MainWindow(QMainWindow):
@@ -75,11 +84,12 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("ROS Map Editor")
+        self.setWindowTitle("ROS Map Editor[*]")
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
         self._current_map: Path | None = None
         self._current_bundle: MapBundle | None = None
+        self._saved_bundle: MapBundle | None = None
         self._bundle_loader = MapBundleLoader()
         self._map_viewer = MapViewer(self)
         self._metadata_panel = MapMetadataPanel(self)
@@ -100,6 +110,7 @@ class MainWindow(QMainWindow):
         self._create_actions()
         self._create_menus()
         self._create_docks()
+        self._set_map_controls_enabled(False)
         self._connect_viewer_signals()
         self._track_metrics_panel.autoScaleRequested.connect(self._auto_scale_track_width)
         self._track_metrics_panel.computeRequested.connect(self._compute_track_metrics)
@@ -118,6 +129,10 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     def _create_actions(self) -> None:
+        self._action_fit_map = QAction("Fit Map to Window", self)
+        self._action_fit_map.setShortcut("Ctrl+0")
+        self._action_fit_map.triggered.connect(self._map_viewer.fit_to_view)
+
         self._action_open = QAction("&Open Map…", self)
         self._action_open.setShortcut("Ctrl+O")
         self._action_open.triggered.connect(self._select_map_bundle)
@@ -198,6 +213,9 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self._action_exit)
         self._install_menu_refresh(file_menu)
 
+        view_menu = menu_bar.addMenu("&View")
+        view_menu.addAction(self._action_fit_map)
+
         edit_menu = menu_bar.addMenu("&Edit")
         edit_menu.addAction(self._action_undo)
         edit_menu.addAction(self._action_redo)
@@ -268,6 +286,22 @@ class MainWindow(QMainWindow):
         metrics_dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, metrics_dock)
 
+        # Tabs and scrolling keep all controls reachable on smaller screens.
+        for dock, panel in (
+            (metadata_dock, self._metadata_panel),
+            (annotation_dock, self._annotation_panel),
+            (diagnostics_dock, self._diagnostics_panel),
+            (metrics_dock, self._track_metrics_panel),
+        ):
+            panel.setParent(None)
+            scroll = QScrollArea(dock)
+            scroll.setWidgetResizable(True)
+            scroll.setWidget(panel)
+            dock.setWidget(scroll)
+            if dock is not annotation_dock:
+                self.tabifyDockWidget(annotation_dock, dock)
+        annotation_dock.raise_()
+
     def _connect_viewer_signals(self) -> None:
         self._map_viewer.spawnPlacementCompleted.connect(self._finalize_spawn_point)
         self._map_viewer.spawnStampPlacementCompleted.connect(self._finalize_spawn_stamp)
@@ -286,6 +320,8 @@ class MainWindow(QMainWindow):
         )
         if not file_path:
             return
+        if not self._confirm_discard_changes():
+            return
 
         selected_path = Path(file_path)
         suffix = selected_path.suffix.lower()
@@ -293,29 +329,15 @@ class MainWindow(QMainWindow):
         self._map_viewer.cancel_placement()
 
         if suffix in {".png", ".jpg", ".jpeg", ".bmp"}:
-            if self._map_viewer.set_map_image(selected_path):
-                bundle = MapBundle(
-                    image_path=selected_path,
-                    yaml_path=None,
-                    metadata=MapMetadata.default(),
-                    annotations=MapAnnotations(),
-                )
-                self._current_map = selected_path
-                self._current_bundle = bundle
-                self._map_viewer.set_metadata(bundle.metadata)
-                self._metadata_panel.set_metadata(bundle.metadata)
-                self._map_viewer.update_annotations(bundle.annotations)
-                self._annotation_panel.set_annotations(bundle.annotations)
-                self._undo_stack.clear()
-                self._refresh_annotation_context()
-                self._action_save.setEnabled(True)
-                self.statusBar().showMessage(f"Loaded image: {selected_path.name}")
-                self._refresh_diagnostics()
-            else:
-                QMessageBox.warning(self, "Failed to load image", selected_path.name)
+            bundle = MapBundle(
+                image_path=selected_path,
+                yaml_path=None,
+                metadata=MapMetadata.default(),
+                annotations=MapAnnotations(),
+            )
+            self._apply_loaded_bundle(MapBundleLoadResult(bundle), f"Loaded image: {selected_path.name}")
             return
 
-        # Default to YAML handling; full parsing will come later.
         try:
             result = self._bundle_loader.load_from_yaml(selected_path)
         except MapYamlError as exc:
@@ -324,10 +346,10 @@ class MainWindow(QMainWindow):
 
         self._apply_loaded_bundle(result)
 
-    def _save_map_bundle(self) -> None:
+    def _save_map_bundle(self) -> bool:
         if not self._current_bundle:
             QMessageBox.warning(self, "No map loaded", "Load a map before saving.")
-            return
+            return False
 
         bundle = self._current_bundle
         if bundle.yaml_path is None:
@@ -340,24 +362,61 @@ class MainWindow(QMainWindow):
                 "ROS map YAML files (*.yaml);;All files (*)",
             )
             if not file_path:
-                return
+                return False
             bundle = bundle.with_yaml_path(Path(file_path))
 
         try:
             saved_path = self._bundle_loader.save_bundle(bundle)
         except (OSError, MapYamlError) as exc:
             QMessageBox.critical(self, "Failed to save map", str(exc))
-            return
+            return False
 
         self._current_bundle = bundle
         self._current_map = saved_path
+        self._saved_bundle = deepcopy(bundle)
+        self._update_modified_state()
         self._refresh_annotation_context()
         self.statusBar().showMessage(f"Saved: {saved_path.name}")
         self._refresh_diagnostics()
+        return True
+
+    def _update_modified_state(self) -> None:
+        self.setWindowModified(self._current_bundle != self._saved_bundle)
+
+    def _confirm_discard_changes(self) -> bool:
+        if not self.isWindowModified():
+            return True
+        choice = QMessageBox.warning(
+            self, "Unsaved changes", "Save changes to the current map?",
+            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard
+            | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Save,
+        )
+        if choice == QMessageBox.StandardButton.Save:
+            return self._save_map_bundle()
+        return choice == QMessageBox.StandardButton.Discard
+
+    def closeEvent(self, event) -> None:
+        if self._confirm_discard_changes():
+            event.accept()
+        else:
+            event.ignore()
+
+    def _set_map_controls_enabled(self, enabled: bool) -> None:
+        self._annotation_panel.setEnabled(enabled)
+        for action in (
+            self._action_save, self._action_fit_map, self._action_export_bundle, self._action_add_spawn,
+            self._action_edit_spawn, self._action_delete_spawn, self._action_set_start_finish,
+            self._action_clear_start_finish, self._action_place_centerline,
+            self._action_import_centerline, self._action_edit_centerline,
+            self._action_clear_centerline, self._action_generate_centerline,
+        ):
+            action.setEnabled(enabled)
 
     def _handle_metadata_changed(self, metadata: MapMetadata) -> None:
         if self._current_bundle is not None:
             self._current_bundle = self._current_bundle.with_metadata(metadata)
+        self._update_modified_state()
         self._map_viewer.set_metadata(metadata)
         if self._current_bundle is not None:
             self._map_viewer.update_annotations(self._current_bundle.annotations)
@@ -383,16 +442,21 @@ class MainWindow(QMainWindow):
         message: str | None = None,
     ) -> None:
         bundle = result.bundle
+        if not self._map_viewer.set_map_image(bundle.image_path):
+            QMessageBox.warning(self, "Failed to load image", str(bundle.image_path))
+            return
         self._current_map = bundle.yaml_path or bundle.image_path
         self._current_bundle = bundle
-        self._map_viewer.set_map_image(bundle.image_path)
+        self._saved_bundle = deepcopy(bundle)
+        self._update_modified_state()
+        self._centerline_spacing = DEFAULT_CENTERLINE_SPACING
         self._map_viewer.set_metadata(bundle.metadata)
         self._metadata_panel.set_metadata(bundle.metadata)
         self._map_viewer.update_annotations(bundle.annotations)
         self._annotation_panel.set_annotations(bundle.annotations)
         self._undo_stack.clear()
         self._refresh_annotation_context()
-        self._action_save.setEnabled(True)
+        self._set_map_controls_enabled(True)
 
         if message is None:
             message = (
@@ -409,6 +473,8 @@ class MainWindow(QMainWindow):
     def _open_track_generator(self) -> None:
         dialog = TrackGeneratorDialog(self)
         if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        if not self._confirm_discard_changes():
             return
         try:
             spec = dialog.spec()
@@ -443,6 +509,7 @@ class MainWindow(QMainWindow):
     def _handle_annotation_change(self, annotations: MapAnnotations) -> None:
         if self._current_bundle is not None:
             self._current_bundle = self._current_bundle.with_annotations(annotations)
+        self._update_modified_state()
         self._map_viewer.update_annotations(annotations)
         self._annotation_panel.set_annotations(annotations)
         self._action_save.setEnabled(True)
@@ -529,12 +596,12 @@ class MainWindow(QMainWindow):
         self._annotation_panel.set_centerline_placing(False)
 
     def _start_centerline_placement(self) -> None:
-        if self._annotation_context is None and self._ensure_annotation_context() is None:
+        if self._ensure_annotation_context() is None:
             return
         if self._map_viewer.begin_centerline_placement():
             self._annotation_panel.set_centerline_placing(True)
             self.statusBar().showMessage(
-                "Centerline placement mode: left-click to add points, Enter/right-click to finish."
+                "Centerline placement: left-click to add points, Enter to finish, Esc/right-click to cancel."
             )
 
     def _finish_centerline_placement(self) -> None:
@@ -555,7 +622,6 @@ class MainWindow(QMainWindow):
         self._undo_stack.push(SetCenterlineCommand(context, typed_points))
         self.statusBar().showMessage(f"Centerline placed ({len(typed_points)} point(s)).")
         self._annotation_panel.set_centerline_placing(False)
-        self._refresh_diagnostics()
 
     def _import_centerline_csv(self) -> None:
         context = self._ensure_annotation_context()
@@ -580,7 +646,6 @@ class MainWindow(QMainWindow):
             return
         self._undo_stack.push(SetCenterlineCommand(context, points))
         self.statusBar().showMessage(f"Imported centerline with {len(points)} point(s).")
-        self._refresh_diagnostics()
 
     def _read_centerline_csv(self, path: Path) -> list[Point2D]:
         points: list[Point2D] = []
@@ -605,29 +670,34 @@ class MainWindow(QMainWindow):
         if not self._current_bundle:
             QMessageBox.information(self, "No map", "Load a map before generating a centerline.")
             return
-        with show_busy_dialog(self, "Generating centerline…", minimum_duration=0) as progress:
-            progress.setLabelText("Extracting walls…")
-            QApplication.processEvents()
-            extraction = run_in_thread(
-                lambda: extract_walls(
-                    self._current_bundle.image_path,
-                    self._current_bundle.metadata,
-                ),
-                parent=self,
-            )
-            if len(extraction.walls) < 2:
-                QMessageBox.warning(
-                    self,
-                    "Insufficient walls",
-                    "Need at least two wall contours to derive a centerline.",
+        try:
+            with show_busy_dialog(self, "Generating centerline…", minimum_duration=0) as progress:
+                progress.setLabelText("Extracting walls…")
+                QApplication.processEvents()
+                extraction = run_in_thread(
+                    lambda: extract_walls(
+                        self._current_bundle.image_path,
+                        self._current_bundle.metadata,
+                        negate=self._current_bundle.negate,
+                    ),
+                    parent=self,
                 )
-                return
-            progress.setLabelText("Deriving centerline path…")
-            QApplication.processEvents()
-            centerline_points = run_in_thread(
-                lambda: derive_centerline_from_walls(extraction.walls),
-                parent=self,
-            )
+                if len(extraction.walls) < 2:
+                    QMessageBox.warning(
+                        self,
+                        "Insufficient walls",
+                        "Need at least two wall contours to derive a centerline.",
+                    )
+                    return
+                progress.setLabelText("Deriving centerline path…")
+                QApplication.processEvents()
+                centerline_points = run_in_thread(
+                    lambda: derive_centerline_from_walls(extraction.walls),
+                    parent=self,
+                )
+        except (WallExtractionError, ValueError) as exc:
+            QMessageBox.critical(self, "Centerline generation failed", str(exc))
+            return
         if len(centerline_points) < 2:
             QMessageBox.warning(self, "Centerline generation failed", "Could not derive a usable centerline from walls.")
             return
@@ -635,7 +705,6 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(
             f"Generated centerline from occupancy map ({len(centerline_points)} point(s))."
         )
-        self._refresh_diagnostics()
 
     def _finalize_spawn_point(self, x: float, y: float) -> None:
         context = self._annotation_context
@@ -657,7 +726,6 @@ class MainWindow(QMainWindow):
             )
         else:
             self.statusBar().showMessage("Spawn placement cancelled.")
-        self._refresh_diagnostics()
 
     def _finalize_spawn_stamp(self, poses: list[Pose2D]) -> None:
         context = self._annotation_context
@@ -676,7 +744,6 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(
             f"Added {len(spawns)} spawn point(s) via stamp placement."
         )
-        self._refresh_diagnostics()
 
     def _finalize_start_finish_line(self, sx: float, sy: float, ex: float, ey: float) -> None:
         context = self._annotation_context
@@ -695,7 +762,6 @@ class MainWindow(QMainWindow):
         else:
             self.statusBar().showMessage("Start/finish placement cancelled.")
 
-        self._refresh_diagnostics()
 
     def _edit_centerline(self) -> None:
         self._map_viewer.cancel_placement()
@@ -723,7 +789,6 @@ class MainWindow(QMainWindow):
             return
         self._undo_stack.push(SetCenterlineCommand(context, []))
         self.statusBar().showMessage("Centerline cleared.")
-        self._refresh_diagnostics()
 
     def _create_centerline_csv(self) -> None:
         if not self._current_bundle or not self._current_bundle.annotations.centerline:
@@ -810,10 +875,11 @@ class MainWindow(QMainWindow):
                 progress.setLabelText("Copying map image…")
                 QApplication.processEvents()
                 image_target = destination / f"{stem}{bundle.image_path.suffix.lower()}"
-                run_in_thread(
-                    lambda: shutil.copy2(bundle.image_path, image_target),
-                    parent=self,
-                )
+                if bundle.image_path.resolve() != image_target.resolve():
+                    run_in_thread(
+                        lambda: shutil.copy2(bundle.image_path, image_target),
+                        parent=self,
+                    )
                 exported.append(image_target.name)
 
                 progress.setLabelText("Generating PGM…")
@@ -830,7 +896,7 @@ class MainWindow(QMainWindow):
                 yaml_target = destination / f"{stem}.yaml"
                 run_in_thread(
                     lambda: self._bundle_loader.save_bundle(
-                        bundle,
+                        replace(bundle, image_path=image_target),
                         destination=yaml_target,
                         create_backup=False,
                     ),
@@ -863,7 +929,7 @@ class MainWindow(QMainWindow):
                 progress.setLabelText("Extracting walls…")
                 QApplication.processEvents()
                 extraction = run_in_thread(
-                    lambda: extract_walls(bundle.image_path, bundle.metadata),
+                    lambda: extract_walls(bundle.image_path, bundle.metadata, negate=bundle.negate),
                     parent=self,
                 )
                 if extraction.walls:
@@ -956,7 +1022,7 @@ class MainWindow(QMainWindow):
                 progress.setLabelText("Extracting walls…")
                 QApplication.processEvents()
                 extraction = run_in_thread(
-                    lambda: extract_walls(bundle.image_path, bundle.metadata),
+                    lambda: extract_walls(bundle.image_path, bundle.metadata, negate=bundle.negate),
                     parent=self,
                 )
 
@@ -1090,6 +1156,10 @@ class MainWindow(QMainWindow):
         )
 
         self._current_bundle = bundle.with_metadata(new_metadata).with_annotations(new_annotations)
+        # Previous annotation commands refer to the unscaled annotation object.
+        self._undo_stack.clear()
+        self._map_viewer.cancel_placement()
+        self._update_modified_state()
         self._centerline_spacing *= scale_factor
 
         self._metadata_panel.set_metadata(new_metadata)

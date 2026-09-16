@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -14,7 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from map_editor.services.diagnostics import DiagnosticIssue, DiagnosticsReport
+from map_editor.services.diagnostics import DiagnosticsReport
 from map_editor.ui.collapsible_section import CollapsibleSection
 
 

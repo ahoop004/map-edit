@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+import math
+from dataclasses import dataclass, field, replace
 from pathlib import Path
+from typing import Any
 
 from map_editor.models.annotations import MapAnnotations
 
@@ -37,6 +39,25 @@ class MapMetadata:
     def with_origin_theta(self, theta: float) -> "MapMetadata":
         return replace(self, origin_theta=theta)
 
+    def pixel_to_world(self, x: float, y: float, image_height: float) -> tuple[float, float]:
+        """Convert image coordinates (Y down) to the rotated map frame."""
+        local_x = x * self.resolution
+        local_y = (image_height - y) * self.resolution
+        cosine, sine = math.cos(self.origin_theta), math.sin(self.origin_theta)
+        return (
+            self.origin_x + cosine * local_x - sine * local_y,
+            self.origin_y + sine * local_x + cosine * local_y,
+        )
+
+    def world_to_pixel(self, x: float, y: float, image_height: float) -> tuple[float, float]:
+        """Invert the map transform for annotation display and placement."""
+        dx, dy = x - self.origin_x, y - self.origin_y
+        cosine, sine = math.cos(self.origin_theta), math.sin(self.origin_theta)
+        return (
+            (cosine * dx + sine * dy) / self.resolution,
+            image_height - (-sine * dx + cosine * dy) / self.resolution,
+        )
+
 
 @dataclass
 class MapBundle:
@@ -46,16 +67,18 @@ class MapBundle:
     yaml_path: Path | None
     metadata: MapMetadata
     annotations: MapAnnotations
+    negate: int = 0
+    extra_fields: dict[str, Any] = field(default_factory=dict)
 
     def with_metadata(self, metadata: MapMetadata) -> "MapBundle":
         """Return a copy with updated metadata."""
-        return MapBundle(self.image_path, self.yaml_path, metadata, self.annotations)
+        return replace(self, metadata=metadata)
 
     def with_annotations(self, annotations: MapAnnotations) -> "MapBundle":
-        return MapBundle(self.image_path, self.yaml_path, self.metadata, annotations)
+        return replace(self, annotations=annotations)
 
     def with_yaml_path(self, yaml_path: Path) -> "MapBundle":
-        return MapBundle(self.image_path, yaml_path, self.metadata, self.annotations)
+        return replace(self, yaml_path=yaml_path)
 
     @property
     def stem(self) -> str:

@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import math
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
@@ -74,27 +75,37 @@ class CenterlineEditorDialog(QDialog):
         layout.addLayout(button_row)
         layout.addWidget(buttons)
 
-        self._populate_table(points)
         self._table.itemSelectionChanged.connect(self._on_selection_changed)
+        self._populate_table(points)
+        self._on_selection_changed()
 
-    def points(self) -> List[Point2D]:
-        points: List[Point2D] = []
+    def points(self) -> list[Point2D]:
+        points: list[Point2D] = []
         for row in range(self._table.rowCount()):
             x_item = self._table.item(row, 0)
             y_item = self._table.item(row, 1)
-            if x_item is None or y_item is None:
-                continue
             try:
-                x = float(x_item.text())
-                y = float(y_item.text())
-            except ValueError:
-                continue
+                x = float(x_item.text()) if x_item else float("nan")
+                y = float(y_item.text()) if y_item else float("nan")
+                if not (math.isfinite(x) and math.isfinite(y)):
+                    raise ValueError
+            except ValueError as exc:
+                self._table.selectRow(row)
+                raise ValueError(f"Row {row + 1}: enter finite numbers for X and Y.") from exc
             points.append(Point2D(x, y))
         return points
 
+    def accept(self) -> None:
+        try:
+            self.points()
+        except ValueError as exc:
+            QMessageBox.warning(self, "Invalid centerline point", str(exc))
+            return
+        super().accept()
+
     # Internal helpers -------------------------------------------------
 
-    def _populate_table(self, points: List[Point2D]) -> None:
+    def _populate_table(self, points: list[Point2D]) -> None:
         self._table.setRowCount(0)
         for point in points:
             self._append_row(point.x, point.y)
@@ -104,8 +115,8 @@ class CenterlineEditorDialog(QDialog):
     def _append_row(self, x: float, y: float) -> None:
         row = self._table.rowCount()
         self._table.insertRow(row)
-        self._table.setItem(row, 0, QTableWidgetItem(f"{x:.3f}"))
-        self._table.setItem(row, 1, QTableWidgetItem(f"{y:.3f}"))
+        self._table.setItem(row, 0, QTableWidgetItem(str(x)))
+        self._table.setItem(row, 1, QTableWidgetItem(str(y)))
 
     def _add_point(self) -> None:
         self._append_row(0.0, 0.0)
@@ -124,25 +135,25 @@ class CenterlineEditorDialog(QDialog):
         new_row = row + delta
         if not (0 <= new_row < self._table.rowCount()):
             return
-        x_item = self._table.takeItem(row, 0)
-        y_item = self._table.takeItem(row, 1)
-        self._table.insertRow(new_row)
-        self._table.setItem(new_row, 0, x_item)
-        self._table.setItem(new_row, 1, y_item)
-        if new_row > row:
-            self._table.removeRow(row)
-        else:
-            self._table.removeRow(row + 1)
+        for column in range(self._table.columnCount()):
+            current = self._table.takeItem(row, column)
+            adjacent = self._table.takeItem(new_row, column)
+            self._table.setItem(row, column, adjacent)
+            self._table.setItem(new_row, column, current)
         self._table.selectRow(new_row)
 
     def _clear(self) -> None:
         self._table.setRowCount(0)
 
     def _smooth(self) -> None:
-        points = self.points()
+        try:
+            points = self.points()
+        except ValueError as exc:
+            QMessageBox.warning(self, "Invalid centerline point", str(exc))
+            return
         if len(points) < 3:
             return
-        smoothed: List[Point2D] = []
+        smoothed: list[Point2D] = []
         smoothed.append(points[0])
         for i in range(1, len(points) - 1):
             prev_pt, cur_pt, next_pt = points[i - 1], points[i], points[i + 1]
@@ -162,7 +173,7 @@ class CenterlineEditorDialog(QDialog):
         return indexes[0].row()
 
     def _on_selection_changed(self) -> None:
-        has_selection = self._selected_row() is not None
-        self._remove_button.setEnabled(has_selection)
-        self._move_up_button.setEnabled(has_selection)
-        self._move_down_button.setEnabled(has_selection)
+        row = self._selected_row()
+        self._remove_button.setEnabled(row is not None)
+        self._move_up_button.setEnabled(row is not None and row > 0)
+        self._move_down_button.setEnabled(row is not None and row < self._table.rowCount() - 1)

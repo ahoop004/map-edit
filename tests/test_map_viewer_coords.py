@@ -7,6 +7,7 @@ import os
 import pytest
 from PySide6.QtWidgets import QApplication
 
+from map_editor.constants import CAR_LENGTH_M, CAR_WIDTH_M
 from map_editor.models.annotations import Point2D
 from map_editor.models.map_bundle import MapMetadata
 from map_editor.models.spawn_stamp import SpawnStampSettings
@@ -57,8 +58,8 @@ def test_spawn_vehicle_polygon_scales_with_resolution():
     length_pixels = max(xs) - min(xs)
     width_pixels = max(ys) - min(ys)
 
-    expected_length_pixels = MapViewer._CAR_LENGTH_M / metadata.resolution
-    expected_width_pixels = MapViewer._CAR_WIDTH_M / metadata.resolution
+    expected_length_pixels = CAR_LENGTH_M / metadata.resolution
+    expected_width_pixels = CAR_WIDTH_M / metadata.resolution
 
     assert length_pixels == pytest.approx(expected_length_pixels, rel=1e-6)
     assert width_pixels == pytest.approx(expected_width_pixels, rel=1e-6)
