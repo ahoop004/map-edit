@@ -14,6 +14,11 @@ A PySide6 desktop tool for inspecting and editing ROS map bundles used in F1TENT
 - CLI helper `scripts/export_centerline.py` to resample/export waypoints from a map YAML into CSV.
 - Occupancy-derived tooling: extract wall contours, auto-generate centerlines, and save walls to CSV.
 - YAML save workflow with automatic backups to keep prior revisions safe.
+- Paper-inspired rounded L circuit preset and seeded track collections, with
+  replayable recipes, measured geometry, and curvature/width profiles.
+
+See [Paper circuit and collections](docs/paper_tracks.md) for GUI controls,
+generation commands, bundle schemas, and custom gym integration.
 
 ## Annotation Placement Workflow
 

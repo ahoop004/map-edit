@@ -54,6 +54,7 @@ from map_editor.models.spawn_stamp import SpawnStampSettings
 from map_editor.services.diagnostics import DiagnosticsReport, analyse_bundle
 from map_editor.services.map_loader import MapBundleLoader, MapBundleLoadResult
 from map_editor.services.procedural_track import TrackSpecError, generate_track_bundle
+from map_editor.services.paper_tracks import generate_paper_collection
 from map_editor.services.track_metrics import (
     TrackWidthProfile,
     compute_track_width_profile,
@@ -479,6 +480,7 @@ class MainWindow(QMainWindow):
         try:
             spec = dialog.spec()
             output_dir = dialog.output_dir()
+            collection_options = dialog.collection_options()
         except TrackSpecError as exc:
             QMessageBox.critical(self, "Generate Track failed", str(exc))
             return
@@ -487,10 +489,25 @@ class MainWindow(QMainWindow):
             with show_busy_dialog(self, "Generating track…", minimum_duration=0) as progress:
                 progress.setLabelText("Building bundle…")
                 QApplication.processEvents()
-                yaml_path = run_in_thread(
-                    lambda: generate_track_bundle(spec, output_dir),
-                    parent=self,
-                )
+                if collection_options:
+                    progress.setLabelText("Generating reference and track collection…")
+                    report = run_in_thread(
+                        lambda: generate_paper_collection(spec, output_dir, **collection_options),
+                        parent=self,
+                    )
+                    yaml_path = output_dir / report["reference"]["map"]
+                    summary = (f"Created {len(report['accepted'])} / {report['requested_variants']} variants "
+                               f"and reference; rejected {len(report['rejected'])} candidates. "
+                               f"Report: {output_dir / 'collection.yaml'}")
+                    if not report["complete"]:
+                        QMessageBox.warning(self, "Collection incomplete", summary)
+                    else:
+                        QMessageBox.information(self, "Collection generated", summary)
+                else:
+                    yaml_path = run_in_thread(
+                        lambda: generate_track_bundle(spec, output_dir),
+                        parent=self,
+                    )
         except (TrackSpecError, OSError) as exc:
             QMessageBox.critical(self, "Generate Track failed", str(exc))
             return

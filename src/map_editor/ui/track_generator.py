@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from dataclasses import replace
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -22,6 +23,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QDoubleSpinBox,
     QSpinBox,
+    QScrollArea,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -30,6 +32,7 @@ from PySide6.QtWidgets import (
 
 from map_editor.constants import DEFAULT_TRACK_WIDTH_TARGET
 from map_editor.models.annotations import Point2D
+from map_editor.services.paper_tracks import build_paper_track_spec
 from map_editor.services.procedural_track import (
     TrackSpec,
     TrackSpecError,
@@ -53,7 +56,7 @@ class TrackGeneratorDialog(QDialog):
         self._stem_edit = QLineEdit()
 
         self._source_combo = QComboBox()
-        self._source_combo.addItems(["YAML", "Oval"])
+        self._source_combo.addItems(["YAML", "Oval", "Paper L (approximation)"])
         self._source_combo.currentTextChanged.connect(self._on_source_changed)
 
         browse_spec = QPushButton("Browse…")
@@ -82,6 +85,19 @@ class TrackGeneratorDialog(QDialog):
         self._width_spin = self._make_spin(0.1, 100.0, DEFAULT_TRACK_WIDTH_TARGET, suffix=" m")
         self._resolution_spin = self._make_spin(0.001, 1.0, 0.06, decimals=5, suffix=" m/px")
         self._padding_spin = self._make_spin(0.0, 100.0, 5.0, suffix=" m")
+        self._lap_length_spin = self._make_spin(1.0, 200.0, 17.0, suffix=" m")
+        self._radius_spin = self._make_spin(0.1, 20.0, 0.65, suffix=" m")
+        self._variant_count_spin = QSpinBox()
+        self._variant_count_spin.setRange(0, 1000)
+        self._seed_spin = QSpinBox()
+        self._seed_spin.setRange(0, 2**31 - 1)
+        self._seed_spin.setValue(42)
+        self._variation_spin = self._make_spin(0.01, 0.5, 0.2)
+        self._paper_note = QLabel(
+            "Approximation of the paper's rounded L circuit, not the authors' original map. "
+            "Collections include the reference plus the requested variants; use an empty output folder."
+        )
+        self._paper_note.setWordWrap(True)
 
         form = QFormLayout()
         form.addRow("Source", self._source_combo)
@@ -91,6 +107,12 @@ class TrackGeneratorDialog(QDialog):
         form.addRow("Oval width", self._oval_width_spin)
         form.addRow("Curve amplitude", self._curve_amp_spin)
         form.addRow("Curve frequency", self._curve_freq_spin)
+        form.addRow("Target lap length", self._lap_length_spin)
+        form.addRow("Minimum corner radius", self._radius_spin)
+        form.addRow("Variants (0 = reference only)", self._variant_count_spin)
+        form.addRow("Collection seed", self._seed_spin)
+        form.addRow("Shape variation fraction", self._variation_spin)
+        form.addRow(self._paper_note)
         form.addRow("Output folder", output_row)
         form.addRow("Track width", self._width_spin)
         form.addRow("Resolution", self._resolution_spin)
@@ -99,6 +121,7 @@ class TrackGeneratorDialog(QDialog):
         self._preview_label = QLabel("Preview not generated")
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._preview_label.setMinimumSize(360, 240)
+        self._preview_label.setMaximumHeight(300)
         self._preview_label.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Sunken)
 
         preview_button = QPushButton("Preview")
@@ -112,7 +135,12 @@ class TrackGeneratorDialog(QDialog):
         button_box.rejected.connect(self.reject)
 
         layout = QVBoxLayout(self)
-        layout.addLayout(form)
+        form_widget = QWidget()
+        form_widget.setLayout(form)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(form_widget)
+        layout.addWidget(scroll, 1)
         layout.addWidget(self._preview_label)
         layout.addWidget(preview_button, alignment=Qt.AlignmentFlag.AlignRight)
         layout.addWidget(button_box)
@@ -122,6 +150,11 @@ class TrackGeneratorDialog(QDialog):
         self._output_dir: Path | None = None
         self._preview_image = None
         self._source_controls = (self._spec_path_edit, browse_spec, create_spec)
+        self._form = form
+        self._spec_row = spec_row
+        self._paper_controls = (self._lap_length_spin, self._radius_spin,
+                                self._variant_count_spin, self._seed_spin, self._variation_spin)
+        self.resize(620, 850)
         self._stem_edit.textChanged.connect(self._sync_output_dir)
         self._on_source_changed(self._source_combo.currentText())
 
@@ -152,6 +185,12 @@ class TrackGeneratorDialog(QDialog):
         if self._output_dir is None:
             raise TrackSpecError("No output directory selected.")
         return self._output_dir
+
+    def collection_options(self) -> dict | None:
+        if self._source_combo.currentText() != "Paper L (approximation)" or not self._variant_count_spin.value():
+            return None
+        return dict(count=self._variant_count_spin.value(), seed=self._seed_spin.value(),
+                    variation=self._variation_spin.value())
 
     def _browse_spec(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -234,6 +273,14 @@ class TrackGeneratorDialog(QDialog):
         source = self._source_combo.currentText()
         if source == "Oval":
             return self._build_oval_spec()
+        if source == "Paper L (approximation)":
+            return replace(
+                build_paper_track_spec(self._stem_edit.text().strip(),
+                                      target_length=self._lap_length_spin.value(),
+                                      track_width=self._width_spin.value()),
+                resolution=self._resolution_spin.value(), padding=self._padding_spin.value(),
+                min_curvature_radius=self._radius_spin.value(),
+            )
         return self._build_yaml_spec()
 
     def _build_oval_spec(self) -> TrackSpec:
@@ -280,34 +327,34 @@ class TrackGeneratorDialog(QDialog):
             spec = self._spec_override
         else:
             raise TrackSpecError("Track spec path is required.")
-        return TrackSpec(
+        return replace(spec,
             stem=self._stem_edit.text().strip() or spec.stem,
-            control_points=spec.control_points,
             track_width=self._width_spin.value(),
-            centerline_spacing=spec.centerline_spacing,
             resolution=self._resolution_spin.value(),
             padding=self._padding_spin.value(),
-            wall_thickness_px=spec.wall_thickness_px,
-            wall_smoothing_passes=spec.wall_smoothing_passes,
-            min_curvature_radius=spec.min_curvature_radius,
-            min_wall_separation=spec.min_wall_separation,
-            occupied_thresh=spec.occupied_thresh,
-            free_thresh=spec.free_thresh,
-            negate=spec.negate,
         )
 
     def _on_source_changed(self, text: str) -> None:
         using_yaml = text == "YAML"
+        using_paper = text == "Paper L (approximation)"
         for widget in self._source_controls:
             widget.setEnabled(using_yaml)
+        self._form.setRowVisible(self._spec_row, using_yaml)
         for widget in (
             self._oval_length_spin,
             self._oval_width_spin,
             self._curve_amp_spin,
             self._curve_freq_spin,
         ):
-            widget.setEnabled(not using_yaml)
-        if not using_yaml and not self._stem_edit.text().strip():
+            widget.setEnabled(text == "Oval")
+            self._form.setRowVisible(widget, text == "Oval")
+        for widget in self._paper_controls:
+            widget.setEnabled(using_paper)
+            self._form.setRowVisible(widget, using_paper)
+        self._paper_note.setVisible(using_paper)
+        if using_paper:
+            self._apply_spec_defaults(build_paper_track_spec())
+        elif not using_yaml and not self._stem_edit.text().strip():
             self._stem_edit.setText("oval_track")
 
     def _sync_output_dir(self) -> None:
