@@ -117,3 +117,9 @@ Malformed labels reject before any bundle files are written. Existing generators
 do not infer labels, implement new maneuver shapes, enforce dominance fractions,
 or claim that caller-provided labels match measured geometry. Those checks belong
 to the Phase 1 feature-controlled generator.
+
+Phase 2's [specialist templates](specialist_templates.md) retain this schema and
+declare specialist intent independently of geometric composition. Their new
+generator version records target/minimum exposure in `requested` and measured
+family/role exposure, lineage and difficulty dimensions in `provenance`. Existing
+Phase 0 and Phase 1 recipe interpretation remains unchanged.

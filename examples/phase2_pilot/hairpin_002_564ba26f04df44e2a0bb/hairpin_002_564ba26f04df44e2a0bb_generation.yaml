@@ -1,0 +1,56 @@
+schema_version: 1
+generator: map_editor.specialist_templates.v1
+target_family: hairpin
+vehicle:
+  length_m: 0.5
+  width_m: 0.27
+  lf_m: 0.15875
+  lr_m: 0.17145
+  steering_min_rad: -0.523599
+  steering_max_rad: 0.523599
+  steering_rate_min_rad_s: -3.2
+  steering_rate_max_rad_s: 3.2
+  source: combined_slip.yaml
+  source_sha256: fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016
+  calibration_status: uncalibrated
+parameters:
+  approach_length_m: 1.5
+  exit_length_m: 1.5
+  connector_radius_m: 3.0
+  connector_transition_m: 1.0
+  track_width_m: 1.5
+  spacing_m: 0.15
+  resolution_m_per_pixel: 0.04
+  padding_m: 1.0
+  turn_radius_m: 4.056573597439611
+  turn_angle_rad: 3.141592653589793
+  transition_length_m: 0.85
+seed: 1287010195568088798
+variant_number: 2
+minimum_target_exposure: 0.7
+clockwise: true
+dataset_id: phase2_pilot
+parent_lineage: null
+experimental_mode: specialist
+template_revision: halfturn.v1
+limits:
+  minimum_radius_m: 0.5
+  minimum_usable_width_m: 0.7
+  maximum_curvature_rate_inv_m2: 2.0
+  footprint_margin_m: 0.02
+  minimum_nonlocal_boundary_gap_m: 0.1
+achieved:
+  length_m: 33.186808271101846
+  minimum_radius_m: 4.055319704518651
+  minimum_width_m: 1.5
+  maximum_width_m: 1.5
+  mean_width_m: 1.5
+  sample_count: 224
+files:
+  map: hairpin_002_564ba26f04df44e2a0bb.yaml
+  image: hairpin_002_564ba26f04df44e2a0bb.png
+  pgm: hairpin_002_564ba26f04df44e2a0bb.pgm
+  centerline: hairpin_002_564ba26f04df44e2a0bb_centerline.csv
+  walls: hairpin_002_564ba26f04df44e2a0bb_walls.csv
+  track_profile: hairpin_002_564ba26f04df44e2a0bb_track_profile.csv
+  metadata: hairpin_002_564ba26f04df44e2a0bb_metadata.json

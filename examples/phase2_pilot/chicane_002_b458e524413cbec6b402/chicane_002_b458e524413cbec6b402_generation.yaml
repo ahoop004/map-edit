@@ -1,0 +1,59 @@
+schema_version: 1
+generator: map_editor.specialist_templates.v1
+target_family: chicane
+vehicle:
+  length_m: 0.5
+  width_m: 0.27
+  lf_m: 0.15875
+  lr_m: 0.17145
+  steering_min_rad: -0.523599
+  steering_max_rad: 0.523599
+  steering_rate_min_rad_s: -3.2
+  steering_rate_max_rad_s: 3.2
+  source: combined_slip.yaml
+  source_sha256: fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016
+  calibration_status: uncalibrated
+parameters:
+  approach_length_m: 1.2
+  exit_length_m: 1.4
+  connector_radius_m: 3.3
+  connector_transition_m: 1.2
+  track_width_m: 1.5
+  spacing_m: 0.15
+  resolution_m_per_pixel: 0.04
+  padding_m: 1.0
+  turn_radius_m: 4.8
+  lateral_displacement_m: 4.181232430115987
+  chicane_spacing_m: 2.5
+  transition_length_m: 1.0
+  repetitions: 3
+  inter_maneuver_straight_m: 0.0
+seed: 5446332115853614978
+variant_number: 2
+minimum_target_exposure: 0.6
+clockwise: true
+dataset_id: phase2_pilot
+parent_lineage: null
+experimental_mode: specialist
+template_revision: halfturn.v1
+limits:
+  minimum_radius_m: 0.5
+  minimum_usable_width_m: 0.7
+  maximum_curvature_rate_inv_m2: 2.0
+  footprint_margin_m: 0.02
+  minimum_nonlocal_boundary_gap_m: 0.1
+achieved:
+  length_m: 93.46167604524422
+  minimum_radius_m: 3.2991924339151892
+  minimum_width_m: 1.5
+  maximum_width_m: 1.5
+  mean_width_m: 1.5
+  sample_count: 666
+files:
+  map: chicane_002_b458e524413cbec6b402.yaml
+  image: chicane_002_b458e524413cbec6b402.png
+  pgm: chicane_002_b458e524413cbec6b402.pgm
+  centerline: chicane_002_b458e524413cbec6b402_centerline.csv
+  walls: chicane_002_b458e524413cbec6b402_walls.csv
+  track_profile: chicane_002_b458e524413cbec6b402_track_profile.csv
+  metadata: chicane_002_b458e524413cbec6b402_metadata.json

@@ -29,6 +29,12 @@ physical-arc straights, hairpins, sweepers, chicanes, S-curves and curvature ram
 with measured acceptance, continuity and vehicle-clearance checks. Its versioned
 recipes use a separate backend; legacy spline recipes retain their behavior.
 
+The [Phase 2 results](docs/phase2_results.md) add closed maneuver-specialist
+templates with explicit intent, enforced measured exposure and bounded seeded
+variation. Review the [ten-track pilot](examples/phase2_pilot/manifest.json),
+[overview](examples/phase2_pilot/plots/overview.png), and
+[specialist parameter contract](docs/specialist_templates.md).
+
 ## Annotation Placement Workflow
 
 1. Open a map bundle (File → Open Map…, select the YAML file).

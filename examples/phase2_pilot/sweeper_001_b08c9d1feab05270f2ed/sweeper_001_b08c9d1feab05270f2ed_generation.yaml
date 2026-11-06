@@ -1,0 +1,56 @@
+schema_version: 1
+generator: map_editor.specialist_templates.v1
+target_family: sweeper
+vehicle:
+  length_m: 0.5
+  width_m: 0.27
+  lf_m: 0.15875
+  lr_m: 0.17145
+  steering_min_rad: -0.523599
+  steering_max_rad: 0.523599
+  steering_rate_min_rad_s: -3.2
+  steering_rate_max_rad_s: 3.2
+  source: combined_slip.yaml
+  source_sha256: fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016
+  calibration_status: uncalibrated
+parameters:
+  approach_length_m: 1.0
+  exit_length_m: 1.0
+  connector_radius_m: 3.0
+  connector_transition_m: 1.0
+  track_width_m: 1.5
+  spacing_m: 0.15
+  resolution_m_per_pixel: 0.04
+  padding_m: 1.0
+  turn_radius_m: 7.1191458007800925
+  turn_angle_rad: 3.141592653589793
+  transition_length_m: 1.0
+seed: 945351111358374057
+variant_number: 1
+minimum_target_exposure: 0.8
+clockwise: false
+dataset_id: phase2_pilot
+parent_lineage: null
+experimental_mode: specialist
+template_revision: halfturn.v1
+limits:
+  minimum_radius_m: 0.5
+  minimum_usable_width_m: 0.7
+  maximum_curvature_rate_inv_m2: 2.0
+  footprint_margin_m: 0.02
+  minimum_nonlocal_boundary_gap_m: 0.1
+achieved:
+  length_m: 50.73010538894039
+  minimum_radius_m: 7.115941880925252
+  minimum_width_m: 1.5
+  maximum_width_m: 1.5
+  mean_width_m: 1.5
+  sample_count: 346
+files:
+  map: sweeper_001_b08c9d1feab05270f2ed.yaml
+  image: sweeper_001_b08c9d1feab05270f2ed.png
+  pgm: sweeper_001_b08c9d1feab05270f2ed.pgm
+  centerline: sweeper_001_b08c9d1feab05270f2ed_centerline.csv
+  walls: sweeper_001_b08c9d1feab05270f2ed_walls.csv
+  track_profile: sweeper_001_b08c9d1feab05270f2ed_track_profile.csv
+  metadata: sweeper_001_b08c9d1feab05270f2ed_metadata.json
