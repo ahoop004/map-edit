@@ -2,31 +2,28 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 import os
+from contextlib import contextmanager
 from typing import Callable, Generator, TypeVar, cast
 
-from PySide6.QtCore import QEventLoop, QObject, Qt, QThread, Signal, Slot
+from PySide6.QtCore import QEventLoop, QObject, Qt, QThread
 from PySide6.QtWidgets import QApplication, QProgressDialog, QWidget
 
 T = TypeVar("T")
 
 
-class _TaskRunner(QObject):
-    finished = Signal(object, object)
-
-    def __init__(self, task: Callable[[], T]) -> None:
-        super().__init__()
+class _TaskThread(QThread):
+    def __init__(self, task: Callable[[], T], parent: QObject | None) -> None:
+        super().__init__(parent)
         self._task = task
+        self.value: T | None = None
+        self.error: BaseException | None = None
 
-    @Slot()
     def run(self) -> None:
         try:
-            result = self._task()
+            self.value = self._task()
         except BaseException as exc:
-            self.finished.emit(None, exc)
-            return
-        self.finished.emit(result, None)
+            self.error = exc
 
 
 @contextmanager
@@ -55,37 +52,20 @@ def show_busy_dialog(
 
 def run_in_thread(task: Callable[[], T], *, parent: QObject | None = None) -> T:
     """Run a task in a worker thread while keeping the UI responsive."""
-    if os.environ.get("MAP_EDITOR_BACKGROUND_TASKS") != "1":
+    if os.environ.get("MAP_EDITOR_BACKGROUND_TASKS") == "0":
         return task()
 
-    thread = QThread(parent)
-    runner = _TaskRunner(task)
-    runner.moveToThread(thread)
-
-    result: dict[str, object] = {"value": None, "error": None}
-
-    def _capture(value: object, error: object) -> None:
-        result["value"] = value
-        result["error"] = error
-
-    runner.finished.connect(_capture)
-    runner.finished.connect(thread.quit)
-    runner.finished.connect(runner.deleteLater)
-    thread.finished.connect(thread.deleteLater)
-    thread.started.connect(runner.run)
-
-    thread.start()
+    thread = _TaskThread(task, parent)
     loop = QEventLoop()
-    runner.finished.connect(loop.quit)
+    # Connect before starting: even an immediately completed task must wake the loop.
+    thread.finished.connect(loop.quit)
+    thread.start()
     loop.exec()
-
-    if thread.isRunning():
-        thread.wait()
-
-    error = cast(BaseException | None, result["error"])
-    if error is not None:
-        raise error
-    return cast(T, result["value"])
+    thread.wait()
+    thread.deleteLater()
+    if thread.error is not None:
+        raise thread.error
+    return cast(T, thread.value)
 
 
 __all__ = ["run_in_thread", "show_busy_dialog"]

@@ -169,7 +169,9 @@ def _ray_segment_intersection(
     t = (diff_x * (-seg_dy) + diff_y * seg_dx) / denom
     u = (dir_x * diff_y - dir_y * diff_x) / denom
 
-    if t < 0 or u < 0 or u > 1:
+    # A generated normal often hits a boundary vertex exactly; roundoff must
+    # not discard both adjoining segments and report the far side of the map.
+    if t < 0 or u < -1e-9 or u > 1 + 1e-9:
         return None
     return t * math.hypot(dir_x, dir_y)
 

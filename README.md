@@ -14,6 +14,11 @@ A PySide6 desktop tool for inspecting and editing ROS map bundles used in F1TENT
 - CLI helper `scripts/export_centerline.py` to resample/export waypoints from a map YAML into CSV.
 - Occupancy-derived tooling: extract wall contours, auto-generate centerlines, and save walls to CSV.
 - YAML save workflow with automatic backups to keep prior revisions safe.
+- Paper-inspired rounded L circuit preset and seeded track collections, with
+  replayable recipes, measured geometry, and curvature/width profiles.
+
+See [Paper circuit and collections](docs/paper_tracks.md) for GUI controls,
+generation commands, bundle schemas, and custom gym integration.
 
 ## Annotation Placement Workflow
 
@@ -33,6 +38,11 @@ A PySide6 desktop tool for inspecting and editing ROS map bundles used in F1TENT
 - Crosshair cursor indicates you are in placement mode.
 - Status bar messages guide each step (“Click to place…”, “Placement cancelled”, etc.).
 - After confirming a placement the status bar summarises the coordinates written to the map.
+- The window title marks unsaved edits; opening another map, generating a track, or exiting offers Save, Discard, and Cancel.
+- Editor docks use scrollable tabs so their controls remain accessible on smaller windows.
+- Maps fit the viewport until you zoom manually; use View → Fit Map to Window to reset.
+
+Track-width scaling clears earlier annotation undo history because it changes the coordinate system. Subsequent annotation edits remain undoable.
 
 ## Shortcuts
 
@@ -40,6 +50,7 @@ A PySide6 desktop tool for inspecting and editing ROS map bundles used in F1TENT
 - `Ctrl+S` – Save map
 - `Ctrl+Z` / `Ctrl+Shift+Z` – Undo/Redo
 - `Ctrl+Q` – Exit
+- `Ctrl+0` – Fit map to window
 
 ## Development Setup
 
@@ -47,8 +58,11 @@ A PySide6 desktop tool for inspecting and editing ROS map bundles used in F1TENT
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python scripts/run_map_editor.py
+python scripts/run.py
 ```
+
+Run the tests with `pip install pytest` followed by `python -m pytest -q`.
+The GUI tests use Qt's offscreen backend.
 
 ## Roadmap
 

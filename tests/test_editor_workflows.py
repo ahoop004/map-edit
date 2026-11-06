@@ -29,7 +29,10 @@ def window(qapp, tmp_path):
     window = MainWindow()
     window._apply_loaded_bundle(MapBundleLoadResult(bundle))
     yield window
+    window.setWindowModified(False)
     window.close()
+    window.deleteLater()
+    qapp.processEvents()
 
 
 def test_scale_undo_redo_with_surrounding_annotation_edits(window, tmp_path):

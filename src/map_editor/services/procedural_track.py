@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field
 import math
 from pathlib import Path
 from typing import Iterable, Sequence
@@ -14,6 +14,9 @@ from map_editor.exporters.centerline import CenterlineSample, export_centerline_
 from map_editor.models.annotations import MapAnnotations, Point2D
 from map_editor.services.wall_extraction import export_walls_csv
 from map_editor.services.yaml_serializer import MapYamlDocument, dump_map_yaml
+from map_editor.services.track_profile import (
+    build_track_profile, closed_length, export_track_profile, profile_metrics,
+)
 
 EPSILON = 1e-9  # floating-point near-zero threshold used throughout this module
 
@@ -33,15 +36,36 @@ class TrackSpec:
     occupied_thresh: float = 0.45
     free_thresh: float = 0.196
     negate: int = 0
+    target_length: float | None = None
+    provenance: dict = field(default_factory=dict)
 
 
 class TrackSpecError(ValueError):
     """Raised when the track spec is invalid."""
 
+    def __init__(self, message: str, *, metrics: dict | None = None):
+        super().__init__(message)
+        self.metrics = metrics
+
+
+@dataclass
+class TrackGeometry:
+    samples: list[CenterlineSample]
+    walls: list[list[Point2D]]
+    profile: list[dict[str, float]]
+    metrics: dict
+
+    @property
+    def centerline(self) -> list[Point2D]:
+        return [Point2D(sample.x, sample.y) for sample in self.samples]
+
 
 def load_track_spec(path: Path) -> TrackSpec:
     """Load a procedural track spec from YAML."""
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        raise TrackSpecError(f"Cannot read track spec: {exc}") from exc
     if not isinstance(data, dict):
         raise TrackSpecError("Track spec must be a YAML mapping.")
 
@@ -64,6 +88,8 @@ def load_track_spec(path: Path) -> TrackSpec:
             raise TrackSpecError(f"control_points[{index}] must be numeric.") from exc
         points.append(Point2D(x, y))
 
+    if not isinstance(data.get("provenance", {}), dict):
+        raise TrackSpecError("provenance must be a mapping.")
     return TrackSpec(
         stem=stem.strip(),
         control_points=points,
@@ -78,6 +104,9 @@ def load_track_spec(path: Path) -> TrackSpec:
         occupied_thresh=_read_float(data, "occupied_thresh", default=0.45, min_value=0.0, max_value=1.0),
         free_thresh=_read_float(data, "free_thresh", default=0.196, min_value=0.0, max_value=1.0),
         negate=_read_int(data, "negate", default=0, min_value=0),
+        target_length=(_read_float(data, "target_length", default=17.0, min_value=0.1)
+                       if data.get("target_length") is not None else None),
+        provenance=data.get("provenance", {}),
     )
 
 
@@ -195,22 +224,52 @@ def adjust_oval_parameters_for_min_radius(
     return length, width, curve_amplitude, total_scale
 
 
-def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
-    """Generate a full map bundle for the given track spec."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    polyline = _sample_closed_bspline(spec.control_points)
-    samples = _resample_closed_polyline(polyline, spec.centerline_spacing)
-    if len(samples) < 2:
+def prepare_track_geometry(spec: TrackSpec) -> TrackGeometry:
+    """Fit once, measure and validate the final geometry used by every export."""
+    _validate_spec(spec)
+    polyline = _sample_closed_bspline(spec.control_points, samples_per_segment=96)
+    length = closed_length(polyline)
+    if length <= EPSILON:
         raise TrackSpecError("Generated centerline is too short.")
-
+    if spec.target_length is not None:
+        scale = spec.target_length / length
+        polyline = [Point2D(p.x * scale, p.y * scale) for p in polyline]
+    samples = _resample_closed_polyline(polyline, spec.centerline_spacing)
+    if len(samples) < 4:
+        raise TrackSpecError("Generated centerline is too short.")
     centerline_points = [Point2D(sample.x, sample.y) for sample in samples]
-    _validate_centerline(centerline_points, spec)
+    if spec.target_length is not None:
+        # Fit the exported polyline length, including its closing segment.
+        scale = spec.target_length / closed_length(centerline_points)
+        centerline_points = [Point2D(p.x * scale, p.y * scale) for p in centerline_points]
     walls = _build_walls(centerline_points, spec.track_width)
     if spec.wall_smoothing_passes > 0:
         walls = [_smooth_closed_polyline(wall, spec.wall_smoothing_passes) for wall in walls]
-    _ensure_wall_constraints(walls, spec)
     walls = _scale_walls_to_width(centerline_points, walls, spec.track_width)
+    try:
+        profile = build_track_profile(centerline_points, walls)
+    except ValueError as exc:
+        raise TrackSpecError(str(exc)) from exc
+    metrics = profile_metrics(centerline_points, profile)
+    try:
+        _validate_centerline(centerline_points, spec)
+        if _polyline_self_intersects(centerline_points):
+            raise TrackSpecError("Centerline self-intersects.")
+        _ensure_wall_constraints(walls, spec)
+        if metrics["minimum_width_m"] < spec.min_wall_separation - 1e-6:
+            raise TrackSpecError("Measured track width is below minimum wall separation.")
+    except TrackSpecError as exc:
+        raise TrackSpecError(str(exc), metrics=metrics) from exc
+    samples = [CenterlineSample(p.x, p.y, row["heading_rad"])
+               for p, row in zip(centerline_points, profile)]
+    return TrackGeometry(samples, walls, profile, metrics)
+
+
+def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
+    """Generate a full map bundle, plus a replayable recipe and track profile."""
+    geometry = prepare_track_geometry(spec)
+    samples, walls = geometry.samples, geometry.walls
+    centerline_points = geometry.centerline
 
     image_bytes, width, height, origin_x, origin_y = _rasterize_walls(
         walls,
@@ -226,10 +285,14 @@ def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
     centerline_path = output_dir / f"{stem}_centerline.csv"
     walls_path = output_dir / f"{stem}_walls.csv"
 
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if spec.negate:
+        image_bytes = bytes(255 - value for value in image_bytes)
     _write_png(image_bytes, width, height, png_path)
     _write_pgm(image_bytes, width, height, pgm_path)
     export_centerline_csv(samples, centerline_path)
     export_walls_csv(walls, walls_path)
+    export_track_profile(geometry.profile, output_dir / f"{stem}_track_profile.csv")
     _write_preview_overlay(
         centerline_points,
         walls,
@@ -248,22 +311,29 @@ def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
         negate=spec.negate,
     )
     dump_map_yaml(document, destination=yaml_path)
+    recipe = asdict(spec)
+    recipe["control_points"] = [[float(point.x), float(point.y)] for point in spec.control_points]
+    recipe.update({
+        "schema_version": 1,
+        "generator": "map_editor.closed_bspline.v1",
+        "coordinate_frame": "map",
+        "closed": True,
+        "achieved": geometry.metrics,
+        "files": {
+            "map": yaml_path.name, "image": png_path.name, "pgm": pgm_path.name,
+            "centerline": centerline_path.name, "walls": walls_path.name,
+            "track_profile": f"{stem}_track_profile.csv",
+        },
+    })
+    (output_dir / f"{stem}_generation.yaml").write_text(
+        yaml.safe_dump(recipe, sort_keys=False), encoding="utf-8")
     return yaml_path
 
 
 def generate_preview_image(spec: TrackSpec) -> QImage:
     """Build a preview overlay image without writing files."""
-    polyline = _sample_closed_bspline(spec.control_points)
-    samples = _resample_closed_polyline(polyline, spec.centerline_spacing)
-    if len(samples) < 2:
-        raise TrackSpecError("Generated centerline is too short.")
-    centerline_points = [Point2D(sample.x, sample.y) for sample in samples]
-    _validate_centerline(centerline_points, spec)
-    walls = _build_walls(centerline_points, spec.track_width)
-    if spec.wall_smoothing_passes > 0:
-        walls = [_smooth_closed_polyline(wall, spec.wall_smoothing_passes) for wall in walls]
-    _ensure_wall_constraints(walls, spec)
-    walls = _scale_walls_to_width(centerline_points, walls, spec.track_width)
+    geometry = prepare_track_geometry(spec)
+    centerline_points, walls = geometry.centerline, geometry.walls
 
     width, height, origin_x, origin_y = _compute_raster_bounds(
         walls,
@@ -590,6 +660,8 @@ def _read_float(
         value = float(raw)
     except (TypeError, ValueError) as exc:
         raise TrackSpecError(f"'{key}' must be a number.") from exc
+    if not math.isfinite(value):
+        raise TrackSpecError(f"'{key}' must be finite.")
     if min_value is not None and value < min_value:
         raise TrackSpecError(f"'{key}' must be >= {min_value}.")
     if max_value is not None and value > max_value:
@@ -626,7 +698,34 @@ __all__ = [
     "generate_track_bundle",
     "generate_preview_image",
     "load_track_spec",
+    "prepare_track_geometry",
 ]
+
+
+def _validate_spec(spec: TrackSpec) -> None:
+    if not spec.stem.strip() or spec.stem in (".", "..") or any(c in spec.stem for c in "/\\"):
+        raise TrackSpecError("Stem must be a non-empty filename without directories.")
+    if len(spec.control_points) < 4 or not all(
+        math.isfinite(p.x) and math.isfinite(p.y) for p in spec.control_points
+    ):
+        raise TrackSpecError("At least four finite control points are required.")
+    for name in ("track_width", "centerline_spacing", "resolution",
+                 "min_curvature_radius", "min_wall_separation"):
+        value = getattr(spec, name)
+        if not math.isfinite(value) or value <= 0:
+            raise TrackSpecError(f"{name} must be finite and positive.")
+    if spec.target_length is not None and (
+        not math.isfinite(spec.target_length) or spec.target_length <= 0
+    ):
+        raise TrackSpecError("target_length must be finite and positive.")
+    if not math.isfinite(spec.padding) or spec.padding < 0:
+        raise TrackSpecError("padding must be finite and nonnegative.")
+    if spec.wall_thickness_px < 1 or spec.wall_smoothing_passes < 0:
+        raise TrackSpecError("Invalid wall thickness or smoothing passes.")
+    if spec.negate not in (0, 1):
+        raise TrackSpecError("negate must be 0 or 1.")
+
+
 def _validate_centerline(points: Sequence[Point2D], spec: TrackSpec) -> None:
     if spec.track_width < spec.min_wall_separation:
         raise TrackSpecError(
@@ -693,11 +792,15 @@ def _ensure_wall_constraints(
     if len(left) == len(right):
         for i in range(len(left)):
             separation = math.hypot(left[i].x - right[i].x, left[i].y - right[i].y)
-            if separation < spec.min_wall_separation:
+            if separation < spec.min_wall_separation - 1e-6:
                 raise TrackSpecError(
                     f"Wall separation {separation:.3f} m at point {i} is below "
                     f"minimum {spec.min_wall_separation:.3f} m; increase track width or reduce curvature."
                 )
+    for a, b in zip(left, [*left[1:], left[0]]):
+        for c, d in zip(right, [*right[1:], right[0]]):
+            if _segments_intersect(a, b, c, d):
+                raise TrackSpecError("Track boundaries intersect; reduce width or change the layout.")
 
 
 def _polyline_self_intersects(points: Sequence[Point2D]) -> bool:

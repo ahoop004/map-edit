@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -61,6 +62,13 @@ class MapYamlDocument:
 
 def load_map_yaml(yaml_path: Path) -> MapYamlDocument:
     """Load and validate a ROS map YAML file."""
+    try:
+        return _load_map_yaml(yaml_path)
+    except (OSError, yaml.YAMLError, ValueError, TypeError, OverflowError) as exc:
+        raise MapYamlError(f"Unable to read map YAML: {exc}") from exc
+
+
+def _load_map_yaml(yaml_path: Path) -> MapYamlDocument:
     if not yaml_path.exists():
         raise MapYamlError(f"YAML file does not exist: {yaml_path}")
 
@@ -90,6 +98,13 @@ def load_map_yaml(yaml_path: Path) -> MapYamlDocument:
         occupied_thresh=_expect_float(parsed, "occupied_thresh", default=0.65),
         free_thresh=_expect_float(parsed, "free_thresh", default=0.196),
     )
+    if not all(math.isfinite(value) for value in (
+        metadata.resolution, metadata.origin_x, metadata.origin_y, metadata.origin_theta,
+        metadata.occupied_thresh, metadata.free_thresh,
+    )):
+        raise MapYamlError("Map metadata must contain finite numbers")
+    if metadata.resolution <= 0:
+        raise MapYamlError("Resolution must be positive")
 
     negate = int(parsed.get("negate", 0))
 

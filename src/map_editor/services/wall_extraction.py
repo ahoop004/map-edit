@@ -52,7 +52,7 @@ def extract_walls(image_path: Path, metadata: MapMetadata, *, negate: int = 0) -
     for y in range(height):
         for x in range(width):
             gray = image.pixelColor(x, y).value()
-            occ_prob = (gray if negate else 255 - gray) / 255.0
+            occ_prob = gray / 255.0 if negate else (255 - gray) / 255.0
             if occ_prob >= metadata.occupied_thresh:
                 mask[y][x] = True
 
@@ -192,10 +192,7 @@ def _points_close(a: Point2D, b: Point2D, tol: float = 1e-6) -> bool:
 
 
 def _grid_to_world(x: int, y: int, metadata: MapMetadata, height: int) -> Point2D:
-    world_x, world_y = metadata.local_to_world(
-        x * metadata.resolution, (height - y) * metadata.resolution
-    )
-    return Point2D(world_x, world_y)
+    return Point2D(*metadata.pixel_to_world(x, y, height))
 
 
 def _polygon_area(points: Sequence[Point2D]) -> float:

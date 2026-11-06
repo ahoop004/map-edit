@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
 import math
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +49,15 @@ class MapMetadata:
         dx, dy = x - self.origin_x, y - self.origin_y
         cosine, sine = math.cos(self.origin_theta), math.sin(self.origin_theta)
         return cosine * dx + sine * dy, -sine * dx + cosine * dy
+
+    def pixel_to_world(self, x: float, y: float, image_height: float) -> tuple[float, float]:
+        """Convert image coordinates (Y down) to the rotated map frame."""
+        return self.local_to_world(x * self.resolution, (image_height - y) * self.resolution)
+
+    def world_to_pixel(self, x: float, y: float, image_height: float) -> tuple[float, float]:
+        """Invert the map transform for annotation display and placement."""
+        local_x, local_y = self.world_to_local(x, y)
+        return local_x / self.resolution, image_height - local_y / self.resolution
 
 
 @dataclass

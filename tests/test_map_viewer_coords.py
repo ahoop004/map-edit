@@ -10,6 +10,7 @@ import pytest
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QPointF
 
+from map_editor.constants import CAR_LENGTH_M, CAR_WIDTH_M
 from map_editor.models.annotations import Point2D
 from map_editor.constants import CAR_LENGTH_M, CAR_WIDTH_M
 from map_editor.models.map_bundle import MapMetadata

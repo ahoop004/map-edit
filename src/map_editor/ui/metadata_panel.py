@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 
 from PySide6.QtCore import QSignalBlocker, Qt, Signal
 from PySide6.QtWidgets import (
@@ -117,17 +118,19 @@ class MapMetadataPanel(QWidget):
 
     def metadata(self) -> MapMetadata:
         """Return the current metadata values from the form."""
-        return MapMetadata(
-            resolution=self._resolution.value(),
-            origin_x=self._origin_x.value(),
-            origin_y=self._origin_y.value(),
-            origin_theta=self._current_metadata.origin_theta,
-            occupied_thresh=self._occupied_thresh.value(),
-            free_thresh=self._free_thresh.value(),
-        )
+        return self._current_metadata
 
     def _emit_metadata_changed(self) -> None:
-        updated = self.metadata()
+        fields = {
+            self._resolution: "resolution",
+            self._origin_x: "origin_x",
+            self._origin_y: "origin_y",
+            self._occupied_thresh: "occupied_thresh",
+            self._free_thresh: "free_thresh",
+        }
+        spinbox = self.sender()
+        # Preserve untouched values, including precision beyond the displayed decimals.
+        updated = replace(self._current_metadata, **{fields[spinbox]: spinbox.value()})
         self._current_metadata = updated
         self.metadataChanged.emit(updated)
 

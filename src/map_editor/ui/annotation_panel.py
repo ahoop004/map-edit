@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -10,7 +9,6 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QDoubleSpinBox,
     QFormLayout,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -114,6 +112,7 @@ class AnnotationPanel(QWidget):
 
     def set_annotations(self, annotations: MapAnnotations) -> None:
         """Refresh UI state based on provided annotations."""
+        selected_row = self.selected_index()
         self._annotations = annotations
         self._spawn_list.clear()
         for spawn in annotations.spawn_points:
@@ -121,6 +120,8 @@ class AnnotationPanel(QWidget):
                 f"{spawn.name}  (x={spawn.pose.x:.2f}, y={spawn.pose.y:.2f}, θ={spawn.pose.theta:.2f})"
             )
             self._spawn_list.addItem(item)
+        if selected_row is not None and self._spawn_list.count():
+            self._spawn_list.setCurrentRow(min(selected_row, self._spawn_list.count() - 1))
         if annotations.start_finish_line is None:
             self._start_finish_label.setText("No start/finish line")
         else:
