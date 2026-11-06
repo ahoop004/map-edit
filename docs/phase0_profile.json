@@ -1,0 +1,151 @@
+{
+  "python": "3.12.3",
+  "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "note": "One wall-time run and one cProfile run per case; cumulative timings overlap. Not a benchmark guarantee.",
+  "cases": [
+    {
+      "family": "rounded_oval",
+      "centerline_spacing_m": 0.05,
+      "sample_count": 340,
+      "wall_vertices_each": 340,
+      "geometry_wall_seconds": 0.3395981490000395,
+      "raster_seconds": 0.014537354999902163,
+      "raster_validation_seconds": 0.0018074679999244836,
+      "profiled_geometry_seconds": 0.7721547950000002,
+      "functions": [
+        {
+          "function": "_segments_intersect",
+          "calls": 287470,
+          "self_seconds": 0.17566230200000002,
+          "cumulative_seconds": 0.47634381200000003
+        },
+        {
+          "function": "_ensure_wall_constraints",
+          "calls": 1,
+          "self_seconds": 0.025966023,
+          "cumulative_seconds": 0.438989722
+        },
+        {
+          "function": "_polyline_self_intersects",
+          "calls": 3,
+          "self_seconds": 0.032911052,
+          "cumulative_seconds": 0.28954815300000003
+        },
+        {
+          "function": "build_track_profile",
+          "calls": 1,
+          "self_seconds": 0.0010536620000000001,
+          "cumulative_seconds": 0.22407174600000002
+        },
+        {
+          "function": "_ray_wall_distance",
+          "calls": 680,
+          "self_seconds": 0.064475726,
+          "cumulative_seconds": 0.222623965
+        },
+        {
+          "function": "_validate_centerline",
+          "calls": 1,
+          "self_seconds": 0.000161292,
+          "cumulative_seconds": 0.0005354320000000001
+        }
+      ]
+    },
+    {
+      "family": "rounded_oval",
+      "centerline_spacing_m": 0.02,
+      "sample_count": 850,
+      "wall_vertices_each": 850,
+      "geometry_wall_seconds": 2.2035926470000504,
+      "raster_seconds": 0.03009768700007953,
+      "raster_validation_seconds": 0.0027128050001010706,
+      "profiled_geometry_seconds": 4.511421990000001,
+      "functions": [
+        {
+          "function": "_segments_intersect",
+          "calls": 1802425,
+          "self_seconds": 1.0049260230000001,
+          "cumulative_seconds": 2.7499225060000003
+        },
+        {
+          "function": "_ensure_wall_constraints",
+          "calls": 1,
+          "self_seconds": 0.12746247200000002,
+          "cumulative_seconds": 2.479106917
+        },
+        {
+          "function": "_polyline_self_intersects",
+          "calls": 3,
+          "self_seconds": 0.21570707900000002,
+          "cumulative_seconds": 1.849664572
+        },
+        {
+          "function": "build_track_profile",
+          "calls": 1,
+          "self_seconds": 0.003577995,
+          "cumulative_seconds": 1.3989402450000001
+        },
+        {
+          "function": "_ray_wall_distance",
+          "calls": 1700,
+          "self_seconds": 0.40216023,
+          "cumulative_seconds": 1.3941802570000001
+        },
+        {
+          "function": "_validate_centerline",
+          "calls": 1,
+          "self_seconds": 0.000407333,
+          "cumulative_seconds": 0.001355742
+        }
+      ]
+    },
+    {
+      "family": "rounded_oval",
+      "centerline_spacing_m": 0.01,
+      "sample_count": 1700,
+      "wall_vertices_each": 1700,
+      "geometry_wall_seconds": 8.470078382999873,
+      "raster_seconds": 0.059236713000018426,
+      "raster_validation_seconds": 0.0041805190001014125,
+      "profiled_geometry_seconds": 18.014914677,
+      "functions": [
+        {
+          "function": "_segments_intersect",
+          "calls": 7217350,
+          "self_seconds": 4.018943141,
+          "cumulative_seconds": 10.970162582
+        },
+        {
+          "function": "_ensure_wall_constraints",
+          "calls": 1,
+          "self_seconds": 0.547838807,
+          "cumulative_seconds": 9.954972047
+        },
+        {
+          "function": "_polyline_self_intersects",
+          "calls": 3,
+          "self_seconds": 0.9163211250000001,
+          "cumulative_seconds": 7.451513799000001
+        },
+        {
+          "function": "build_track_profile",
+          "calls": 1,
+          "self_seconds": 0.008451143000000001,
+          "cumulative_seconds": 5.55144204
+        },
+        {
+          "function": "_ray_wall_distance",
+          "calls": 3400,
+          "self_seconds": 1.587968947,
+          "cumulative_seconds": 5.5403687470000005
+        },
+        {
+          "function": "_validate_centerline",
+          "calls": 1,
+          "self_seconds": 0.0007917890000000001,
+          "cumulative_seconds": 0.0026275720000000003
+        }
+      ]
+    }
+  ]
+}

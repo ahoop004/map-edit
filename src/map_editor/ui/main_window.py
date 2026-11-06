@@ -1164,7 +1164,9 @@ class MainWindow(QMainWindow):
                 LineSegment(
                     start=Point2D(start.x * scale_factor, start.y * scale_factor),
                     end=Point2D(end.x * scale_factor, end.y * scale_factor),
-                )
+                ),
+                direction=annotations.start_finish_line.direction,
+                extra_fields=dict(annotations.start_finish_line.extra_fields),
             )
 
         new_annotations = MapAnnotations(

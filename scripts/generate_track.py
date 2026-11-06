@@ -46,6 +46,8 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--target-length", type=float, help="Target centerline lap length in meters.")
     parser.add_argument("--track-width", type=float, help="Track width in meters.")
     parser.add_argument("--min-radius", type=float, help="Minimum centerline corner radius in meters.")
+    parser.add_argument("--occupancy-mode", choices=["walls", "corridor"],
+                        help="Legacy boundary-only image or occupied exterior/infield (recipe default preserved).")
     args = parser.parse_args(argv)
 
     if args.input and args.preset != "sample_default":
@@ -57,6 +59,8 @@ def main(argv: list[str]) -> int:
     try:
         spec = load_track_spec(args.input) if args.input else build_paper_track_spec()
         changes = {}
+        if args.occupancy_mode is not None:
+            changes["occupancy_mode"] = args.occupancy_mode
         if args.target_length is not None:
             changes["target_length"] = args.target_length
         if args.track_width is not None:

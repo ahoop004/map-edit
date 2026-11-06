@@ -36,6 +36,8 @@ class StartFinishLine:
     """Start/finish line represented as a line segment."""
 
     segment: LineSegment
+    direction: Point2D | None = None
+    extra_fields: dict = field(default_factory=dict)
 
 
 @dataclass

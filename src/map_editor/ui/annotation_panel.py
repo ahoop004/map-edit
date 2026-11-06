@@ -340,6 +340,7 @@ class StartFinishDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(title)
 
+        self._line = line
         start = line.segment.start if line else None
         end = line.segment.end if line else None
 
@@ -374,7 +375,9 @@ class StartFinishDialog(QDialog):
     def start_finish_line(self) -> StartFinishLine:
         start_point = Point2D(self._start_x.value(), self._start_y.value())
         end_point = Point2D(self._end_x.value(), self._end_y.value())
-        return StartFinishLine(LineSegment(start=start_point, end=end_point))
+        return StartFinishLine(LineSegment(start=start_point, end=end_point),
+                               direction=self._line.direction if self._line else None,
+                               extra_fields=dict(self._line.extra_fields) if self._line else {})
 
 
 __all__ = [

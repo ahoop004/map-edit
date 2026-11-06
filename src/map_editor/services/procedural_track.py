@@ -11,7 +11,8 @@ import yaml
 from PySide6.QtGui import QColor, QImage, QPainter, QPen
 
 from map_editor.exporters.centerline import CenterlineSample, export_centerline_csv, resample_centerline
-from map_editor.models.annotations import MapAnnotations, Point2D
+from map_editor.models.annotations import LineSegment, MapAnnotations, Point2D, StartFinishLine
+from map_editor.services.geometry_metadata import build_geometry_metadata, write_geometry_metadata
 from map_editor.services.wall_extraction import export_walls_csv
 from map_editor.services.yaml_serializer import MapYamlDocument, dump_map_yaml
 from map_editor.services.track_profile import (
@@ -38,6 +39,8 @@ class TrackSpec:
     negate: int = 0
     target_length: float | None = None
     provenance: dict = field(default_factory=dict)
+    occupancy_mode: str = "walls"
+    track_metadata: dict = field(default_factory=dict)
 
 
 class TrackSpecError(ValueError):
@@ -90,6 +93,10 @@ def load_track_spec(path: Path) -> TrackSpec:
 
     if not isinstance(data.get("provenance", {}), dict):
         raise TrackSpecError("provenance must be a mapping.")
+    if not isinstance(data.get("track_metadata", {}), dict):
+        raise TrackSpecError("track_metadata must be a mapping.")
+    if data.get("schema_version", 1) != 1 or data.get("generator", "map_editor.closed_bspline.v1") != "map_editor.closed_bspline.v1":
+        raise TrackSpecError("Unsupported generation recipe version or generator.")
     return TrackSpec(
         stem=stem.strip(),
         control_points=points,
@@ -107,6 +114,8 @@ def load_track_spec(path: Path) -> TrackSpec:
         target_length=(_read_float(data, "target_length", default=17.0, min_value=0.1)
                        if data.get("target_length") is not None else None),
         provenance=data.get("provenance", {}),
+        occupancy_mode=data.get("occupancy_mode", "walls"),
+        track_metadata=data.get("track_metadata", {}),
     )
 
 
@@ -276,7 +285,17 @@ def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
         resolution=spec.resolution,
         padding=spec.padding,
         thickness_px=spec.wall_thickness_px,
+        occupancy_mode=spec.occupancy_mode,
     )
+    if spec.occupancy_mode == "corridor":
+        _validate_corridor_raster(centerline_points, image_bytes, width, height,
+                                  origin_x, origin_y, spec.resolution)
+
+    # Validate metadata before writing any artifacts.
+    try:
+        metadata_contract = build_geometry_metadata(spec, geometry.metrics)
+    except ValueError as exc:
+        raise TrackSpecError(f"Invalid track metadata: {exc}") from exc
 
     stem = spec.stem
     png_path = output_dir / f"{stem}.png"
@@ -300,15 +319,21 @@ def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
         resolution=spec.resolution,
         padding=spec.padding,
         thickness_px=spec.wall_thickness_px,
+        occupancy_mode=spec.occupancy_mode,
     )
 
-    annotations = MapAnnotations(centerline=centerline_points)
+    annotations = MapAnnotations(centerline=centerline_points,
+                                 start_finish_line=build_finish_line(geometry))
     document = MapYamlDocument(
         yaml_path=yaml_path,
         image=png_path.name,
         metadata=_build_metadata(spec, origin_x, origin_y),
         annotations=annotations,
         negate=spec.negate,
+        extra_fields={"track_metadata": f"{stem}_metadata.json",
+                      "occupancy": {"mode": spec.occupancy_mode,
+                                    "outside_track": "occupied" if spec.occupancy_mode == "corridor" else "free",
+                                    "marl_race_track_inverted": bool(spec.negate)}},
     )
     dump_map_yaml(document, destination=yaml_path)
     recipe = asdict(spec)
@@ -323,17 +348,35 @@ def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
             "map": yaml_path.name, "image": png_path.name, "pgm": pgm_path.name,
             "centerline": centerline_path.name, "walls": walls_path.name,
             "track_profile": f"{stem}_track_profile.csv",
+            "metadata": f"{stem}_metadata.json",
         },
     })
     (output_dir / f"{stem}_generation.yaml").write_text(
         yaml.safe_dump(recipe, sort_keys=False), encoding="utf-8")
+    write_geometry_metadata(metadata_contract, output_dir / f"{stem}_metadata.json")
     return yaml_path
+
+
+def build_finish_line(geometry: TrackGeometry) -> StartFinishLine:
+    """Span the final walls at s=0; forward follows centerline travel."""
+    row = geometry.profile[0]
+    point = geometry.centerline[0]
+    dx, dy = math.cos(row["heading_rad"]), math.sin(row["heading_rad"])
+    # Ray intersections remain correct after wall smoothing/width fitting.
+    start = Point2D(point.x - dy * row["left_width_m"],
+                    point.y + dx * row["left_width_m"])
+    end = Point2D(point.x + dy * row["right_width_m"],
+                  point.y - dx * row["right_width_m"])
+    return StartFinishLine(LineSegment(start, end), Point2D(dx, dy), {"version": 1})
 
 
 def generate_preview_image(spec: TrackSpec) -> QImage:
     """Build a preview overlay image without writing files."""
     geometry = prepare_track_geometry(spec)
     centerline_points, walls = geometry.centerline, geometry.walls
+    if spec.occupancy_mode == "corridor":
+        return _corridor_preview(centerline_points, walls, spec.resolution,
+                                 spec.padding, spec.wall_thickness_px)
 
     width, height, origin_x, origin_y = _compute_raster_bounds(
         walls,
@@ -438,7 +481,14 @@ def _rasterize_walls(
     resolution: float,
     padding: float,
     thickness_px: int,
+    occupancy_mode: str = "walls",
 ) -> tuple[bytes, int, int, float, float]:
+    walls = list(walls)
+    if occupancy_mode not in {"walls", "corridor"}:
+        raise TrackSpecError("occupancy_mode must be 'walls' or 'corridor'.")
+    if occupancy_mode == "corridor":
+        # Keep every occupied boundary cell inside the map even at padding=0.
+        padding = max(padding, (thickness_px // 2 + 1) * resolution)
     width, height, origin_x, origin_y = _compute_raster_bounds(
         walls,
         resolution=resolution,
@@ -446,16 +496,52 @@ def _rasterize_walls(
     )
 
     pixels = bytearray([255] * (width * height))
+    if occupancy_mode == "corridor":
+        pixels = _fill_corridor(walls, width, height, origin_x, origin_y, resolution)
+    to_pixel = _world_to_cell if occupancy_mode == "corridor" else _world_to_pixel
 
     for wall in walls:
         if len(wall) < 2:
             continue
         for start, end in zip(wall, [*wall[1:], wall[0]]):
-            x0, y0 = _world_to_pixel(start, origin_x, origin_y, resolution, height)
-            x1, y1 = _world_to_pixel(end, origin_x, origin_y, resolution, height)
+            x0, y0 = to_pixel(start, origin_x, origin_y, resolution, height)
+            x1, y1 = to_pixel(end, origin_x, origin_y, resolution, height)
             _draw_line(pixels, width, height, x0, y0, x1, y1, thickness_px)
 
     return bytes(pixels), width, height, origin_x, origin_y
+
+
+def _world_to_cell(point, origin_x, origin_y, resolution, height):
+    """Simulator cell ownership: floor in bottom-up local meters."""
+    return (math.floor((point.x - origin_x) / resolution),
+            height - 1 - math.floor((point.y - origin_y) / resolution))
+
+
+def _fill_corridor(walls, width, height, origin_x, origin_y, resolution):
+    """Even-odd scanline fill of the annulus; sample at cell centers."""
+    pixels = bytearray(width * height)
+    edges = [(a, b) for wall in walls for a, b in zip(wall, [*wall[1:], wall[0]])]
+    for row in range(height):
+        y = origin_y + (height - row - 0.5) * resolution
+        crossings = sorted(a.x + (y - a.y) * (b.x - a.x) / (b.y - a.y)
+                           for a, b in edges if (a.y > y) != (b.y > y))
+        for left, right in zip(crossings[::2], crossings[1::2]):
+            first = max(0, math.ceil((left - origin_x) / resolution - 0.5))
+            stop = min(width, math.ceil((right - origin_x) / resolution - 0.5))
+            if stop > first:
+                pixels[row * width + first:row * width + stop] = bytes([255]) * (stop - first)
+    return pixels
+
+
+def _validate_corridor_raster(points, pixels, width, height, ox, oy, resolution):
+    """Reject rasterizations that erase or break the exported centerline."""
+    for a, b in zip(points, [*points[1:], points[0]]):
+        count = max(1, math.ceil(math.hypot(b.x - a.x, b.y - a.y) / (resolution * 0.5)))
+        for i in range(count + 1):
+            p = Point2D(a.x + (b.x - a.x) * i / count, a.y + (b.y - a.y) * i / count)
+            x, y = _world_to_cell(p, ox, oy, resolution, height)
+            if not (0 <= x < width and 0 <= y < height) or pixels[y * width + x] != 255:
+                raise TrackSpecError("Rasterization blocks the centerline; increase resolution or corridor width, or reduce wall thickness.")
 
 
 def _world_to_pixel(
@@ -558,7 +644,13 @@ def _write_preview_overlay(
     resolution: float,
     padding: float,
     thickness_px: int,
+    occupancy_mode: str = "walls",
 ) -> None:
+    if occupancy_mode == "corridor":
+        image = _corridor_preview(centerline, walls, resolution, padding, thickness_px)
+        if not image.save(str(preview_path), "PNG"):
+            raise TrackSpecError(f"Failed to save preview PNG: {preview_path}")
+        return
     width, height, origin_x, origin_y = _compute_raster_bounds(
         walls,
         resolution=resolution,
@@ -576,6 +668,21 @@ def _write_preview_overlay(
     )
     if not image.save(str(preview_path), "PNG"):
         raise TrackSpecError(f"Failed to save preview PNG: {preview_path}")
+
+
+def _corridor_preview(centerline, walls, resolution, padding, thickness_px):
+    pixels, width, height, ox, oy = _rasterize_walls(
+        walls, resolution=resolution, padding=padding, thickness_px=thickness_px,
+        occupancy_mode="corridor")
+    image = QImage(pixels, width, height, width, QImage.Format_Grayscale8).convertToFormat(QImage.Format_RGB888)
+    painter = QPainter(image)
+    try:
+        painter.setPen(QPen(QColor(0, 200, 200), max(1, thickness_px)))
+        _draw_polyline(painter, centerline, ox, oy, resolution, height,
+                       close=True, cell_coordinates=True)
+    finally:
+        painter.end()
+    return image
 
 
 def _render_preview_overlay(
@@ -614,11 +721,13 @@ def _draw_polyline(
     height: int,
     *,
     close: bool = False,
+    cell_coordinates: bool = False,
 ) -> None:
     if len(points) < 2:
         return
+    to_pixel = _world_to_cell if cell_coordinates else _world_to_pixel
     coords = [
-        _world_to_pixel(point, origin_x, origin_y, resolution, height)
+        to_pixel(point, origin_x, origin_y, resolution, height)
         for point in points
     ]
     for (x0, y0), (x1, y1) in zip(coords[:-1], coords[1:]):
@@ -724,6 +833,10 @@ def _validate_spec(spec: TrackSpec) -> None:
         raise TrackSpecError("Invalid wall thickness or smoothing passes.")
     if spec.negate not in (0, 1):
         raise TrackSpecError("negate must be 0 or 1.")
+    if spec.occupancy_mode not in {"walls", "corridor"}:
+        raise TrackSpecError("occupancy_mode must be 'walls' or 'corridor'.")
+    if not (0 < spec.free_thresh < spec.occupied_thresh < 1):
+        raise TrackSpecError("Thresholds must satisfy 0 < free_thresh < occupied_thresh < 1 for binary occupancy.")
 
 
 def _validate_centerline(points: Sequence[Point2D], spec: TrackSpec) -> None:
@@ -737,6 +850,8 @@ def _validate_centerline(points: Sequence[Point2D], spec: TrackSpec) -> None:
         prev_pt = points[index - 1]
         cur_pt = points[index]
         next_pt = points[(index + 1) % len(points)]
+        if math.hypot(next_pt.x - cur_pt.x, next_pt.y - cur_pt.y) <= EPSILON:
+            raise TrackSpecError("Centerline has a zero-length segment.")
         radius = _curvature_radius(prev_pt, cur_pt, next_pt)
         if radius is not None and radius < spec.min_curvature_radius - 1e-3:
             raise TrackSpecError(

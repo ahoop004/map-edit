@@ -120,10 +120,13 @@ def _load_map_yaml(yaml_path: Path) -> MapYamlDocument:
             "free_thresh",
             "negate",
             "annotations",
+            "finish_line",
         }
     }
 
     annotations = _parse_annotations(parsed.get("annotations", {}))
+    if annotations.start_finish_line is None and parsed.get("finish_line") is not None:
+        annotations.start_finish_line = _parse_start_finish(parsed["finish_line"])
 
     return MapYamlDocument(
         yaml_path=yaml_path,
@@ -184,7 +187,8 @@ def _parse_annotations(data: Any) -> MapAnnotations:
     if not isinstance(data, dict):
         raise MapYamlError("Annotations section must be a mapping")
 
-    start_finish_raw = data.get("start_finish")
+    # The editor's legacy segment is authoritative when both aliases exist.
+    start_finish_raw = data.get("start_finish", data.get("finish_line"))
     if start_finish_raw is not None:
         annotations.start_finish_line = _parse_start_finish(start_finish_raw)
 
@@ -204,7 +208,17 @@ def _parse_start_finish(raw: Any) -> StartFinishLine:
         raise MapYamlError("start_finish must be a mapping")
     start = _parse_point(raw.get("start"), "start_finish.start")
     end = _parse_point(raw.get("end"), "start_finish.end")
-    return StartFinishLine(LineSegment(start=start, end=end))
+    direction = (_parse_point(raw["direction"], "finish_line.direction")
+                 if "direction" in raw else None)
+    if math.hypot(end.x - start.x, end.y - start.y) <= 1e-6:
+        raise MapYamlError("Finish line requires distinct endpoints")
+    if direction is not None:
+        norm = math.hypot(direction.x, direction.y)
+        cross = (end.x - start.x) * direction.y - (end.y - start.y) * direction.x
+        if norm <= 1e-9 or abs(cross) <= 1e-9:
+            raise MapYamlError("Finish direction must be nonzero and cross the line")
+    return StartFinishLine(LineSegment(start=start, end=end), direction,
+                           {k: v for k, v in raw.items() if k not in {"start", "end", "direction"}})
 
 
 def _parse_spawn_points(raw: Any) -> Iterable[SpawnPoint]:
@@ -230,6 +244,8 @@ def _parse_point(raw: Any, field_name: str) -> Point2D:
     x, y = raw[0], raw[1]
     if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
         raise MapYamlError(f"{field_name} values must be numeric")
+    if not math.isfinite(x) or not math.isfinite(y):
+        raise MapYamlError(f"{field_name} values must be finite")
     return Point2D(float(x), float(y))
 
 
@@ -254,6 +270,7 @@ def _parse_centerline(raw: Any) -> list[Point2D]:
 def _annotations_to_dict(annotations: MapAnnotations) -> dict[str, Any]:
     payload: dict[str, Any] = {}
     if annotations.start_finish_line is not None:
+        line = annotations.start_finish_line
         payload["start_finish"] = {
             "start": [
                 annotations.start_finish_line.segment.start.x,
@@ -264,6 +281,14 @@ def _annotations_to_dict(annotations: MapAnnotations) -> dict[str, Any]:
                 annotations.start_finish_line.segment.end.y,
             ],
         }
+        payload["start_finish"].update(line.extra_fields)
+        if line.direction is not None:
+            payload["start_finish"]["direction"] = [line.direction.x, line.direction.y]
+        direction = _finish_direction(line, annotations.centerline)
+        payload["finish_line"] = dict(payload["start_finish"],
+                                      direction=[direction.x, direction.y])
+        payload["finish_line"].setdefault("version", 1)
+        _parse_start_finish(payload["finish_line"])
     if annotations.spawn_points:
         payload["spawn_points"] = [
             {
@@ -275,6 +300,30 @@ def _annotations_to_dict(annotations: MapAnnotations) -> dict[str, Any]:
     if annotations.centerline:
         payload["centerline"] = [[point.x, point.y] for point in annotations.centerline]
     return payload
+
+
+def _finish_direction(line: StartFinishLine, centerline: list[Point2D]) -> Point2D:
+    """Infer the crossing normal from increasing centerline order for old maps.
+
+    Without a centerline the start-to-end segment's left normal is the explicit
+    convention. Legacy annotations alone cannot determine racing direction.
+    """
+    if line.direction is not None:
+        return line.direction
+    start, end = line.segment.start, line.segment.end
+    dx, dy = end.x - start.x, end.y - start.y
+    norm = math.hypot(dx, dy)
+    if not math.isfinite(norm) or norm <= 1e-6:
+        raise MapYamlError("Finish line requires finite, distinct endpoints")
+    nx, ny = -dy / norm, dx / norm
+    if len(centerline) >= 3:
+        mx, my = (start.x + end.x) / 2, (start.y + end.y) / 2
+        i = min(range(len(centerline)),
+                key=lambda i: (centerline[i].x - mx)**2 + (centerline[i].y - my)**2)
+        a, b = centerline[i - 1], centerline[(i + 1) % len(centerline)]
+        if nx * (b.x - a.x) + ny * (b.y - a.y) < 0:
+            nx, ny = -nx, -ny
+    return Point2D(nx, ny)
 
 
 __all__ = ["MapYamlError", "MapYamlDocument", "load_map_yaml", "dump_map_yaml"]

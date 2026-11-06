@@ -85,6 +85,9 @@ class TrackGeneratorDialog(QDialog):
         self._width_spin = self._make_spin(0.1, 100.0, DEFAULT_TRACK_WIDTH_TARGET, suffix=" m")
         self._resolution_spin = self._make_spin(0.001, 1.0, 0.06, decimals=5, suffix=" m/px")
         self._padding_spin = self._make_spin(0.0, 100.0, 5.0, suffix=" m")
+        self._occupancy_combo = QComboBox()
+        self._occupancy_combo.addItems(["walls", "corridor"])
+        self._occupancy_combo.setToolTip("walls: legacy white exterior; corridor: occupied exterior and infield")
         self._lap_length_spin = self._make_spin(1.0, 200.0, 17.0, suffix=" m")
         self._radius_spin = self._make_spin(0.1, 20.0, 0.65, suffix=" m")
         self._variant_count_spin = QSpinBox()
@@ -117,6 +120,7 @@ class TrackGeneratorDialog(QDialog):
         form.addRow("Track width", self._width_spin)
         form.addRow("Resolution", self._resolution_spin)
         form.addRow("Padding", self._padding_spin)
+        form.addRow("Occupancy", self._occupancy_combo)
 
         self._preview_label = QLabel("Preview not generated")
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -231,6 +235,7 @@ class TrackGeneratorDialog(QDialog):
             self._output_dir_edit.setText(directory)
 
     def _apply_spec_defaults(self, spec: TrackSpec) -> None:
+        self._occupancy_combo.setCurrentText(spec.occupancy_mode)
         self._width_spin.setValue(spec.track_width)
         self._resolution_spin.setValue(spec.resolution)
         self._padding_spin.setValue(spec.padding)
@@ -280,6 +285,7 @@ class TrackGeneratorDialog(QDialog):
                                       track_width=self._width_spin.value()),
                 resolution=self._resolution_spin.value(), padding=self._padding_spin.value(),
                 min_curvature_radius=self._radius_spin.value(),
+                occupancy_mode=self._occupancy_combo.currentText(),
             )
         return self._build_yaml_spec()
 
@@ -317,6 +323,7 @@ class TrackGeneratorDialog(QDialog):
             centerline_spacing=0.2,
             resolution=self._resolution_spin.value(),
             padding=self._padding_spin.value(),
+            occupancy_mode=self._occupancy_combo.currentText(),
         )
 
     def _build_yaml_spec(self) -> TrackSpec:
@@ -332,6 +339,7 @@ class TrackGeneratorDialog(QDialog):
             track_width=self._width_spin.value(),
             resolution=self._resolution_spin.value(),
             padding=self._padding_spin.value(),
+            occupancy_mode=self._occupancy_combo.currentText(),
         )
 
     def _on_source_changed(self, text: str) -> None:

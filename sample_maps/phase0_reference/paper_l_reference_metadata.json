@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": null,
+  "track_id": "paper_l_reference",
+  "generation_mode": "legacy",
+  "geometry_family": "paper_l",
+  "random_seed": null,
+  "generator_version": "map_editor.closed_bspline.v1",
+  "geometry": {
+    "coordinate_frame": "map",
+    "closed": true,
+    "arc_length_origin": "centerline_first_vertex",
+    "positive_curvature": "left"
+  },
+  "requested": {
+    "track_width_m": 1.0,
+    "length_m": 17.0,
+    "minimum_radius_m": 0.65,
+    "minimum_wall_separation_m": 1.0,
+    "centerline_spacing_m": 0.05,
+    "resolution_m_per_pixel": 0.02
+  },
+  "measured": {
+    "length_m": 17.0,
+    "minimum_radius_m": 0.9640947102746189,
+    "minimum_width_m": 0.9999999999999991,
+    "maximum_width_m": 1.0000000000000009,
+    "mean_width_m": 1.0,
+    "sample_count": 340
+  },
+  "difficulty": {},
+  "split": "unspecified",
+  "provenance": {
+    "family": "paper_l",
+    "role": "reference_approximation",
+    "paper": "https://arxiv.org/abs/2504.02420v2",
+    "description": "Rounded L-shaped approximation; not the authors' original geometry.",
+    "assumptions": [
+      "The reported 17 m length is treated as centerline lap length.",
+      "Nominal width is 1 m; corner shapes and proportions are approximated.",
+      "Minimum radius of 0.65 m is a generation constraint, not a paper measurement."
+    ],
+    "shape_parameters": {
+      "horizontal_extent": 6.0,
+      "vertical_extent": 5.0,
+      "arm_extent": 2.8
+    }
+  },
+  "occupancy_mode": "corridor",
+  "maneuvers": [],
+  "artifacts": {
+    "map": "paper_l_reference.yaml",
+    "image": "paper_l_reference.png",
+    "pgm": "paper_l_reference.pgm",
+    "centerline": "paper_l_reference_centerline.csv",
+    "walls": "paper_l_reference_walls.csv",
+    "track_profile": "paper_l_reference_track_profile.csv",
+    "preview": "paper_l_reference_preview.png",
+    "recipe": "paper_l_reference_generation.yaml",
+    "metadata": "paper_l_reference_metadata.json"
+  }
+}
