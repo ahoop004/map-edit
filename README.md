@@ -22,6 +22,13 @@ commands, simulator integration, occupancy choices, validation limits and profil
 The [geometry/maneuver metadata contract](docs/geometry_metadata.md) describes the
 versioned sidecar schema for future dataset generators.
 
+The [Phase 1 results](docs/phase1_results.md) provide a parametric maneuver backend,
+[geometry/parameter contract](docs/parametric_geometry.md), and a small
+[demonstration gallery](examples/phase1/overview.png). The new generator supports
+physical-arc straights, hairpins, sweepers, chicanes, S-curves and curvature ramps,
+with measured acceptance, continuity and vehicle-clearance checks. Its versioned
+recipes use a separate backend; legacy spline recipes retain their behavior.
+
 ## Annotation Placement Workflow
 
 1. Open a map bundle (File → Open Map…, select the YAML file).

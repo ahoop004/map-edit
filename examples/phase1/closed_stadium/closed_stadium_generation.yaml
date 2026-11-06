@@ -1,0 +1,125 @@
+schema_version: 1
+generator: map_editor.parametric_curvature.v1
+closed: true
+stem: closed_stadium
+maneuvers:
+- type: straight
+  direction: none
+  segments:
+  - length_m: 12
+    k_start: 0.0
+    k_end: 0.0
+    ramp: smoothstep
+  requested:
+    length_m: 12
+- type: hairpin
+  direction: left
+  segments:
+  - length_m: 1.0
+    k_start: 0
+    k_end: 0.25
+    ramp: smoothstep
+  - length_m: 11.566370614359172
+    k_start: 0.25
+    k_end: 0.25
+    ramp: smoothstep
+  - length_m: 1.0
+    k_start: 0.25
+    k_end: 0
+    ramp: smoothstep
+  requested:
+    radius_m: 4
+    turn_angle_rad: 3.141592653589793
+    direction: left
+    entry_transition_m: 1.0
+    exit_transition_m: 1.0
+- type: straight
+  direction: none
+  segments:
+  - length_m: 12
+    k_start: 0.0
+    k_end: 0.0
+    ramp: smoothstep
+  requested:
+    length_m: 12
+- type: hairpin
+  direction: left
+  segments:
+  - length_m: 1.0
+    k_start: 0
+    k_end: 0.25
+    ramp: smoothstep
+  - length_m: 11.566370614359172
+    k_start: 0.25
+    k_end: 0.25
+    ramp: smoothstep
+  - length_m: 1.0
+    k_start: 0.25
+    k_end: 0
+    ramp: smoothstep
+  requested:
+    radius_m: 4
+    turn_angle_rad: 3.141592653589793
+    direction: left
+    entry_transition_m: 1.0
+    exit_transition_m: 1.0
+spacing_m: 0.1
+width_m: 1.5
+resolution: 0.03
+padding: 1.0
+frame:
+  x: 0.0
+  y: 0.0
+  heading: 0.0
+require_g2: true
+continuity:
+  position_m: 1.0e-07
+  heading_rad: 1.0e-07
+  curvature_inv_m: 1.0e-07
+measurements:
+  length_abs_m: 0.0001
+  length_relative: 0.002
+  angle_rad: 0.005
+  curvature_inv_m: 0.002
+  straightness_m: 0.001
+  sign_epsilon_inv_m: 1.0e-05
+  hairpin_min_angle_rad: 2.6179938779914944
+  hairpin_max_angle_rad: 3.6651914291880923
+  minimum_lobe_angle_rad: 0.05
+  displacement_m: 0.002
+limits:
+  minimum_radius_m: 0.5
+  minimum_usable_width_m: 0.7
+  maximum_curvature_rate_inv_m2: 2.0
+  footprint_margin_m: 0.02
+  minimum_nonlocal_boundary_gap_m: 0.1
+vehicle:
+  length_m: 0.5
+  width_m: 0.27
+  lf_m: 0.15875
+  lr_m: 0.17145
+  steering_min_rad: -0.523599
+  steering_max_rad: 0.523599
+  steering_rate_min_rad_s: -3.2
+  steering_rate_max_rad_s: 3.2
+  source: combined_slip.yaml
+  source_sha256: fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016
+  calibration_status: uncalibrated
+random_seed: null
+dataset_id: null
+split: unspecified
+achieved:
+  length_m: 51.13210365751361
+  minimum_radius_m: 3.9999999999913713
+  minimum_width_m: 1.5
+  maximum_width_m: 1.5
+  mean_width_m: 1.5
+  sample_count: 512
+files:
+  map: closed_stadium.yaml
+  image: closed_stadium.png
+  pgm: closed_stadium.pgm
+  centerline: closed_stadium_centerline.csv
+  walls: closed_stadium_walls.csv
+  track_profile: closed_stadium_track_profile.csv
+  metadata: closed_stadium_metadata.json

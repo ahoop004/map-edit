@@ -108,7 +108,7 @@ def derive_centerline_from_walls(walls: Sequence[Sequence[Point2D]]) -> list[Poi
     return _smooth_polyline(centerline, passes=2)
 
 
-def export_walls_csv(walls: Sequence[Sequence[Point2D]], destination: Path) -> None:
+def export_walls_csv(walls: Sequence[Sequence[Point2D]], destination: Path, *, closed: bool = True) -> None:
     """Write wall polylines to CSV with columns wall_id,vertex_id,x,y."""
     destination.parent.mkdir(parents=True, exist_ok=True)
     with destination.open("w", newline="", encoding="utf-8") as handle:
@@ -116,7 +116,7 @@ def export_walls_csv(walls: Sequence[Sequence[Point2D]], destination: Path) -> N
         writer.writerow(["wall_id", "vertex_id", "x", "y"])
         for wall_id, wall in enumerate(walls):
             points = list(wall)
-            if len(points) >= 2 and not _points_close(points[0], points[-1]):
+            if closed and len(points) >= 2 and not _points_close(points[0], points[-1]):
                 points.append(Point2D(points[0].x, points[0].y))
             writer.writerow([wall_id, "BEGIN", "NaN", "NaN"])
             for vertex_id, point in enumerate(points):

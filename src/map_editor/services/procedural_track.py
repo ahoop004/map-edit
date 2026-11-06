@@ -277,6 +277,18 @@ def prepare_track_geometry(spec: TrackSpec) -> TrackGeometry:
 def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
     """Generate a full map bundle, plus a replayable recipe and track profile."""
     geometry = prepare_track_geometry(spec)
+    return export_track_geometry(spec, geometry, output_dir)
+
+
+def export_track_geometry(
+    spec: TrackSpec, geometry: TrackGeometry, output_dir: Path, *,
+    metadata_contract: dict | None = None, generation_recipe: dict | None = None,
+) -> Path:
+    """Export already prepared closed geometry without fitting or resampling it.
+
+    Both backends use this writer. The legacy entry point and default recipe
+    preserve their original ordering, values and artifact bytes.
+    """
     samples, walls = geometry.samples, geometry.walls
     centerline_points = geometry.centerline
 
@@ -293,7 +305,11 @@ def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
 
     # Validate metadata before writing any artifacts.
     try:
-        metadata_contract = build_geometry_metadata(spec, geometry.metrics)
+        if metadata_contract is None:
+            metadata_contract = build_geometry_metadata(spec, geometry.metrics)
+        else:
+            from map_editor.services.geometry_metadata import validate_geometry_metadata
+            validate_geometry_metadata(metadata_contract)
     except ValueError as exc:
         raise TrackSpecError(f"Invalid track metadata: {exc}") from exc
 
@@ -336,13 +352,14 @@ def generate_track_bundle(spec: TrackSpec, output_dir: Path) -> Path:
                                     "marl_race_track_inverted": bool(spec.negate)}},
     )
     dump_map_yaml(document, destination=yaml_path)
-    recipe = asdict(spec)
-    recipe["control_points"] = [[float(point.x), float(point.y)] for point in spec.control_points]
+    if generation_recipe is None:
+        recipe = asdict(spec)
+        recipe["control_points"] = [[float(point.x), float(point.y)] for point in spec.control_points]
+        recipe.update({"schema_version": 1, "generator": "map_editor.closed_bspline.v1",
+                       "coordinate_frame": "map", "closed": True})
+    else:
+        recipe = dict(generation_recipe)
     recipe.update({
-        "schema_version": 1,
-        "generator": "map_editor.closed_bspline.v1",
-        "coordinate_frame": "map",
-        "closed": True,
         "achieved": geometry.metrics,
         "files": {
             "map": yaml_path.name, "image": png_path.name, "pgm": pgm_path.name,

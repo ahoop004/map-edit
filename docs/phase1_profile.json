@@ -1,0 +1,411 @@
+{
+  "python": "3.12.3",
+  "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "vehicle": {
+    "length_m": 0.5,
+    "width_m": 0.27,
+    "lf_m": 0.15875,
+    "lr_m": 0.17145,
+    "steering_min_rad": -0.523599,
+    "steering_max_rad": 0.523599,
+    "steering_rate_min_rad_s": -3.2,
+    "steering_rate_max_rad_s": 3.2,
+    "source": "combined_slip.yaml",
+    "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+    "calibration_status": "uncalibrated"
+  },
+  "note": "Phase 0 uses a 17 m rounded oval; Phase 1 uses an analytic 17 m circle. Both width 1 m. New preparation also includes raster, vehicle footprint, classification and metadata. Timings are single runs, with separate cProfile instrumentation.",
+  "phase0_baseline": {
+    "python": "3.12.3",
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "note": "One wall-time run and one cProfile run per case; cumulative timings overlap. Not a benchmark guarantee.",
+    "cases": [
+      {
+        "family": "rounded_oval",
+        "centerline_spacing_m": 0.05,
+        "sample_count": 340,
+        "wall_vertices_each": 340,
+        "geometry_wall_seconds": 0.3395981490000395,
+        "raster_seconds": 0.014537354999902163,
+        "raster_validation_seconds": 0.0018074679999244836,
+        "profiled_geometry_seconds": 0.7721547950000002,
+        "functions": [
+          {
+            "function": "_segments_intersect",
+            "calls": 287470,
+            "self_seconds": 0.17566230200000002,
+            "cumulative_seconds": 0.47634381200000003
+          },
+          {
+            "function": "_ensure_wall_constraints",
+            "calls": 1,
+            "self_seconds": 0.025966023,
+            "cumulative_seconds": 0.438989722
+          },
+          {
+            "function": "_polyline_self_intersects",
+            "calls": 3,
+            "self_seconds": 0.032911052,
+            "cumulative_seconds": 0.28954815300000003
+          },
+          {
+            "function": "build_track_profile",
+            "calls": 1,
+            "self_seconds": 0.0010536620000000001,
+            "cumulative_seconds": 0.22407174600000002
+          },
+          {
+            "function": "_ray_wall_distance",
+            "calls": 680,
+            "self_seconds": 0.064475726,
+            "cumulative_seconds": 0.222623965
+          },
+          {
+            "function": "_validate_centerline",
+            "calls": 1,
+            "self_seconds": 0.000161292,
+            "cumulative_seconds": 0.0005354320000000001
+          }
+        ]
+      },
+      {
+        "family": "rounded_oval",
+        "centerline_spacing_m": 0.02,
+        "sample_count": 850,
+        "wall_vertices_each": 850,
+        "geometry_wall_seconds": 2.2035926470000504,
+        "raster_seconds": 0.03009768700007953,
+        "raster_validation_seconds": 0.0027128050001010706,
+        "profiled_geometry_seconds": 4.511421990000001,
+        "functions": [
+          {
+            "function": "_segments_intersect",
+            "calls": 1802425,
+            "self_seconds": 1.0049260230000001,
+            "cumulative_seconds": 2.7499225060000003
+          },
+          {
+            "function": "_ensure_wall_constraints",
+            "calls": 1,
+            "self_seconds": 0.12746247200000002,
+            "cumulative_seconds": 2.479106917
+          },
+          {
+            "function": "_polyline_self_intersects",
+            "calls": 3,
+            "self_seconds": 0.21570707900000002,
+            "cumulative_seconds": 1.849664572
+          },
+          {
+            "function": "build_track_profile",
+            "calls": 1,
+            "self_seconds": 0.003577995,
+            "cumulative_seconds": 1.3989402450000001
+          },
+          {
+            "function": "_ray_wall_distance",
+            "calls": 1700,
+            "self_seconds": 0.40216023,
+            "cumulative_seconds": 1.3941802570000001
+          },
+          {
+            "function": "_validate_centerline",
+            "calls": 1,
+            "self_seconds": 0.000407333,
+            "cumulative_seconds": 0.001355742
+          }
+        ]
+      },
+      {
+        "family": "rounded_oval",
+        "centerline_spacing_m": 0.01,
+        "sample_count": 1700,
+        "wall_vertices_each": 1700,
+        "geometry_wall_seconds": 8.470078382999873,
+        "raster_seconds": 0.059236713000018426,
+        "raster_validation_seconds": 0.0041805190001014125,
+        "profiled_geometry_seconds": 18.014914677,
+        "functions": [
+          {
+            "function": "_segments_intersect",
+            "calls": 7217350,
+            "self_seconds": 4.018943141,
+            "cumulative_seconds": 10.970162582
+          },
+          {
+            "function": "_ensure_wall_constraints",
+            "calls": 1,
+            "self_seconds": 0.547838807,
+            "cumulative_seconds": 9.954972047
+          },
+          {
+            "function": "_polyline_self_intersects",
+            "calls": 3,
+            "self_seconds": 0.9163211250000001,
+            "cumulative_seconds": 7.451513799000001
+          },
+          {
+            "function": "build_track_profile",
+            "calls": 1,
+            "self_seconds": 0.008451143000000001,
+            "cumulative_seconds": 5.55144204
+          },
+          {
+            "function": "_ray_wall_distance",
+            "calls": 3400,
+            "self_seconds": 1.587968947,
+            "cumulative_seconds": 5.5403687470000005
+          },
+          {
+            "function": "_validate_centerline",
+            "calls": 1,
+            "self_seconds": 0.0007917890000000001,
+            "cumulative_seconds": 0.0026275720000000003
+          }
+        ]
+      }
+    ]
+  },
+  "cases": [
+    {
+      "spacing_m": 0.05,
+      "sample_count": 340,
+      "prepare_wall_seconds": 0.08387854699958552,
+      "profiled_prepare_seconds": 0.17861374500000018,
+      "functions": [
+        {
+          "function": "validate_geometry",
+          "calls": 1,
+          "self_seconds": 0.0073716350000000005,
+          "cumulative_seconds": 0.127600566
+        },
+        {
+          "function": "minimum_boundary_separation",
+          "calls": 1,
+          "self_seconds": 0.014409538000000001,
+          "cumulative_seconds": 0.070993599
+        },
+        {
+          "function": "self_intersects",
+          "calls": 4,
+          "self_seconds": 0.005039147,
+          "cumulative_seconds": 0.025272811000000003
+        },
+        {
+          "function": "segment_distance",
+          "calls": 3365,
+          "self_seconds": 0.003305745,
+          "cumulative_seconds": 0.024365817
+        },
+        {
+          "function": "validate_raster_footprint",
+          "calls": 1,
+          "self_seconds": 0.011042346000000001,
+          "cumulative_seconds": 0.022865806000000002
+        },
+        {
+          "function": "_segments_intersect",
+          "calls": 7776,
+          "self_seconds": 0.005486802000000001,
+          "cumulative_seconds": 0.014393626000000001
+        },
+        {
+          "function": "sample",
+          "calls": 1,
+          "self_seconds": 0.000183296,
+          "cumulative_seconds": 0.012164017000000001
+        },
+        {
+          "function": "sample",
+          "calls": 1,
+          "self_seconds": 1.1119000000000001e-05,
+          "cumulative_seconds": 0.004104394
+        },
+        {
+          "function": "sample",
+          "calls": 1,
+          "self_seconds": 0.00010418700000000001,
+          "cumulative_seconds": 0.002724816
+        },
+        {
+          "function": "at",
+          "calls": 343,
+          "self_seconds": 0.000765899,
+          "cumulative_seconds": 0.0025295030000000002
+        },
+        {
+          "function": "validate_maneuver",
+          "calls": 1,
+          "self_seconds": 1.8498e-05,
+          "cumulative_seconds": 0.0015556040000000001
+        },
+        {
+          "function": "at",
+          "calls": 2,
+          "self_seconds": 1.1514e-05,
+          "cumulative_seconds": 5.9430000000000005e-05
+        }
+      ]
+    },
+    {
+      "spacing_m": 0.02,
+      "sample_count": 850,
+      "prepare_wall_seconds": 0.2977075959997819,
+      "profiled_prepare_seconds": 0.7481162020000006,
+      "functions": [
+        {
+          "function": "validate_geometry",
+          "calls": 1,
+          "self_seconds": 0.039352753000000004,
+          "cumulative_seconds": 0.62360125
+        },
+        {
+          "function": "minimum_boundary_separation",
+          "calls": 1,
+          "self_seconds": 0.086124186,
+          "cumulative_seconds": 0.38171704100000003
+        },
+        {
+          "function": "segment_distance",
+          "calls": 13225,
+          "self_seconds": 0.014138781000000001,
+          "cumulative_seconds": 0.102585382
+        },
+        {
+          "function": "self_intersects",
+          "calls": 4,
+          "self_seconds": 0.013064357,
+          "cumulative_seconds": 0.06417846
+        },
+        {
+          "function": "validate_raster_footprint",
+          "calls": 1,
+          "self_seconds": 0.029745428,
+          "cumulative_seconds": 0.061904243000000005
+        },
+        {
+          "function": "_segments_intersect",
+          "calls": 24429,
+          "self_seconds": 0.018361138000000003,
+          "cumulative_seconds": 0.048291521000000004
+        },
+        {
+          "function": "sample",
+          "calls": 1,
+          "self_seconds": 0.000471461,
+          "cumulative_seconds": 0.028797469000000003
+        },
+        {
+          "function": "sample",
+          "calls": 1,
+          "self_seconds": 1.0037e-05,
+          "cumulative_seconds": 0.007987894
+        },
+        {
+          "function": "sample",
+          "calls": 1,
+          "self_seconds": 0.00015612900000000002,
+          "cumulative_seconds": 0.0047398200000000005
+        },
+        {
+          "function": "at",
+          "calls": 853,
+          "self_seconds": 0.0018458340000000002,
+          "cumulative_seconds": 0.004324995
+        },
+        {
+          "function": "validate_maneuver",
+          "calls": 1,
+          "self_seconds": 2.1845000000000002e-05,
+          "cumulative_seconds": 0.0034169170000000002
+        },
+        {
+          "function": "at",
+          "calls": 2,
+          "self_seconds": 1.0527000000000001e-05,
+          "cumulative_seconds": 6.0020000000000005e-05
+        }
+      ]
+    },
+    {
+      "spacing_m": 0.01,
+      "sample_count": 1700,
+      "prepare_wall_seconds": 0.9659977680003067,
+      "profiled_prepare_seconds": 2.323237770999999,
+      "functions": [
+        {
+          "function": "validate_geometry",
+          "calls": 1,
+          "self_seconds": 0.141391079,
+          "cumulative_seconds": 2.053184333
+        },
+        {
+          "function": "minimum_boundary_separation",
+          "calls": 1,
+          "self_seconds": 0.32178492000000003,
+          "cumulative_seconds": 1.353499953
+        },
+        {
+          "function": "segment_distance",
+          "calls": 37357,
+          "self_seconds": 0.040103881,
+          "cumulative_seconds": 0.292089231
+        },
+        {
+          "function": "validate_raster_footprint",
+          "calls": 1,
+          "self_seconds": 0.070539078,
+          "cumulative_seconds": 0.147180012
+        },
+        {
+          "function": "self_intersects",
+          "calls": 4,
+          "self_seconds": 0.027101120000000003,
+          "cumulative_seconds": 0.13322255
+        },
+        {
+          "function": "_segments_intersect",
+          "calls": 59715,
+          "self_seconds": 0.047755427,
+          "cumulative_seconds": 0.122833416
+        },
+        {
+          "function": "sample",
+          "calls": 1,
+          "self_seconds": 0.0007979860000000001,
+          "cumulative_seconds": 0.060338405000000005
+        },
+        {
+          "function": "sample",
+          "calls": 1,
+          "self_seconds": 2.4953000000000003e-05,
+          "cumulative_seconds": 0.016909883
+        },
+        {
+          "function": "sample",
+          "calls": 1,
+          "self_seconds": 0.000372009,
+          "cumulative_seconds": 0.010214649000000001
+        },
+        {
+          "function": "at",
+          "calls": 1703,
+          "self_seconds": 0.003903624,
+          "cumulative_seconds": 0.009283107
+        },
+        {
+          "function": "validate_maneuver",
+          "calls": 1,
+          "self_seconds": 2.2576000000000002e-05,
+          "cumulative_seconds": 0.006255889000000001
+        },
+        {
+          "function": "at",
+          "calls": 2,
+          "self_seconds": 1.0693e-05,
+          "cumulative_seconds": 5.8916e-05
+        }
+      ]
+    }
+  ]
+}
