@@ -17,8 +17,10 @@ A PySide6 desktop tool for inspecting and editing ROS map bundles used in F1TENT
 - Paper-inspired rounded L circuit preset and seeded track collections, with
   replayable recipes, measured geometry, and curvature/width profiles.
 
-See [Paper circuit and collections](docs/paper_tracks.md) for GUI controls,
-generation commands, bundle schemas, and custom gym integration.
+See the [Phase 0 compatibility audit](docs/phase0_compatibility.md) for generation
+commands, simulator integration, occupancy choices, validation limits and profiling.
+The [geometry/maneuver metadata contract](docs/geometry_metadata.md) describes the
+versioned sidecar schema for future dataset generators.
 
 ## Annotation Placement Workflow
 
@@ -63,6 +65,19 @@ python scripts/run.py
 
 Run the tests with `pip install pytest` followed by `python -m pytest -q`.
 The GUI tests use Qt's offscreen backend.
+If unrelated system pytest plugins interfere, use
+`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q`.
+
+Generate and inspect an exclusively drivable corridor bundle:
+
+```bash
+python3 scripts/generate_track.py --preset paper_l --occupancy-mode corridor --output generated_maps/example
+python3 scripts/smoke_marl_race.py generated_maps/example/paper_l_reference.yaml --marl-race-root ../marl_race
+```
+
+Omit `--occupancy-mode` to retain legacy boundary-only images. New bundles include
+compatible finish annotations and a metadata JSON sidecar. Existing recipe files
+remain valid; replay uses their recorded occupancy choice.
 
 ## Roadmap
 
