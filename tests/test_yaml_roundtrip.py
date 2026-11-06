@@ -5,6 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import os
+from dataclasses import replace
+
+import pytest
+import yaml
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QImage, QColor
@@ -56,4 +60,43 @@ def test_save_then_load_preserves_annotations(tmp_path: Path):
     assert loaded.metadata == metadata
     assert loaded.annotations.start_finish_line == annotations.start_finish_line
     assert loaded.annotations.spawn_points == annotations.spawn_points
-    assert loaded.annotations.centerline == []
+    assert loaded.annotations.centerline == annotations.centerline
+
+
+def test_edit_and_save_preserves_yaml_settings(tmp_path: Path):
+    image_path = tmp_path / "track.png"
+    _write_png(image_path)
+    yaml_path = tmp_path / "track.yaml"
+    yaml_path.write_text(yaml.safe_dump({
+        "image": "track.png", "resolution": 0.05, "origin": [0, 0, 0],
+        "negate": 1, "mode": "scale", "custom": {"labels": ["a", "b"]},
+    }))
+    loader = MapBundleLoader(search_image=False)
+    bundle = loader.load_from_yaml(yaml_path).bundle
+    bundle = bundle.with_metadata(replace(bundle.metadata, resolution=0.1))
+    bundle = bundle.with_annotations(MapAnnotations(centerline=[Point2D(1, 2), Point2D(3, 4)]))
+    bundle = bundle.with_yaml_path(tmp_path / "edited.yaml")
+    loader.save_bundle(bundle)
+    loaded = loader.load_from_yaml(bundle.yaml_path).bundle
+    assert loaded.negate == 1
+    assert loaded.extra_fields == {"mode": "scale", "custom": {"labels": ["a", "b"]}}
+    assert loaded.metadata.resolution == 0.1
+    assert loaded.annotations == bundle.annotations
+
+
+@pytest.mark.parametrize("absolute", [False, True])
+@pytest.mark.parametrize("relocate", [False, True])
+def test_save_keeps_image_reference_resolvable(tmp_path: Path, absolute: bool, relocate: bool):
+    image_path = tmp_path / "images" / "track.png"
+    image_path.parent.mkdir()
+    _write_png(image_path)
+    yaml_path = tmp_path / "track.yaml"
+    yaml_path.write_text(yaml.safe_dump({
+        "image": str(image_path) if absolute else "images/track.png",
+        "resolution": 0.05, "origin": [0, 0, 0],
+    }))
+    loader = MapBundleLoader(search_image=False)
+    bundle = loader.load_from_yaml(yaml_path).bundle
+    target = tmp_path / "elsewhere" / "saved.yaml" if relocate else yaml_path
+    loader.save_bundle(bundle, destination=target)
+    assert loader.load_from_yaml(target).bundle.image_path == image_path

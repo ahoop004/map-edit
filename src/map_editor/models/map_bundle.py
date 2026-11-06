@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
+import math
 from pathlib import Path
+from typing import Any
 
 from map_editor.models.annotations import MapAnnotations
 
@@ -37,6 +39,17 @@ class MapMetadata:
     def with_origin_theta(self, theta: float) -> "MapMetadata":
         return replace(self, origin_theta=theta)
 
+    def local_to_world(self, x: float, y: float) -> tuple[float, float]:
+        """Transform map-local meters into world coordinates."""
+        cosine, sine = math.cos(self.origin_theta), math.sin(self.origin_theta)
+        return self.origin_x + cosine * x - sine * y, self.origin_y + sine * x + cosine * y
+
+    def world_to_local(self, x: float, y: float) -> tuple[float, float]:
+        """Transform world coordinates into map-local meters."""
+        dx, dy = x - self.origin_x, y - self.origin_y
+        cosine, sine = math.cos(self.origin_theta), math.sin(self.origin_theta)
+        return cosine * dx + sine * dy, -sine * dx + cosine * dy
+
 
 @dataclass
 class MapBundle:
@@ -46,16 +59,18 @@ class MapBundle:
     yaml_path: Path | None
     metadata: MapMetadata
     annotations: MapAnnotations
+    negate: int = 0
+    extra_fields: dict[str, Any] = field(default_factory=dict)
 
     def with_metadata(self, metadata: MapMetadata) -> "MapBundle":
         """Return a copy with updated metadata."""
-        return MapBundle(self.image_path, self.yaml_path, metadata, self.annotations)
+        return replace(self, metadata=metadata)
 
     def with_annotations(self, annotations: MapAnnotations) -> "MapBundle":
-        return MapBundle(self.image_path, self.yaml_path, self.metadata, annotations)
+        return replace(self, annotations=annotations)
 
     def with_yaml_path(self, yaml_path: Path) -> "MapBundle":
-        return MapBundle(self.image_path, yaml_path, self.metadata, self.annotations)
+        return replace(self, yaml_path=yaml_path)
 
     @property
     def stem(self) -> str:

@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import os
+import math
+from dataclasses import replace
 
 import pytest
 from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QPointF
 
 from map_editor.models.annotations import Point2D
+from map_editor.constants import CAR_LENGTH_M, CAR_WIDTH_M
 from map_editor.models.map_bundle import MapMetadata
 from map_editor.models.spawn_stamp import SpawnStampSettings
 from map_editor.ui.map_viewer import MapViewer
@@ -57,8 +61,8 @@ def test_spawn_vehicle_polygon_scales_with_resolution():
     length_pixels = max(xs) - min(xs)
     width_pixels = max(ys) - min(ys)
 
-    expected_length_pixels = MapViewer._CAR_LENGTH_M / metadata.resolution
-    expected_width_pixels = MapViewer._CAR_WIDTH_M / metadata.resolution
+    expected_length_pixels = CAR_LENGTH_M / metadata.resolution
+    expected_width_pixels = CAR_WIDTH_M / metadata.resolution
 
     assert length_pixels == pytest.approx(expected_length_pixels, rel=1e-6)
     assert width_pixels == pytest.approx(expected_width_pixels, rel=1e-6)
@@ -108,3 +112,18 @@ def test_closest_centerline_frame_projects_to_segment():
     assert proj_x == pytest.approx(1.0)
     assert theta == pytest.approx(0.0)
     assert distance == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("theta", [math.pi / 2, -math.pi / 3])
+def test_rotated_origin_coordinates(theta):
+    viewer = MapViewer()
+    viewer.set_metadata(replace(
+        MapMetadata.default(), resolution=0.5, origin_x=3, origin_y=-2, origin_theta=theta,
+    ))
+    viewer._pixmap_height = 100
+    # Scene (4, 94) corresponds to local meters (2, 3).
+    expected = (3 + 2 * math.cos(theta) - 3 * math.sin(theta),
+                -2 + 2 * math.sin(theta) + 3 * math.cos(theta))
+    assert viewer._scene_to_world(QPointF(4, 94)) == pytest.approx(expected)
+    scene = viewer._world_to_scene(*expected)
+    assert (scene.x(), scene.y()) == pytest.approx((4, 94))

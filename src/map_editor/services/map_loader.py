@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 
 from PySide6.QtGui import QPixmap
@@ -46,6 +47,8 @@ class MapBundleLoader:
             yaml_path=yaml_path,
             metadata=document.metadata,
             annotations=document.annotations,
+            negate=document.negate,
+            extra_fields=document.extra_fields,
         )
 
         warnings = self._collect_warnings(document)
@@ -68,11 +71,18 @@ class MapBundleLoader:
             backup_path = target.with_suffix(target.suffix + ".bak")
             target.replace(backup_path)
 
+        try:
+            image_reference = os.path.relpath(bundle.image_path.resolve(), target.parent.resolve())
+        except ValueError:  # Paths on different Windows drives cannot be relative.
+            image_reference = str(bundle.image_path.resolve())
+
         document = MapYamlDocument(
             yaml_path=target,
-            image=bundle.image_path.name,
+            image=image_reference,
             metadata=bundle.metadata,
             annotations=bundle.annotations,
+            negate=bundle.negate,
+            extra_fields=bundle.extra_fields,
         )
         dump_map_yaml(document, destination=target)
         return target

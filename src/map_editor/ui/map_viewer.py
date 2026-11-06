@@ -502,8 +502,9 @@ class MapViewer(QGraphicsView):
     def _world_to_scene(self, x: float, y: float) -> QPointF:
         if not self._metadata or self._pixmap_height == 0:
             return QPointF(x, -y)
-        pixel_x = (x - self._metadata.origin_x) / self._metadata.resolution
-        pixel_y_from_origin = (y - self._metadata.origin_y) / self._metadata.resolution
+        local_x, local_y = self._metadata.world_to_local(x, y)
+        pixel_x = local_x / self._metadata.resolution
+        pixel_y_from_origin = local_y / self._metadata.resolution
         scene_x = pixel_x
         scene_y = self._pixmap_height - pixel_y_from_origin
         return QPointF(scene_x, scene_y)
@@ -514,9 +515,10 @@ class MapViewer(QGraphicsView):
         pixel_x = scene_pos.x()
         pixel_y_top = scene_pos.y()
         pixel_y_from_origin = self._pixmap_height - pixel_y_top
-        world_x = self._metadata.origin_x + pixel_x * self._metadata.resolution
-        world_y = self._metadata.origin_y + pixel_y_from_origin * self._metadata.resolution
-        return world_x, world_y
+        return self._metadata.local_to_world(
+            pixel_x * self._metadata.resolution,
+            pixel_y_from_origin * self._metadata.resolution,
+        )
 
     def _marker_radius(self) -> float:
         if not self._metadata:

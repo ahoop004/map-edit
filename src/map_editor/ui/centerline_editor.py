@@ -126,13 +126,12 @@ class CenterlineEditorDialog(QDialog):
             return
         x_item = self._table.takeItem(row, 0)
         y_item = self._table.takeItem(row, 1)
-        self._table.insertRow(new_row)
+        other_x = self._table.takeItem(new_row, 0)
+        other_y = self._table.takeItem(new_row, 1)
+        self._table.setItem(row, 0, other_x)
+        self._table.setItem(row, 1, other_y)
         self._table.setItem(new_row, 0, x_item)
         self._table.setItem(new_row, 1, y_item)
-        if new_row > row:
-            self._table.removeRow(row)
-        else:
-            self._table.removeRow(row + 1)
         self._table.selectRow(new_row)
 
     def _clear(self) -> None:

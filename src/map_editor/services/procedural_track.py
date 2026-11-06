@@ -380,7 +380,7 @@ def _rasterize_walls(
     for wall in walls:
         if len(wall) < 2:
             continue
-        for start, end in zip(wall[:-1], wall[1:]):
+        for start, end in zip(wall, [*wall[1:], wall[0]]):
             x0, y0 = _world_to_pixel(start, origin_x, origin_y, resolution, height)
             x1, y1 = _world_to_pixel(end, origin_x, origin_y, resolution, height)
             _draw_line(pixels, width, height, x0, y0, x1, y1, thickness_px)
@@ -526,7 +526,7 @@ def _render_preview_overlay(
         wall_pen = QPen(QColor(0, 0, 0), max(1, thickness_px))
         painter.setPen(wall_pen)
         for wall in walls:
-            _draw_polyline(painter, wall, origin_x, origin_y, resolution, height)
+            _draw_polyline(painter, wall, origin_x, origin_y, resolution, height, close=True)
         center_pen = QPen(QColor(0, 200, 200), max(1, thickness_px))
         painter.setPen(center_pen)
         _draw_polyline(painter, centerline, origin_x, origin_y, resolution, height, close=True)

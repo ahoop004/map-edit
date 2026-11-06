@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+from dataclasses import replace
 
 import shutil
 from pathlib import Path
@@ -45,6 +46,7 @@ from map_editor.models.annotations import (
     SpawnPoint,
     StartFinishLine,
 )
+from map_editor.commands.map_commands import MapGeometryState, ScaleMapCommand
 from map_editor.models.map_bundle import MapBundle, MapMetadata
 from map_editor.models.spawn_stamp import SpawnStampSettings
 from map_editor.services.diagnostics import DiagnosticsReport, analyse_bundle
@@ -612,6 +614,7 @@ class MainWindow(QMainWindow):
                 lambda: extract_walls(
                     self._current_bundle.image_path,
                     self._current_bundle.metadata,
+                    negate=self._current_bundle.negate,
                 ),
                 parent=self,
             )
@@ -810,10 +813,11 @@ class MainWindow(QMainWindow):
                 progress.setLabelText("Copying map image…")
                 QApplication.processEvents()
                 image_target = destination / f"{stem}{bundle.image_path.suffix.lower()}"
-                run_in_thread(
-                    lambda: shutil.copy2(bundle.image_path, image_target),
-                    parent=self,
-                )
+                if not image_target.exists() or not bundle.image_path.samefile(image_target):
+                    run_in_thread(
+                        lambda: shutil.copy2(bundle.image_path, image_target),
+                        parent=self,
+                    )
                 exported.append(image_target.name)
 
                 progress.setLabelText("Generating PGM…")
@@ -830,7 +834,7 @@ class MainWindow(QMainWindow):
                 yaml_target = destination / f"{stem}.yaml"
                 run_in_thread(
                     lambda: self._bundle_loader.save_bundle(
-                        bundle,
+                        replace(bundle, image_path=image_target),
                         destination=yaml_target,
                         create_backup=False,
                     ),
@@ -863,7 +867,7 @@ class MainWindow(QMainWindow):
                 progress.setLabelText("Extracting walls…")
                 QApplication.processEvents()
                 extraction = run_in_thread(
-                    lambda: extract_walls(bundle.image_path, bundle.metadata),
+                    lambda: extract_walls(bundle.image_path, bundle.metadata, negate=bundle.negate),
                     parent=self,
                 )
                 if extraction.walls:
@@ -956,7 +960,7 @@ class MainWindow(QMainWindow):
                 progress.setLabelText("Extracting walls…")
                 QApplication.processEvents()
                 extraction = run_in_thread(
-                    lambda: extract_walls(bundle.image_path, bundle.metadata),
+                    lambda: extract_walls(bundle.image_path, bundle.metadata, negate=bundle.negate),
                     parent=self,
                 )
 
@@ -1089,15 +1093,23 @@ class MainWindow(QMainWindow):
             centerline=scaled_centerline,
         )
 
-        self._current_bundle = bundle.with_metadata(new_metadata).with_annotations(new_annotations)
-        self._centerline_spacing *= scale_factor
-
-        self._metadata_panel.set_metadata(new_metadata)
-        self._map_viewer.set_metadata(new_metadata)
-        self._map_viewer.update_annotations(new_annotations)
-        self._annotation_panel.set_annotations(new_annotations)
-        self._refresh_annotation_context()
-        self._refresh_diagnostics()
+        self._undo_stack.push(ScaleMapCommand(
+            MapGeometryState(metadata, annotations, self._centerline_spacing),
+            MapGeometryState(new_metadata, new_annotations, self._centerline_spacing * scale_factor),
+            self._apply_map_geometry,
+        ))
         self.statusBar().showMessage(
             f"Scaled map by {scale_factor:.3f} to achieve {self._track_width_target:.2f} m width."
         )
+
+    def _apply_map_geometry(self, state: MapGeometryState) -> None:
+        assert self._current_bundle is not None
+        self._map_viewer.cancel_placement()
+        self._current_bundle = self._current_bundle.with_metadata(state.metadata).with_annotations(state.annotations)
+        self._centerline_spacing = state.centerline_spacing
+        self._metadata_panel.set_metadata(state.metadata)
+        self._map_viewer.set_metadata(state.metadata)
+        self._map_viewer.update_annotations(state.annotations)
+        self._refresh_annotation_context()
+        self._action_save.setEnabled(True)
+        self._refresh_diagnostics()
