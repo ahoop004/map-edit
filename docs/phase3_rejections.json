@@ -1,0 +1,584 @@
+{
+  "schema_version": 1,
+  "kind": "composite_rejection_audit",
+  "cases": [
+    {
+      "case": "asymmetric_return_outside_bounds",
+      "status": "rejected",
+      "reason": "No valid closure within the bounded connector search: Return straight length 22.000000 m outside [0, 0.25] bounds; Closure angle exceeds the designated connector bound; Return straight length -17.005926 m outside [0, 0.25] bounds",
+      "closure_attempts": [
+        {
+          "index": 1,
+          "strategy": "asymmetric",
+          "radius_m": 3.5,
+          "leg_heading_rad": 3.141592653589793,
+          "middle_sign": 1,
+          "status": "rejected",
+          "reason": "Return straight length 22.000000 m outside [0, 0.25] bounds"
+        },
+        {
+          "index": 2,
+          "strategy": "asymmetric",
+          "radius_m": 3.5,
+          "leg_heading_rad": 3.141592653589793,
+          "middle_sign": -1,
+          "status": "rejected",
+          "reason": "Closure angle exceeds the designated connector bound"
+        },
+        {
+          "index": 3,
+          "strategy": "asymmetric",
+          "radius_m": 3.5,
+          "leg_heading_rad": 1.5707963267948966,
+          "middle_sign": 1,
+          "status": "rejected",
+          "reason": "Return straight length -17.005926 m outside [0, 0.25] bounds"
+        },
+        {
+          "index": 4,
+          "strategy": "asymmetric",
+          "radius_m": 3.5,
+          "leg_heading_rad": 1.5707963267948966,
+          "middle_sign": -1,
+          "status": "rejected",
+          "reason": "Closure angle exceeds the designated connector bound"
+        }
+      ],
+      "recipe": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "straight",
+            "family": "straight",
+            "parameters": {
+              "length_m": 18
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "hairpin",
+            "family": "hairpin",
+            "parameters": {
+              "radius_m": 8,
+              "turn_angle_rad": 3.141592653589793,
+              "direction": "left",
+              "entry_transition_m": 1.0,
+              "exit_transition_m": 1.0
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "asymmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 1.0,
+        "approach_length_m": 4.0,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0,
+            0.25
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 4
+        },
+        "required_families": [
+          "hairpin",
+          "straight"
+        ],
+        "exposure_bounds": {},
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20.0,
+          500.0
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": true,
+        "mirrored": false,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "two_asymmetric",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": null,
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    },
+    {
+      "case": "wrong_maneuver_identity",
+      "status": "rejected",
+      "reason": "No valid closure within the bounded connector search: Invalid hairpin: hairpin heading-reversal range",
+      "closure_attempts": [
+        {
+          "index": 1,
+          "strategy": "symmetric",
+          "radius_m": 3.5,
+          "correction_angle_rad": 1.5707963267948966,
+          "status": "rejected",
+          "reason": "Invalid hairpin: hairpin heading-reversal range"
+        },
+        {
+          "index": 2,
+          "strategy": "symmetric",
+          "radius_m": 5.25,
+          "correction_angle_rad": 1.5707963267948966,
+          "status": "rejected",
+          "reason": "Invalid hairpin: hairpin heading-reversal range"
+        },
+        {
+          "index": 3,
+          "strategy": "symmetric",
+          "radius_m": 7.0,
+          "correction_angle_rad": 1.5707963267948966,
+          "status": "rejected",
+          "reason": "Invalid hairpin: hairpin heading-reversal range"
+        }
+      ],
+      "recipe": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "straight",
+            "family": "straight",
+            "parameters": {
+              "length_m": 15
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "wrong_hairpin",
+            "family": "hairpin",
+            "parameters": {
+              "radius_m": 8,
+              "turn_angle_rad": 1.5707963267948966,
+              "direction": "left",
+              "entry_transition_m": 1.0,
+              "exit_transition_m": 1.0
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "symmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 1.0,
+        "approach_length_m": 3.0,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0.0,
+            100.0
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 48
+        },
+        "required_families": [
+          "hairpin",
+          "straight"
+        ],
+        "exposure_bounds": {},
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20.0,
+          500.0
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": false,
+        "mirrored": false,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "two_symmetric",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": null,
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    },
+    {
+      "case": "unattainable_exposure_request",
+      "status": "rejected",
+      "reason": "No valid closure within the bounded connector search: Exposure straight=0.368664 outside [0.99, 1]; Exposure straight=0.324777 outside [0.99, 1]; Exposure straight=0.290229 outside [0.99, 1]",
+      "closure_attempts": [
+        {
+          "index": 1,
+          "strategy": "symmetric",
+          "radius_m": 3.5,
+          "correction_angle_rad": 3.141592653589793,
+          "status": "rejected",
+          "reason": "Exposure straight=0.368664 outside [0.99, 1]"
+        },
+        {
+          "index": 2,
+          "strategy": "symmetric",
+          "radius_m": 5.25,
+          "correction_angle_rad": 3.141592653589793,
+          "status": "rejected",
+          "reason": "Exposure straight=0.324777 outside [0.99, 1]"
+        },
+        {
+          "index": 3,
+          "strategy": "symmetric",
+          "radius_m": 7.0,
+          "correction_angle_rad": 3.141592653589793,
+          "status": "rejected",
+          "reason": "Exposure straight=0.290229 outside [0.99, 1]"
+        }
+      ],
+      "recipe": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "straight",
+            "family": "straight",
+            "parameters": {
+              "length_m": 15
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "chicane",
+            "family": "chicane",
+            "parameters": {
+              "radius_m": 4,
+              "lateral_displacement_m": 3,
+              "separation_m": 2,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "symmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 1.0,
+        "approach_length_m": 3.0,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0.0,
+            100.0
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 48
+        },
+        "required_families": [
+          "chicane",
+          "straight"
+        ],
+        "exposure_bounds": {
+          "straight": [
+            0.99,
+            1
+          ]
+        },
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20.0,
+          500.0
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": false,
+        "mirrored": false,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "two_symmetric",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": null,
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    },
+    {
+      "case": "unattainable_lap_length",
+      "status": "rejected",
+      "reason": "No valid closure within the bounded connector search: Final lap length 81.374842 outside requested range (20, 21); Final lap length 92.370943 outside requested range (20, 21); Final lap length 103.366773 outside requested range (20, 21)",
+      "closure_attempts": [
+        {
+          "index": 1,
+          "strategy": "symmetric",
+          "radius_m": 3.5,
+          "correction_angle_rad": 3.141592653589793,
+          "status": "rejected",
+          "reason": "Final lap length 81.374842 outside requested range (20, 21)"
+        },
+        {
+          "index": 2,
+          "strategy": "symmetric",
+          "radius_m": 5.25,
+          "correction_angle_rad": 3.141592653589793,
+          "status": "rejected",
+          "reason": "Final lap length 92.370943 outside requested range (20, 21)"
+        },
+        {
+          "index": 3,
+          "strategy": "symmetric",
+          "radius_m": 7.0,
+          "correction_angle_rad": 3.141592653589793,
+          "status": "rejected",
+          "reason": "Final lap length 103.366773 outside requested range (20, 21)"
+        }
+      ],
+      "recipe": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "straight",
+            "family": "straight",
+            "parameters": {
+              "length_m": 15
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "chicane",
+            "family": "chicane",
+            "parameters": {
+              "radius_m": 4,
+              "lateral_displacement_m": 3,
+              "separation_m": 2,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "symmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 1.0,
+        "approach_length_m": 3.0,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0.0,
+            100.0
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 48
+        },
+        "required_families": [
+          "chicane",
+          "straight"
+        ],
+        "exposure_bounds": {},
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20,
+          21
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": false,
+        "mirrored": false,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "two_symmetric",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": null,
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    }
+  ],
+  "physical_drivability": "unassessed"
+}

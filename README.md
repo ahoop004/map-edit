@@ -35,6 +35,14 @@ variation. Review the [ten-track pilot](examples/phase2_pilot/manifest.json),
 [overview](examples/phase2_pilot/plots/overview.png), and
 [specialist parameter contract](docs/specialist_templates.md).
 
+The [Phase 3 results](docs/phase3_results.md) add controlled ordered composites,
+repeated-block and bounded asymmetric closure, explicit connector/transition
+statistics, and evaluation-only selector-window metadata. Review the
+[eight-track manifest](examples/phase3_pilot/manifest.json),
+[gallery](examples/phase3_pilot/plots/overview.png), and
+[composite specification](docs/composite_circuits.md). Existing generator recipes
+remain unchanged; no policy observations or training are added.
+
 ## Annotation Placement Workflow
 
 1. Open a map bundle (File → Open Map…, select the YAML file).

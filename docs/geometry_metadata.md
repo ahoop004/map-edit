@@ -123,3 +123,9 @@ declare specialist intent independently of geometric composition. Their new
 generator version records target/minimum exposure in `requested` and measured
 family/role exposure, lineage and difficulty dimensions in `provenance`. Existing
 Phase 0 and Phase 1 recipe interpretation remains unchanged.
+
+Phase 3's [composite circuits](composite_circuits.md) also retain schema 1.0.0,
+with a distinct recipe generator. Periodic windows, explicit supporting
+connectors, cyclic transition counts and selector-window estimates are stored
+as evaluation metadata. A separate evaluation CSV carries IDs and boundary
+distances; the ordinary centerline schema and policy observations do not change.

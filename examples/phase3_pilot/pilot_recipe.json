@@ -1,0 +1,1212 @@
+{
+  "schema_version": 1,
+  "generator": "map_editor.composite_circuits.v1",
+  "kind": "composite_pilot",
+  "seed": 42,
+  "max_attempts_per_request": 4,
+  "requests": [
+    {
+      "category": "two_families",
+      "expected_primary_families": 2,
+      "base": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "straight",
+            "family": "straight",
+            "parameters": {
+              "length_m": 15
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "chicane",
+            "family": "chicane",
+            "parameters": {
+              "radius_m": 4,
+              "lateral_displacement_m": 3,
+              "separation_m": 2,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "symmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 1.0,
+        "approach_length_m": 3.0,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0.0,
+            100.0
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 48
+        },
+        "required_families": [
+          "chicane",
+          "straight"
+        ],
+        "exposure_bounds": {},
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20.0,
+          500.0
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": false,
+        "mirrored": false,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "two_symmetric",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": null,
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    },
+    {
+      "category": "two_families",
+      "expected_primary_families": 2,
+      "base": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "straight",
+            "family": "straight",
+            "parameters": {
+              "length_m": 18
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "hairpin",
+            "family": "hairpin",
+            "parameters": {
+              "radius_m": 8,
+              "turn_angle_rad": 3.141592653589793,
+              "direction": "left",
+              "entry_transition_m": 1.0,
+              "exit_transition_m": 1.0
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "asymmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 1.0,
+        "approach_length_m": 4.0,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0.0,
+            100.0
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 48
+        },
+        "required_families": [
+          "hairpin",
+          "straight"
+        ],
+        "exposure_bounds": {},
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20.0,
+          500.0
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": true,
+        "mirrored": false,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "two_asymmetric",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": null,
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    },
+    {
+      "category": "three_families",
+      "expected_primary_families": 3,
+      "base": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "straight",
+            "family": "straight",
+            "parameters": {
+              "length_m": 15
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "chicane",
+            "family": "chicane",
+            "parameters": {
+              "radius_m": 4,
+              "lateral_displacement_m": 3,
+              "separation_m": 2,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "s_curve",
+            "family": "s_curve",
+            "parameters": {
+              "radii_m": [
+                4,
+                5
+              ],
+              "turn_angle_rad": 1.0471975511965976,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "symmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 1.5,
+        "approach_length_m": 4.0,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0.0,
+            100.0
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 48
+        },
+        "required_families": [
+          "chicane",
+          "s_curve",
+          "straight"
+        ],
+        "exposure_bounds": {},
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20.0,
+          500.0
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": false,
+        "mirrored": false,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "three_symmetric",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": null,
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    },
+    {
+      "category": "three_families",
+      "expected_primary_families": 3,
+      "base": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "sweeper_left",
+            "family": "sweeper",
+            "parameters": {
+              "radius_m": 7,
+              "turn_angle_rad": 0.7853981633974483,
+              "direction": "left",
+              "entry_transition_m": 1,
+              "exit_transition_m": 1,
+              "end_radius_m": null
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "straight",
+            "family": "straight",
+            "parameters": {
+              "length_m": 15
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "sweeper_right",
+            "family": "sweeper",
+            "parameters": {
+              "radius_m": 7,
+              "turn_angle_rad": 0.7853981633974483,
+              "direction": "right",
+              "entry_transition_m": 1,
+              "exit_transition_m": 1,
+              "end_radius_m": null
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "hairpin",
+            "family": "hairpin",
+            "parameters": {
+              "radius_m": 8,
+              "turn_angle_rad": 3.141592653589793,
+              "direction": "left",
+              "entry_transition_m": 1.0,
+              "exit_transition_m": 1.0
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "asymmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 2.0,
+        "approach_length_m": 6.0,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0.0,
+            100.0
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 48
+        },
+        "required_families": [
+          "hairpin",
+          "straight",
+          "sweeper"
+        ],
+        "exposure_bounds": {},
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20.0,
+          500.0
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": false,
+        "mirrored": false,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "three_asymmetric",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": null,
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    },
+    {
+      "category": "five_families",
+      "expected_primary_families": 5,
+      "base": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "straight",
+            "family": "straight",
+            "parameters": {
+              "length_m": 15
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "chicane",
+            "family": "chicane",
+            "parameters": {
+              "radius_m": 4,
+              "lateral_displacement_m": 3,
+              "separation_m": 2,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "s_curve",
+            "family": "s_curve",
+            "parameters": {
+              "radii_m": [
+                4,
+                5
+              ],
+              "turn_angle_rad": 1.0471975511965976,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "sweeper_left",
+            "family": "sweeper",
+            "parameters": {
+              "radius_m": 7,
+              "turn_angle_rad": 0.7853981633974483,
+              "direction": "left",
+              "entry_transition_m": 1,
+              "exit_transition_m": 1,
+              "end_radius_m": null
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "sweeper_right",
+            "family": "sweeper",
+            "parameters": {
+              "radius_m": 7,
+              "turn_angle_rad": 0.7853981633974483,
+              "direction": "right",
+              "entry_transition_m": 1,
+              "exit_transition_m": 1,
+              "end_radius_m": null
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "hairpin",
+            "family": "hairpin",
+            "parameters": {
+              "radius_m": 8,
+              "turn_angle_rad": 3.141592653589793,
+              "direction": "left",
+              "entry_transition_m": 1.0,
+              "exit_transition_m": 1.0
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "symmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 0.75,
+        "approach_length_m": 3.0,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0.0,
+            100.0
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 48
+        },
+        "required_families": [
+          "chicane",
+          "hairpin",
+          "s_curve",
+          "straight",
+          "sweeper"
+        ],
+        "exposure_bounds": {},
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20.0,
+          500.0
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": false,
+        "mirrored": false,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "five_symmetric",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": null,
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    },
+    {
+      "category": "five_families",
+      "expected_primary_families": 5,
+      "base": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "s_curve",
+            "family": "s_curve",
+            "parameters": {
+              "radii_m": [
+                4.5,
+                6
+              ],
+              "turn_angle_rad": 1.0,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "straight",
+            "family": "straight",
+            "parameters": {
+              "length_m": 18
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "chicane",
+            "family": "chicane",
+            "parameters": {
+              "radius_m": 4.8,
+              "lateral_displacement_m": 3.5,
+              "separation_m": 2,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "sweeper_left",
+            "family": "sweeper",
+            "parameters": {
+              "radius_m": 8,
+              "turn_angle_rad": 1.0471975511965976,
+              "direction": "left",
+              "entry_transition_m": 1,
+              "exit_transition_m": 1,
+              "end_radius_m": null
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "sweeper_right",
+            "family": "sweeper",
+            "parameters": {
+              "radius_m": 8,
+              "turn_angle_rad": 1.0471975511965976,
+              "direction": "right",
+              "entry_transition_m": 1,
+              "exit_transition_m": 1,
+              "end_radius_m": null
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "hairpin",
+            "family": "hairpin",
+            "parameters": {
+              "radius_m": 9,
+              "turn_angle_rad": 3.141592653589793,
+              "direction": "left",
+              "entry_transition_m": 1.0,
+              "exit_transition_m": 1.0
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "asymmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 1.2,
+        "approach_length_m": 2.5,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0.0,
+            100.0
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 48
+        },
+        "required_families": [
+          "chicane",
+          "hairpin",
+          "s_curve",
+          "straight",
+          "sweeper"
+        ],
+        "exposure_bounds": {},
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20.0,
+          500.0
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": false,
+        "mirrored": true,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "five_asymmetric",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": null,
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    },
+    {
+      "category": "matched_order",
+      "expected_primary_families": 5,
+      "base": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "straight_a",
+            "family": "straight",
+            "parameters": {
+              "length_m": 8
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "chicane",
+            "family": "chicane",
+            "parameters": {
+              "radius_m": 4,
+              "lateral_displacement_m": 2.5,
+              "separation_m": 2,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "s_curve",
+            "family": "s_curve",
+            "parameters": {
+              "radii_m": [
+                4,
+                5
+              ],
+              "turn_angle_rad": 0.7853981633974483,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "straight_b",
+            "family": "straight",
+            "parameters": {
+              "length_m": 5
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "sweeper_left",
+            "family": "sweeper",
+            "parameters": {
+              "radius_m": 6,
+              "turn_angle_rad": 0.6283185307179586,
+              "direction": "left",
+              "entry_transition_m": 1,
+              "exit_transition_m": 1,
+              "end_radius_m": null
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "sweeper_right",
+            "family": "sweeper",
+            "parameters": {
+              "radius_m": 6,
+              "turn_angle_rad": 0.6283185307179586,
+              "direction": "right",
+              "entry_transition_m": 1,
+              "exit_transition_m": 1,
+              "end_radius_m": null
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "hairpin",
+            "family": "hairpin",
+            "parameters": {
+              "radius_m": 8,
+              "turn_angle_rad": 3.141592653589793,
+              "direction": "left",
+              "entry_transition_m": 1.0,
+              "exit_transition_m": 1.0
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "symmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 0.8,
+        "approach_length_m": 3.0,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0.0,
+            100.0
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 48
+        },
+        "required_families": [
+          "chicane",
+          "hairpin",
+          "s_curve",
+          "straight",
+          "sweeper"
+        ],
+        "exposure_bounds": {},
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20.0,
+          500.0
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": false,
+        "mirrored": false,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "matched_order_a",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": "inventory_order_pair_v1",
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    },
+    {
+      "category": "matched_order",
+      "expected_primary_families": 5,
+      "base": {
+        "schema_version": 1,
+        "generator": "map_editor.composite_circuits.v1",
+        "inventory": [
+          {
+            "name": "straight_b",
+            "family": "straight",
+            "parameters": {
+              "length_m": 5
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "s_curve",
+            "family": "s_curve",
+            "parameters": {
+              "radii_m": [
+                4,
+                5
+              ],
+              "turn_angle_rad": 0.7853981633974483,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "straight_a",
+            "family": "straight",
+            "parameters": {
+              "length_m": 8
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "chicane",
+            "family": "chicane",
+            "parameters": {
+              "radius_m": 4,
+              "lateral_displacement_m": 2.5,
+              "separation_m": 2,
+              "transition_length_m": 1.0,
+              "direction": "left_right"
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "sweeper_left",
+            "family": "sweeper",
+            "parameters": {
+              "radius_m": 6,
+              "turn_angle_rad": 0.6283185307179586,
+              "direction": "left",
+              "entry_transition_m": 1,
+              "exit_transition_m": 1,
+              "end_radius_m": null
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "sweeper_right",
+            "family": "sweeper",
+            "parameters": {
+              "radius_m": 6,
+              "turn_angle_rad": 0.6283185307179586,
+              "direction": "right",
+              "entry_transition_m": 1,
+              "exit_transition_m": 1,
+              "end_radius_m": null
+            },
+            "ranges": {},
+            "gap_after_m": null
+          },
+          {
+            "name": "hairpin",
+            "family": "hairpin",
+            "parameters": {
+              "radius_m": 8,
+              "turn_angle_rad": 3.141592653589793,
+              "direction": "left",
+              "entry_transition_m": 1.0,
+              "exit_transition_m": 1.0
+            },
+            "ranges": {},
+            "gap_after_m": null
+          }
+        ],
+        "vehicle": {
+          "length_m": 0.5,
+          "width_m": 0.27,
+          "lf_m": 0.15875,
+          "lr_m": 0.17145,
+          "steering_min_rad": -0.523599,
+          "steering_max_rad": 0.523599,
+          "steering_rate_min_rad_s": -3.2,
+          "steering_rate_max_rad_s": 3.2,
+          "source": "combined_slip.yaml",
+          "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+          "calibration_status": "uncalibrated"
+        },
+        "layout": "symmetric",
+        "symmetry_order": 2,
+        "motif_repetitions": 1,
+        "gap_length_m": 0.8,
+        "approach_length_m": 3.0,
+        "connectors": {
+          "radius_range_m": [
+            3.5,
+            7.0
+          ],
+          "straight_range_m": [
+            0.0,
+            100.0
+          ],
+          "transition_length_m": 1.0,
+          "join_ramp_length_m": 1.0,
+          "maximum_turn_angle_rad": 3.141592653589793,
+          "minimum_length_m": 0.5,
+          "maximum_length_m": 100.0,
+          "maximum_fraction": 0.65,
+          "solver_budget": 48
+        },
+        "required_families": [
+          "chicane",
+          "hairpin",
+          "s_curve",
+          "straight",
+          "sweeper"
+        ],
+        "exposure_bounds": {},
+        "transition_count_range": [
+          2,
+          100
+        ],
+        "minimum_useful_length_m": 2.0,
+        "lap_length_range_m": [
+          20.0,
+          500.0
+        ],
+        "track_width_m": 1.5,
+        "spacing_m": 0.15,
+        "resolution_m_per_pixel": 0.04,
+        "padding_m": 1.0,
+        "clockwise": false,
+        "mirrored": false,
+        "seam_offset_m": 5.0,
+        "speed_assumption_m_s": 2.0,
+        "environment_step_s": 0.05,
+        "selection_intervals_steps": [
+          5,
+          10,
+          20
+        ],
+        "default_selection_steps": 10,
+        "physical_change_curvature_inv_m": 0.02,
+        "seed": 42,
+        "attempt": 1,
+        "variant": "matched_order_b",
+        "dataset_id": "phase3_pilot",
+        "parent_lineage": null,
+        "matched_group": "inventory_order_pair_v1",
+        "allowed_orders": [],
+        "template_version": "block_and_bounded_return.v1",
+        "generation_mode": "composite",
+        "limits": {
+          "minimum_radius_m": 0.5,
+          "minimum_usable_width_m": 0.7,
+          "maximum_curvature_rate_inv_m2": 2.0,
+          "footprint_margin_m": 0.02,
+          "minimum_nonlocal_boundary_gap_m": 0.1
+        }
+      }
+    }
+  ]
+}
