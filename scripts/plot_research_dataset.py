@@ -100,6 +100,23 @@ def plot(root,analysis,output=None):
             axes[row,col].set(xlim=(0,450),ylim=(-.8,.8),xlabel='physical arc position [m]',ylabel='κ [1/m]',title=f'{scale}: {family or "composite"}\n{e["slot_id"]}',)
             axes[row,col].grid(alpha=.2)
     fig.suptitle('Representative signed curvature profiles — same physical axes in every panel',fontsize=13);save(fig,'curvature_examples')
+    if 'selection_plan_id' in report:
+        fig,axes=plt.subplots(2,2,figsize=(16,12),constrained_layout=True)
+        repetitions=[e['statistics']['repetition_fraction'] for e in composites]
+        active=[e['statistics']['active_curvature_fraction'] for e in composites]
+        axes[0,0].hist(repetitions,bins=np.linspace(0,1,16),color='#56793e')
+        axes[0,0].axvline(.65,color='black',ls='--',label='low-repetition target .65');axes[0,0].axvline(.95,color='#b34349',ls=':',label='high-repetition .95')
+        axes[0,0].set(xlabel='Periodic curvature repetition',ylabel='Composite tracks');axes[0,0].legend()
+        axes[0,1].hist(active,bins=np.linspace(0,1,16),color='#24769c')
+        axes[0,1].axvline(.25,color='#b34349',ls='--',label='review threshold .25');axes[0,1].legend()
+        axes[0,1].set(xlabel='Active-curvature fraction',ylabel='Composite tracks')
+        axes[1,0].scatter([e['statistics']['primary_coverage'] for e in composites],active,c=repetitions,cmap='viridis',vmin=0,vmax=1)
+        axes[1,0].set(xlabel='Primary maneuver annotation coverage',ylabel='Active-curvature exposure',xlim=(0,1),ylim=(0,1))
+        y=np.arange(len(composites));axes[1,1].barh(y-.18,active,.36,label='active curvature',color='#24769c')
+        axes[1,1].barh(y+.18,repetitions,.36,label='repetition',color='#d48529')
+        axes[1,1].set_yticks(y,[e['slot_id'] for e in composites],fontsize=5);axes[1,1].set_xlim(0,1);axes[1,1].legend()
+        fig.suptitle('V2 composites: repetition and active curvature are separate from primary annotation coverage',fontsize=13)
+        save(fig,'repetition_active_curvature')
     print(folder)
 
 if __name__=='__main__':

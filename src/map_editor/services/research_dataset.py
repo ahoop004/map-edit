@@ -141,6 +141,9 @@ def audit_dataset(root,*,require_complete=False,write=False):
         cross_split_lineage_leaks=leaked,cross_split_near_group_leaks=group_leaks,near_duplicate_pairs=not_independent,
         pairwise_comparisons=pairs,policy=spec.policy,bundle_file_checks=bundle_checks,candidate_evidence_sha256=evidence_checksums,artifact_checksums='passed',physical_drivability='unassessed',driving_difficulty='unrated',
         held_out_topology_families=[],generalization_condition='shared broad topology families; independent geometric scaffolds and screened layouts')
+    if 'selection_plan_id' in manifest:
+        from .research_selection_plan import audit_selected_publication
+        report['selection_plan_verification']=audit_selected_publication(root,manifest,spec)
     if write:_json(root/'integrity_report.json',report)
     return report
 
@@ -238,4 +241,88 @@ def generate_dataset(spec,output,*,snapshot,calibration,readiness,resume=False,m
         if path.exists():raise FileExistsError('Refusing to overwrite dataset runtime record')
         path.parent.mkdir(parents=True,exist_ok=True)
         _json(path,dict(total_seconds=perf_counter()-started,candidates=timings,accepted_this_invocation=sum(t.get('replay_seconds',0)>0 for t in timings)))
+    return manifest
+
+
+def publish_selected_dataset(plan_path,source,output,*,snapshot,calibration,resume=False,max_requests=None,slot_ids=None,progress=None):
+    """Publish only the frozen Phase 5.2E selection; never search or substitute.
+
+    Uses the existing bundle staging/replay, entry checks, checkpoints and orphan
+    adoption. slot_ids/max_requests support a development-only partial test.
+    """
+    from .research_selection_plan import verify_plan,verify_prepared_selection,dataset_from_recipe
+    from .research_spec import spec_from_recipe
+    root=Path(output);source=Path(source) if source is not None else None;plan_path=Path(plan_path);snapshot=Path(snapshot);calibration=Path(calibration)
+    if source is None and not resume:raise GeometryError('Fresh selected publication requires preflight source evidence')
+    plan=json.loads(plan_path.read_text())
+    pool_path=source/'preflight.json' if source is not None else root/'development/preflight_pool.json'
+    protocol_path=source/'protocol.json' if source is not None else root/'development/preflight_protocol.json'
+    pool=json.loads(pool_path.read_text());dataset=dataset_from_recipe(plan['dataset_spec']);vehicle=load_vehicle_snapshot(snapshot)
+    if hashlib.sha256(pool_path.read_bytes()).hexdigest()!=plan['preflight_sha256'] or hashlib.sha256(protocol_path.read_bytes()).hexdigest()!=plan['protocol_sha256']:raise GeometryError('Source preflight evidence differs from frozen plan')
+    if hashlib.sha256(snapshot.read_bytes()).hexdigest()!=plan['vehicle_snapshot_sha256']:raise GeometryError('Vehicle snapshot differs from frozen preflight')
+    calibrated=json.loads(calibration.read_text())
+    if calibrated['policy']!=dataset.policy or not calibrated['frozen_before_formal_generation']:raise GeometryError('Original frozen independence calibration required')
+    verify_plan(plan,pool,vehicle)
+    selected={e['slot_id']:e for e in plan['selected']};slots={s.slot_id:s for s in dataset.slots}
+    if slot_ids is not None and (len(set(slot_ids))!=len(slot_ids) or set(slot_ids)-selected.keys()):raise GeometryError('Unallocated publication-test slots')
+    requested=[s.slot_id for s in dataset.slots if slot_ids is None or s.slot_id in slot_ids]
+    plan_file_sha=hashlib.sha256(plan_path.read_bytes()).hexdigest()
+    ready=dict(complete=True,kind='frozen_v2_preflight_readiness',selection_plan_id=plan['plan_id'],slots=60,
+        low_repetition_composites=pool['low_repetition_composites'],source_preflight_sha256=plan['preflight_sha256'])
+    ready_bytes=(json.dumps(ready,indent=2,allow_nan=False)+'\n').encode()
+    hashes=dict(calibration=hashlib.sha256(calibration.read_bytes()).hexdigest(),snapshot=hashlib.sha256(snapshot.read_bytes()).hexdigest(),readiness=hashlib.sha256(ready_bytes).hexdigest())
+    if root.exists():
+        if not resume:raise FileExistsError('Selected publication exists; explicit resume required')
+        manifest=json.loads((root/'manifest.json').read_text())
+        if manifest.get('selection_plan_id')!=plan['plan_id'] or manifest.get('selection_plan_file_sha256')!=plan_file_sha or manifest['evidence_sha256']!=hashes:raise GeometryError('Resume cannot change frozen publication inputs')
+        audit_dataset(root)
+        if manifest['complete']:return manifest
+    else:
+        root.mkdir(parents=True,exist_ok=False);(root/'development').mkdir()
+        _json(root/'dataset_recipe.json',dataset.recipe());(root/'selection_plan.json').write_bytes(plan_path.read_bytes())
+        (root/'selection_plan.sha256').write_text(plan_file_sha+'  selection_plan.json\n')
+        (root/'selected_candidates.sha256').write_text(plan['selected_candidates_sha256']+'\n')
+        (root/'development/vehicle_snapshot.json').write_bytes(snapshot.read_bytes());(root/'development/calibration.json').write_bytes(calibration.read_bytes())
+        (root/'development/readiness.json').write_bytes(ready_bytes)
+        (root/'development/preflight_pool.json').write_bytes(pool_path.read_bytes());(root/'development/preflight_protocol.json').write_bytes(protocol_path.read_bytes())
+        rejected=[];unselected=[];chosen={e['candidate_name'] for e in plan['selected']}
+        for record in pool['evidence']:
+            if record['name'] in chosen:continue
+            bucket='geometry_rejected' if record['status']=='geometry_rejected' else 'valid_unselected'
+            path=root/'candidate_evidence'/bucket/record['slot_id']/f"attempt_{record['attempt']:02d}.json";path.parent.mkdir(parents=True,exist_ok=True);_json(path,record)
+            (rejected if bucket=='geometry_rejected' else unselected).append(str(path.relative_to(root)))
+        manifest=dict(generator=DATASET_VERSION,dataset_id=dataset.dataset_id,dataset_spec_sha256=dataset.identity,
+            selection_plan_id=plan['plan_id'],selection_plan_file_sha256=plan_file_sha,selected_candidates_sha256=plan['selected_candidates_sha256'],
+            evidence_sha256=hashes,requested_tracks=60,complete=False,accepted=[],rejected=rejected,valid_unselected=unselected,
+            incomplete_requests=[s.slot_id for s in dataset.slots],integration=dict(status='not_run',reason='strict_offline_selected_publication'))
+        _save_manifests(root,manifest)
+    shape_cache={e['slot_id']:normalized_shape(read_centerline(safe_path(root,e['map']).parent/(e['track_id']+'_centerline.csv'))) for e in manifest['accepted']}
+    done=set(shape_cache);processed=0
+    for name in requested:
+        if name in done:continue
+        if max_requests is not None and processed>=max_requests:break
+        processed+=1;expected=selected[name];slot=slots[name];native=spec_from_recipe(expected['native_recipe']);folder=root/'tracks'/name
+        # Even recovery prepares only this frozen native recipe. No call to the
+        # candidate generator occurs here and no fallback candidate is allowed.
+        prepared=prepare_research(native);verify_prepared_selection(native,prepared,expected)
+        ok,screening,shape=screen(prepared,manifest['accepted'],shape_cache,dataset.policy)
+        if not ok:raise GeometryError('Frozen publication independence mismatch: '+str(screening))
+        if folder.exists():
+            recipes=list(folder.glob('*_generation.yaml'))
+            if len(recipes)!=1 or load_research_spec(recipes[0]).configuration_id!=native.configuration_id:raise GeometryError('Orphan bundle differs from frozen selected recipe')
+            bundle=folder/(native.track_id+'.yaml')
+        else:bundle=publish_research(native,folder,prepared=prepared)
+        entry=_entry(root,slot,native,bundle,screening);verify_entry(root,entry,slot)
+        if entry['identity']!=expected['identity'] or entry['statistics']!=expected['statistics']:raise GeometryError('Published bundle changed selected identity/statistics')
+        evidence=root/'evidence'/name/f'attempt_{native.attempt:02d}.json'
+        record=dict(status='accepted',candidate_seed=native.seed,attempt=native.attempt,slot_id=name,
+            selection_plan_id=plan['plan_id'],source_candidate_name=expected['candidate_name'],native_recipe=native.recipe(),independence_screen=screening)
+        if evidence.exists():
+            if canonical_hash(json.loads(evidence.read_text()))!=canonical_hash(record):raise GeometryError('Selected evidence is immutable')
+        else:evidence.parent.mkdir(parents=True,exist_ok=True);_json(evidence,record)
+        manifest['accepted'].append(entry);done.add(name);shape_cache[name]=shape
+        manifest['incomplete_requests']=[s.slot_id for s in dataset.slots if s.slot_id not in done];manifest['quotas']=quota_report(manifest['accepted']);_save_manifests(root,manifest)
+        if progress:progress(f'Published frozen candidate {len(done)}/60 {name} attempt {native.attempt}')
+    audit=audit_dataset(root);manifest['complete']=audit['complete'];manifest['quotas']=audit['quotas'];_save_manifests(root,manifest)
+    _json(root/'integrity_report.json',audit)
     return manifest
