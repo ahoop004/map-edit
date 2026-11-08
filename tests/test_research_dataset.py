@@ -357,5 +357,41 @@ def test_v2_rejects_unknown_versions_and_retains_v1_recipe_bytes(vehicle):
     assert 'design_version' not in replace(native,design_version='research_design.v1').recipe()
     slot=next(s for s in v2.slots if s.family=='hairpin')
     attempts=[candidate_spec(v2,slot,a,vehicle) for a in range(1,4)]
-    assert len({s.topology_family for s in attempts})==3
+    assert {s.topology_family for s in attempts}=={'unequal_folded_lanes'}
+    assert len({len(s.inventory) for s in attempts})==3
+    assert all(s.candidate_budget==1 for s in attempts)
     assert len({s.seed for s in attempts})==3
+
+
+@pytest.mark.parametrize('family,scale,variant,seed,attempt,count,target',[
+    ('hairpin','medium',1,53001,2,7,180.),
+    ('hairpin','long',2,53002,1,17,390.),
+    ('composite','medium',0,53007,6,11,145.)])
+def test_v2_corrected_inventory_preserves_physical_coverage(family,scale,variant,seed,attempt,count,target,vehicle):
+    from map_editor.services.research_design import corrected_spec
+    native=corrected_spec(family,scale,variant,seed,vehicle,attempt)
+    assert native.recipe()==corrected_spec(family,scale,variant,seed,vehicle,attempt).recipe()
+    assert spec_from_recipe(native.recipe()).configuration_id==native.configuration_id
+    assert len(native.inventory)==count and native.target_lap_length_m==target
+    assert sum(r.build().length_m for r in native.inventory)/target>=native.minimum_primary_coverage
+    if family=='hairpin':
+        assert native.topology_family=='unequal_folded_lanes'
+        assert all(3<=r.parameters['radius_m']<=6 for r in native.inventory)
+        assert all(r.parameters['turn_angle_rad']==math.pi for r in native.inventory)
+        assert all(a.parameters['direction']!=b.parameters['direction'] for a,b in zip(native.inventory,native.inventory[1:]))
+    else:
+        assert native.minimum_primary_coverage==.6 and native.maximum_supporting_fraction==.4
+        assert {r.family for r in native.inventory}=={'straight','corner','chicane','sweeper'}
+        assert sum(r.name=='extra_chicane' for r in native.inventory)==1
+
+
+def test_v2_fallback_excludes_rejected_clusters_and_bounds_each_seed(vehicle):
+    dataset=default_dataset_spec(design_version='research_design.v2')
+    slot=next(s for s in dataset.slots if s.family=='hairpin' and s.scale=='long')
+    attempts=[candidate_spec(dataset,slot,a,vehicle) for a in range(1,25)]
+    from collections import Counter
+    assert Counter(len(s.inventory) for s in attempts)=={13:8,15:8,17:8}
+    assert all(s.candidate_budget==1 and len(s.topologies)==1 for s in attempts)
+    assert all(s.topology_family=='unequal_folded_lanes' for s in attempts)
+    assert len({s.configuration_id for s in attempts})==24
+    assert all(s.parent_lineage==slot.parent_lineage for s in attempts)

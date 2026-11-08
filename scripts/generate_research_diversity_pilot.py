@@ -48,6 +48,7 @@ def report(root,manifest,baseline):
     import matplotlib.pyplot as plt
     from matplotlib.patches import Patch
     import numpy as np
+    phase='5.2B' if manifest.get('corrective_pass')=='phase5_2b' else '5.2'
     old_manifest=json.loads((baseline/'manifest.json').read_text())
     # Allocation/configuration only: this does not generate a formal dataset.
     write_json(root/'v2_design_contract.json',default_dataset_spec(design_version='research_design.v2').recipe())
@@ -68,7 +69,7 @@ def report(root,manifest,baseline):
             e=accepted[name];s=e['statistics'];geometry(ax,*loaded[name],span)
             ax.set_title(f"{name} · {s['raw_lap_length_m']:.0f} m\n{e['comparison']['layout_topology']}\nprimary {s['primary_coverage']:.0%}; active {s['active_curvature_fraction']:.0%}")
         else:ax.text(.5,.5,name+'\nNo accepted candidate\nSee retained failures',ha='center',transform=ax.transAxes);ax.set_axis_off()
-    fig.suptitle(f"Phase 5.2 · {len(accepted)}/10 accepted · common {span:.0f} m × {span:.0f} m metric axes",fontsize=15)
+    fig.suptitle(f"Phase {phase} · {len(accepted)}/10 accepted · common {span:.0f} m × {span:.0f} m metric axes",fontsize=15)
     fig.legend(handles=[Patch(color=COLORS[f],label=f) for f in ('hairpin','sweeper','chicane','s_curve','corner','straight','transition')],loc='lower center',ncol=7)
     save(fig,'overview')
     # Ten matched panels keep the comparison readable at common metric scale.
@@ -76,13 +77,13 @@ def report(root,manifest,baseline):
         fig,axes=plt.subplots(2,5,figsize=(23,11),constrained_layout=True)
         for j,(family,scale,variant) in enumerate(CASES[start:start+5]):
             name=f'{family}_{variant+1:02d}'
-            for i,(source,entries,prefix) in enumerate(((previous,old,'5.1'),(loaded,accepted,'5.2'))):
+            for i,(source,entries,prefix) in enumerate(((previous,old,'5.1'),(loaded,accepted,phase))):
                 ax=axes[i,j]
                 if name in source:
                     e=entries[name];s=e['statistics'];geometry(ax,*source[name],span)
                     ax.set_title(f"Phase {prefix} {name} · {s['raw_lap_length_m']:.0f} m\nprimary {s['primary_coverage']:.0%}; active {s['active_curvature_fraction']:.0%}")
                 else:ax.text(.5,.5,'No accepted candidate',ha='center',transform=ax.transAxes);ax.set_axis_off()
-        fig.suptitle(f'Phase 5.1 vs 5.2 · common {span:.0f} m metric axes; lengths shown, not matched experiments',fontsize=14)
+        fig.suptitle(f'Phase 5.1 vs {phase} · common {span:.0f} m metric axes; lengths shown, not matched experiments',fontsize=14)
         save(fig,'phase5_1_comparison_'+label)
     old_rows=[statistics(e,json.loads((baseline/e['metadata']).read_text())) for e in old.values()]
     rows=[e['comparison'] for e in manifest['accepted']]
@@ -110,8 +111,8 @@ def report(root,manifest,baseline):
         if rows:
             writer=csv.DictWriter(handle,fieldnames=list(rows[0]));writer.writeheader()
             writer.writerows({k:json.dumps(v,sort_keys=True) if isinstance(v,(dict,list)) else v for k,v in row.items()} for row in rows)
-    html='<!doctype html><meta charset="utf-8"><title>Phase 5.2 pilot</title><style>body{font:16px system-ui;max-width:1500px;margin:30px auto}img{width:100%}td,th{padding:6px;text-align:left}table{border-collapse:collapse}tr{border-bottom:1px solid #ccc}</style>'
-    html+=f'<h1>Phase 5.2 pilot: {len(rows)}/10</h1><p>{len(manifest["rejected"])} rejected candidates; {len(topologies)} topology strategies. All accepted bundles pass native replay and geometry validation.</p>'
+    html=f'<!doctype html><meta charset="utf-8"><title>Phase {phase} pilot</title><style>body{{font:16px system-ui;max-width:1500px;margin:30px auto}}img{{width:100%}}td,th{{padding:6px;text-align:left}}table{{border-collapse:collapse}}tr{{border-bottom:1px solid #ccc}}</style>'
+    html+=f'<h1>Phase {phase} pilot: {len(rows)}/10</h1><p>{len(manifest["rejected"])} rejected candidates; {len(topologies)} topology strategies. All accepted bundles pass native replay and geometry validation.</p>'
     html+='<p><a href="comparison.csv">CSV</a> · <a href="comparison.json">Metrics</a> · <a href="summary.json">Comparison</a> · <a href="manifest.json">Recipes and failures</a></p><img src="plots/overview.png" alt="Ten-track gallery">'
     for label in ('specialists_a','specialists_b_and_composites'):html+=f'<img src="plots/phase5_1_comparison_{label}.png" alt="Phase 5.1 versus Phase 5.2">'
     (root/'index.html').write_text(html+'<p>Sampled clearance; physical drivability unassessed. No formal release or independence audit.</p>\n')

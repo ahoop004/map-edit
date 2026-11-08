@@ -165,11 +165,14 @@ def candidate_spec(dataset,slot,attempt,vehicle):
     from map_editor.geometry.validation import GeometryLimits
     if dataset.design_version=='research_design.v2':
         variant=(slot.design_seed+attempt-1)%3
-        spec=refined_spec(slot.family or 'composite',slot.scale,variant,
+        spec=corrected_spec(slot.family or 'composite',slot.scale,variant,
             candidate_seed(dataset,slot,attempt),vehicle,complexity=slot.complexity)
         spec=replace(spec,seed=candidate_seed(dataset,slot,attempt),attempt=attempt,
             split=slot.split,slot_id=slot.slot_id,parent_lineage=slot.parent_lineage,
             dataset_id=dataset.dataset_id)
+        # One validated proposal per candidate seed. Repeating the same fixed
+        # heading solve with three initializations rarely changes its failure.
+        spec=replace(spec,candidate_budget=1)
     else:spec=_candidate_spec(dataset,slot,attempt,vehicle)
     policy=dataset.objective_ranges
     minimum=dataset.specialist_exposure[slot.family] if slot.family else spec.minimum_target_exposure
@@ -379,3 +382,48 @@ def refined_spec(family,scale,variant,seed,vehicle,attempt=1,*,complexity=None):
         connector_length_bounds_m=(1.2,target*.4),candidate_budget=3,
         width=WidthProfile.constant(1.5),seed=seed+1009*(attempt-1),attempt=attempt,
         dataset_id='phase5_2_pilot',design_version='research_design.v2')
+
+
+def corrected_spec(family,scale,variant,seed,vehicle,attempt=1,*,complexity=None):
+    """Phase 5.2B corrections; saved V2 recipes and the tuning factory stay intact.
+
+    The two rejected hairpin cluster strategies are never selected here. Counts,
+    connector budgets and supporting radii vary within the proven folded lanes.
+    """
+    if family=='hairpin' and variant in (1,2):
+        base=experimental_spec(family,scale,variant,seed,vehicle,attempt)
+        rng=random.Random(base.seed)
+        count=({'short':5,'medium':7,'long':13} if variant==1 else
+               {'short':5,'medium':11,'long':17})[scale]
+        target=({'short':138.,'medium':180.,'long':300.} if variant==1 else
+                {'short':138.,'medium':250.,'long':390.})[scale]
+        inventory=[]
+        for i in range(count):
+            radius=rng.uniform(5.8,6.) if i in (0,count-1) else rng.uniform(5.3,5.6) if i==2 else rng.uniform(3.,3.7)
+            inventory.append(ResearchFeature(f'hairpin_{i+1}','hairpin',dict(radius_m=radius,
+                turn_angle_rad=math.pi,direction='left' if i%2==0 else 'right',
+                entry_transition_m=.65,exit_transition_m=.65)))
+        turns=(SupportingTurn(1,(90.,90.),2.3 if variant==1 else 2.7,.65),
+               SupportingTurn(count-1,(90.,90.),8. if variant==1 else 8.8,.65))
+        return replace(base,inventory=tuple(inventory),target_lap_length_m=target,
+            topologies=(LayoutTopology('unequal_folded_lanes',tuple(range(count)),turns),),
+            topology_family='unequal_folded_lanes',connector_length_bounds_m=(1.2,target*.45),
+            dataset_id='phase5_2b_pilot',design_version='research_design.v2')
+    if family=='composite' and variant==0 and complexity in (None,4):
+        base=experimental_spec(family,'medium',0,seed,vehicle,attempt)
+        rng=random.Random(base.seed+77)
+        inventory=[]
+        for feature in base.inventory:
+            inventory.append(feature)
+            # The proven 115-degree corner has a long following gap. Insert a
+            # genuine opposing bend there instead of expanding straight labels.
+            if feature.name=='corner_3':
+                inventory.append(_opposing_feature('extra_chicane','chicane',rng.uniform(3.,3.5),
+                    .85,.65,rng.choice(('left_right','right_left')),.25))
+        target={'short':138.,'medium':145.,'long':300.}[scale]
+        return replace(base,inventory=tuple(inventory),target_lap_length_m=target,lap_length_range_m=SCALES[scale],
+            topologies=(LayoutTopology('compact_technical_flow_mix',tuple(range(len(inventory))),()),),
+            topology_family='compact_technical_flow_mix',minimum_primary_coverage=.6,
+            maximum_supporting_fraction=.4,maximum_family_exposure=.78,
+            dataset_id='phase5_2b_pilot',design_version='research_design.v2')
+    return refined_spec(family,scale,variant,seed,vehicle,attempt,complexity=complexity)
