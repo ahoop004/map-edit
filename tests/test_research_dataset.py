@@ -395,3 +395,53 @@ def test_v2_fallback_excludes_rejected_clusters_and_bounds_each_seed(vehicle):
     assert all(s.topology_family=='unequal_folded_lanes' for s in attempts)
     assert len({s.configuration_id for s in attempts})==24
     assert all(s.parent_lineage==slot.parent_lineage for s in attempts)
+
+
+@pytest.mark.parametrize('complexity',[2,3,4,5])
+@pytest.mark.parametrize('scale',['short','medium','long'])
+def test_reliability_halfturn_budget_and_native_contract(complexity,scale,vehicle):
+    from map_editor.services.research_reliable_design import reliable_spec
+    for variant in range(4):
+        spec=reliable_spec('composite',scale,variant,73000+variant,vehicle,complexity=complexity)
+        curves=[r.build() for r in spec.inventory]
+        assert spec.assembly_method=='controlled_halfturn.v1'
+        assert abs(sum(c.at(c.length_m).heading for c in curves)-math.pi)<1e-8
+        assert abs(2*(sum(c.length_m for c in curves)+len(curves)*spec.support_gap_m)-spec.target_lap_length_m)<1e-8
+        assert len({r.family for r in spec.inventory})==complexity
+        assert spec.minimum_primary_coverage==.6 and spec.maximum_supporting_fraction==.4
+        assert spec.minimum_family_exposure==.025 and spec.maximum_family_exposure==.78
+        assert spec_from_recipe(spec.recipe()).configuration_id==spec.configuration_id
+        assert all(3<=r.parameters['radius_m']<=6 for r in spec.inventory if r.family=='hairpin')
+        assert spec.recipe()==reliable_spec('composite',scale,variant,73000+variant,vehicle,complexity=complexity).recipe()
+
+
+@pytest.mark.parametrize('family',['chicane','s_curve'])
+@pytest.mark.parametrize('scale',['short','medium','long'])
+def test_reliability_opposing_physical_ranges_and_support_budget(family,scale,vehicle):
+    from map_editor.services.research_reliable_design import reliable_spec
+    for variant in range(4):
+        spec=reliable_spec(family,scale,variant,74000+variant,vehicle)
+        source=sum(r.build().length_m for r in spec.inventory)
+        support=sum(t.radius_m*math.radians(t.angle_bounds_deg[0])+t.transition_m for t in spec.topologies[0].turns)
+        assert source/spec.target_lap_length_m>=.5
+        assert source+support+.3*len(spec.inventory)<spec.target_lap_length_m
+        assert abs(sum(t.angle_bounds_deg[0] for t in spec.topologies[0].turns)-360)<1e-7
+        for r in spec.inventory:
+            p=r.parameters
+            if family=='chicane':
+                assert 2<=p['radius_m']<=5 and 1.5<=p['lateral_displacement_m']<=4
+                assert p['separation_m']==.25
+            else:
+                assert all(3<=v<=8 for v in p['radii_m'])
+                assert math.radians(45)<=p['turn_angle_rad']<=math.radians(90)
+        assert spec.limits.maximum_curvature_rate_inv_m2==2.
+        assert spec.limits.minimum_usable_width_m==.7
+
+
+@pytest.mark.parametrize('family,scale',[('straight','short'),('straight','medium'),('straight','long'),('sweeper','short')])
+def test_reliability_previously_flagged_specialists_have_independent_extremes(family,scale,vehicle):
+    from map_editor.services.research_reliable_design import reliable_spec
+    prepared=[prepare_research(reliable_spec(family,scale,v,75000+v,vehicle)) for v in (0,3)]
+    shapes=[normalized_shape([(p.x,p.y) for p in q.sampled.states[:-1]]) for q in prepared]
+    metrics=pair_metrics(prepared[0].statistics,prepared[1].statistics,*shapes)
+    assert classify_pair(metrics,default_dataset_spec().policy)=='independent_under_policy'
