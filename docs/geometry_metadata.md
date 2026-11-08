@@ -16,6 +16,14 @@ and empty label input; replay remains deterministic. New recipes retain explicit
 version describes data, while a generator version describes geometry/replay
 behavior; changing either does not implicitly change the other.
 
+Phase 5 adds `map_editor.research_tracks.v1` native recipes with explicit
+`specialist`/`composite` intent and preassigned `train`/`validation`/`test`
+splits, while retaining metadata schema **2.0.0**. Its
+[dataset contract](research_dataset.md) describes measured primary-family
+exposure, blueprint lineage, topology, width identity and offline replay.
+These fields and the evaluation CSV remain evaluation-only; they are not
+policy observations. Existing metadata schemas and recipe readers are unchanged.
+
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | String `1.0.0`; incompatible changes need a new schema. |

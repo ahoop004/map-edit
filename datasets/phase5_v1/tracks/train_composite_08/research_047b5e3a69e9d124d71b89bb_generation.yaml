@@ -1,0 +1,267 @@
+schema_version: 1
+generator: map_editor.research_tracks.v1
+inventory:
+- name: core_1
+  family: corner
+  parameters:
+    radius_m: 9.316028792718065
+    turn_angle_deg: 51.88264999190993
+    transition_m: 0.9123151177689095
+  straight_after_m: 0.0
+- name: primary_straight_1
+  family: straight
+  parameters:
+    length_m: 8.986124439187604
+  straight_after_m: 0.0
+- name: core_2
+  family: corner
+  parameters:
+    radius_m: 9.390368094209105
+    turn_angle_deg: 49.47270946145492
+    transition_m: 0.9123151177689095
+  straight_after_m: 0.0
+- name: primary_straight_2
+  family: straight
+  parameters:
+    length_m: 7.916003642260407
+  straight_after_m: 0.0
+- name: core_3
+  family: corner
+  parameters:
+    radius_m: 12.791793218337313
+    turn_angle_deg: 40.10691436682331
+    transition_m: 0.9123151177689095
+  straight_after_m: 0.0
+- name: primary_straight_3
+  family: straight
+  parameters:
+    length_m: 9.360596210992577
+  straight_after_m: 0.0
+- name: core_4
+  family: corner
+  parameters:
+    radius_m: 12.178266503642224
+    turn_angle_deg: 40.82260656158002
+    transition_m: 0.9123151177689095
+  straight_after_m: 0.0
+- name: primary_straight_4
+  family: straight
+  parameters:
+    length_m: 6.81678637904238
+  straight_after_m: 0.0
+- name: core_5
+  family: corner
+  parameters:
+    radius_m: 12.85357118202093
+    turn_angle_deg: 48.99125729958823
+    transition_m: 0.9123151177689095
+  straight_after_m: 0.0
+- name: primary_straight_5
+  family: straight
+  parameters:
+    length_m: 9.399600163173126
+  straight_after_m: 0.0
+- name: core_6
+  family: corner
+  parameters:
+    radius_m: 9.169272132603055
+    turn_angle_deg: 48.72386231864359
+    transition_m: 0.9123151177689095
+  straight_after_m: 0.0
+- name: primary_straight_6
+  family: straight
+  parameters:
+    length_m: 7.585260421561297
+  straight_after_m: 0.0
+vehicle:
+  length_m: 0.5
+  width_m: 0.27
+  lf_m: 0.15875
+  lr_m: 0.17145
+  steering_min_rad: -0.523599
+  steering_max_rad: 0.523599
+  steering_rate_min_rad_s: -3.2
+  steering_rate_max_rad_s: 3.2
+  source: combined_slip.yaml
+  source_sha256: fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016
+  calibration_status: uncalibrated
+topologies:
+- name: mixed_feature_ring
+  order:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  turns:
+  - after_index: 0
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+  - after_index: 2
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+  - after_index: 4
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+  - after_index: 6
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+  - after_index: 8
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+  - after_index: 10
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+- name: reordered_feature_ring
+  order:
+  - 0
+  - 11
+  - 10
+  - 9
+  - 8
+  - 7
+  - 6
+  - 5
+  - 4
+  - 3
+  - 2
+  - 1
+  turns:
+  - after_index: 0
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+  - after_index: 2
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+  - after_index: 4
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+  - after_index: 6
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+  - after_index: 8
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+  - after_index: 10
+    angle_bounds_deg:
+    - 12.0
+    - 20.0
+    radius_m: 4.155756146230429
+    transition_m: 0.5
+target_lap_length_m: 153.78192270655538
+lap_length_range_m:
+- 140.0
+- 260.0
+split: train
+slot_id: train_composite_08
+parent_lineage: lineage_7c2bcbf64b4e18f6b1fae89b
+topology_family: mixed_2_12_ring
+generation_mode: composite
+target_family: null
+minimum_target_exposure: 0.7
+expected_primary_families: 2
+minimum_family_exposure: 0.025
+maximum_family_exposure: 0.78
+connector_length_bounds_m:
+- 0.3
+- 46.13457681196661
+width:
+  left:
+  - - 0.0
+    - 0.817147913392017
+  - - 0.3
+    - 0.7757934170145276
+  - - 0.65
+    - 0.7926719616807302
+  - - 1.0
+    - 0.817147913392017
+  right:
+  - - 0.0
+    - 0.817147913392017
+  - - 0.25
+    - 0.7926719616807302
+  - - 0.7
+    - 0.7757934170145276
+  - - 1.0
+    - 0.817147913392017
+  maximum_gradient: 0.12
+candidate_budget: 3
+optimization_iterations: 80
+spacing_m: 0.12
+resolution_m_per_pixel: 0.06
+padding_m: 1.0
+seam_offset_m: 1.7
+maximum_supporting_fraction: 0.4
+minimum_primary_coverage: 0.6
+minimum_useful_corner_m: 0.6
+maximum_offset_curvature: 0.95
+objectives: {}
+limits:
+  minimum_radius_m: 0.5
+  minimum_usable_width_m: 0.7
+  maximum_curvature_rate_inv_m2: 2.0
+  footprint_margin_m: 0.02
+  minimum_nonlocal_boundary_gap_m: 0.1
+seed: 13748528717009482
+attempt: 2
+dataset_id: phase5_research_v1
+template_version: scaled_maneuver_inventory.v1
+layout_version: bounded_supporting_turns.v1
+assembly_method: bounded_supporting_turns.v1
+support_gap_m: 0.3
+minimum_target_active_fraction: 0.5
+achieved:
+  length_m: 153.78154036378783
+  minimum_radius_m: 4.153944552942687
+  minimum_width_m: 1.5672500634815854
+  maximum_width_m: 1.6342961877527715
+  mean_width_m: 1.5881957062462622
+  sample_count: 1324
+files:
+  map: research_047b5e3a69e9d124d71b89bb.yaml
+  image: research_047b5e3a69e9d124d71b89bb.png
+  pgm: research_047b5e3a69e9d124d71b89bb.pgm
+  centerline: research_047b5e3a69e9d124d71b89bb_centerline.csv
+  walls: research_047b5e3a69e9d124d71b89bb_walls.csv
+  track_profile: research_047b5e3a69e9d124d71b89bb_track_profile.csv
+  metadata: research_047b5e3a69e9d124d71b89bb_metadata.json

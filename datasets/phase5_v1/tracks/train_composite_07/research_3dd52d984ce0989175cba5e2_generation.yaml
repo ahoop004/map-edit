@@ -1,0 +1,221 @@
+schema_version: 1
+generator: map_editor.research_tracks.v1
+inventory:
+- name: core_1
+  family: corner
+  parameters:
+    radius_m: 22.271930117068152
+    turn_angle_deg: 67.24738008290909
+    transition_m: 0.935601472402802
+  straight_after_m: 0.0
+- name: chicane_1
+  family: chicane
+  parameters:
+    radius_m: 6.49425720547999
+    lateral_displacement_m: 3.607162719536608
+    separation_m: 0.3276129241580567
+    transition_length_m: 0.935601472402802
+    direction: right_left
+  straight_after_m: 0.0
+- name: s_curve_1
+  family: s_curve
+  parameters:
+    radii_m:
+    - 4.956177991067112
+    - 5.699604689727178
+    turn_angle_rad: 0.8492316455339362
+    transition_length_m: 0.935601472402802
+    direction: right_left
+  straight_after_m: 0.0
+- name: core_2
+  family: corner
+  parameters:
+    radius_m: 21.530482309722878
+    turn_angle_deg: 77.97578284278782
+    transition_m: 0.935601472402802
+  straight_after_m: 0.0
+- name: core_3
+  family: corner
+  parameters:
+    radius_m: 24.377660862498033
+    turn_angle_deg: 58.373008738077424
+    transition_m: 0.935601472402802
+  straight_after_m: 0.0
+- name: chicane_3
+  family: chicane
+  parameters:
+    radius_m: 5.796186100838095
+    lateral_displacement_m: 3.994224001310811
+    separation_m: 0.3276129241580567
+    transition_length_m: 0.935601472402802
+    direction: right_left
+  straight_after_m: 0.0
+- name: s_curve_3
+  family: s_curve
+  parameters:
+    radii_m:
+    - 5.07479090899959
+    - 5.836009545349529
+    turn_angle_rad: 0.8293825827284623
+    transition_length_m: 0.935601472402802
+    direction: right_left
+  straight_after_m: 0.0
+- name: core_4
+  family: corner
+  parameters:
+    radius_m: 18.88569396849488
+    turn_angle_deg: 76.40382833622564
+    transition_m: 0.935601472402802
+  straight_after_m: 0.0
+vehicle:
+  length_m: 0.5
+  width_m: 0.27
+  lf_m: 0.15875
+  lr_m: 0.17145
+  steering_min_rad: -0.523599
+  steering_max_rad: 0.523599
+  steering_rate_min_rad_s: -3.2
+  steering_rate_max_rad_s: 3.2
+  source: combined_slip.yaml
+  source_sha256: fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016
+  calibration_status: uncalibrated
+topologies:
+- name: mixed_feature_ring
+  order:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  turns:
+  - after_index: 0
+    angle_bounds_deg:
+    - 12.0
+    - 44.0
+    radius_m: 3.642596304256694
+    transition_m: 0.5
+  - after_index: 3
+    angle_bounds_deg:
+    - 12.0
+    - 44.0
+    radius_m: 3.642596304256694
+    transition_m: 0.5
+  - after_index: 4
+    angle_bounds_deg:
+    - 12.0
+    - 44.0
+    radius_m: 3.642596304256694
+    transition_m: 0.5
+  - after_index: 7
+    angle_bounds_deg:
+    - 12.0
+    - 44.0
+    radius_m: 3.642596304256694
+    transition_m: 0.5
+- name: reordered_feature_ring
+  order:
+  - 0
+  - 7
+  - 6
+  - 5
+  - 4
+  - 3
+  - 2
+  - 1
+  turns:
+  - after_index: 0
+    angle_bounds_deg:
+    - 12.0
+    - 44.0
+    radius_m: 3.642596304256694
+    transition_m: 0.5
+  - after_index: 3
+    angle_bounds_deg:
+    - 12.0
+    - 44.0
+    radius_m: 3.642596304256694
+    transition_m: 0.5
+  - after_index: 4
+    angle_bounds_deg:
+    - 12.0
+    - 44.0
+    radius_m: 3.642596304256694
+    transition_m: 0.5
+  - after_index: 7
+    angle_bounds_deg:
+    - 12.0
+    - 44.0
+    radius_m: 3.642596304256694
+    transition_m: 0.5
+target_lap_length_m: 218.40861610537112
+lap_length_range_m:
+- 140.0
+- 260.0
+split: train
+slot_id: train_composite_07
+parent_lineage: lineage_93d4a848972c85eaadb37d85
+topology_family: mixed_3_8_ring
+generation_mode: composite
+target_family: null
+minimum_target_exposure: 0.7
+expected_primary_families: 3
+minimum_family_exposure: 0.025
+maximum_family_exposure: 0.78
+connector_length_bounds_m:
+- 0.3
+- 65.52258483161134
+width:
+  left:
+  - - 0.0
+    - 0.8350248704911928
+  - - 1.0
+    - 0.8350248704911928
+  right:
+  - - 0.0
+    - 0.9532896012012176
+  - - 1.0
+    - 0.9532896012012176
+  maximum_gradient: 0.12
+candidate_budget: 3
+optimization_iterations: 80
+spacing_m: 0.12
+resolution_m_per_pixel: 0.06
+padding_m: 1.0
+seam_offset_m: 1.7
+maximum_supporting_fraction: 0.4
+minimum_primary_coverage: 0.6
+minimum_useful_corner_m: 0.6
+maximum_offset_curvature: 0.95
+objectives: {}
+limits:
+  minimum_radius_m: 0.5
+  minimum_usable_width_m: 0.7
+  maximum_curvature_rate_inv_m2: 2.0
+  footprint_margin_m: 0.02
+  minimum_nonlocal_boundary_gap_m: 0.1
+seed: 458070987429105855
+attempt: 1
+dataset_id: phase5_research_v1
+template_version: scaled_maneuver_inventory.v1
+layout_version: bounded_supporting_turns.v1
+assembly_method: bounded_supporting_turns.v1
+support_gap_m: 0.3
+minimum_target_active_fraction: 0.5
+achieved:
+  length_m: 218.40773235429654
+  minimum_radius_m: 3.6413433615807103
+  minimum_width_m: 1.7883133868431353
+  maximum_width_m: 1.7883154544200597
+  mean_width_m: 1.7883144149681551
+  sample_count: 1855
+files:
+  map: research_3dd52d984ce0989175cba5e2.yaml
+  image: research_3dd52d984ce0989175cba5e2.png
+  pgm: research_3dd52d984ce0989175cba5e2.pgm
+  centerline: research_3dd52d984ce0989175cba5e2_centerline.csv
+  walls: research_3dd52d984ce0989175cba5e2_walls.csv
+  track_profile: research_3dd52d984ce0989175cba5e2_track_profile.csv
+  metadata: research_3dd52d984ce0989175cba5e2_metadata.json

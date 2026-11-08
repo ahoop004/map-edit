@@ -1,0 +1,546 @@
+{
+  "status": "rejected",
+  "candidate_seed": 90023544058965616,
+  "attempt": 1,
+  "slot_id": "train_specialist_s_curve_03",
+  "failure_stage": "geometry",
+  "reason": "No valid research candidate in bounded search",
+  "native_recipe": {
+    "schema_version": 1,
+    "generator": "map_editor.research_tracks.v1",
+    "inventory": [
+      {
+        "name": "s_curve_1",
+        "family": "s_curve",
+        "parameters": {
+          "radii_m": [
+            13.554191925856594,
+            15.587320714735082
+          ],
+          "turn_angle_rad": 0.6946917094924636,
+          "transition_length_m": 0.9112782049436211,
+          "direction": "left_right"
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "s_curve_2",
+        "family": "s_curve",
+        "parameters": {
+          "radii_m": [
+            11.680526799886625,
+            13.432605819869618
+          ],
+          "turn_angle_rad": 0.8276001794917671,
+          "transition_length_m": 0.9112782049436211,
+          "direction": "left_right"
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "s_curve_3",
+        "family": "s_curve",
+        "parameters": {
+          "radii_m": [
+            10.785301241518995,
+            12.403096427746844
+          ],
+          "turn_angle_rad": 0.7951844971336555,
+          "transition_length_m": 0.9112782049436211,
+          "direction": "right_left"
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "s_curve_4",
+        "family": "s_curve",
+        "parameters": {
+          "radii_m": [
+            11.410991182965489,
+            13.122639860410311
+          ],
+          "turn_angle_rad": 0.7358172114955898,
+          "transition_length_m": 0.9112782049436211,
+          "direction": "left_right"
+        },
+        "straight_after_m": 0.0
+      }
+    ],
+    "vehicle": {
+      "length_m": 0.5,
+      "width_m": 0.27,
+      "lf_m": 0.15875,
+      "lr_m": 0.17145,
+      "steering_min_rad": -0.523599,
+      "steering_max_rad": 0.523599,
+      "steering_rate_min_rad_s": -3.2,
+      "steering_rate_max_rad_s": 3.2,
+      "source": "combined_slip.yaml",
+      "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+      "calibration_status": "uncalibrated"
+    },
+    "topologies": [
+      {
+        "name": "unequal_maneuver_ring",
+        "order": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "turns": [
+          {
+            "after_index": 0,
+            "angle_bounds_deg": [
+              62.99999999999999,
+              117.0
+            ],
+            "radius_m": 2.561538268580418,
+            "transition_m": 0.65
+          },
+          {
+            "after_index": 1,
+            "angle_bounds_deg": [
+              62.99999999999999,
+              117.0
+            ],
+            "radius_m": 2.561538268580418,
+            "transition_m": 0.65
+          },
+          {
+            "after_index": 2,
+            "angle_bounds_deg": [
+              62.99999999999999,
+              117.0
+            ],
+            "radius_m": 2.561538268580418,
+            "transition_m": 0.65
+          },
+          {
+            "after_index": 3,
+            "angle_bounds_deg": [
+              62.99999999999999,
+              117.0
+            ],
+            "radius_m": 2.561538268580418,
+            "transition_m": 0.65
+          }
+        ]
+      },
+      {
+        "name": "reordered_maneuver_ring",
+        "order": [
+          0,
+          3,
+          2,
+          1
+        ],
+        "turns": [
+          {
+            "after_index": 0,
+            "angle_bounds_deg": [
+              62.99999999999999,
+              117.0
+            ],
+            "radius_m": 2.561538268580418,
+            "transition_m": 0.65
+          },
+          {
+            "after_index": 1,
+            "angle_bounds_deg": [
+              62.99999999999999,
+              117.0
+            ],
+            "radius_m": 2.561538268580418,
+            "transition_m": 0.65
+          },
+          {
+            "after_index": 2,
+            "angle_bounds_deg": [
+              62.99999999999999,
+              117.0
+            ],
+            "radius_m": 2.561538268580418,
+            "transition_m": 0.65
+          },
+          {
+            "after_index": 3,
+            "angle_bounds_deg": [
+              62.99999999999999,
+              117.0
+            ],
+            "radius_m": 2.561538268580418,
+            "transition_m": 0.65
+          }
+        ]
+      }
+    ],
+    "target_lap_length_m": 104.09877475913717,
+    "lap_length_range_m": [
+      70.0,
+      140.0
+    ],
+    "split": "train",
+    "slot_id": "train_specialist_s_curve_03",
+    "parent_lineage": "lineage_2a85c3c6266212bf6f9dc134",
+    "topology_family": "s_curve_4_unequal_ring",
+    "generation_mode": "specialist",
+    "target_family": "s_curve",
+    "minimum_target_exposure": 0.65,
+    "expected_primary_families": 1,
+    "minimum_family_exposure": 0.025,
+    "maximum_family_exposure": 0.78,
+    "connector_length_bounds_m": [
+      0.3,
+      36.43457116569801
+    ],
+    "width": {
+      "left": [
+        [
+          0.0,
+          0.7978343727952328
+        ],
+        [
+          1.0,
+          0.7978343727952328
+        ]
+      ],
+      "right": [
+        [
+          0.0,
+          0.8452404570511903
+        ],
+        [
+          1.0,
+          0.8452404570511903
+        ]
+      ],
+      "maximum_gradient": 0.12
+    },
+    "candidate_budget": 3,
+    "optimization_iterations": 80,
+    "spacing_m": 0.12,
+    "resolution_m_per_pixel": 0.06,
+    "padding_m": 1.0,
+    "seam_offset_m": 1.7,
+    "maximum_supporting_fraction": 0.35,
+    "minimum_primary_coverage": 0.65,
+    "minimum_useful_corner_m": 0.6,
+    "maximum_offset_curvature": 0.95,
+    "objectives": {},
+    "limits": {
+      "minimum_radius_m": 0.5,
+      "minimum_usable_width_m": 0.7,
+      "maximum_curvature_rate_inv_m2": 2.0,
+      "footprint_margin_m": 0.02,
+      "minimum_nonlocal_boundary_gap_m": 0.1
+    },
+    "seed": 90023544058965616,
+    "attempt": 1,
+    "dataset_id": "phase5_research_v1",
+    "template_version": "scaled_maneuver_inventory.v1",
+    "layout_version": "bounded_supporting_turns.v1",
+    "assembly_method": "bounded_supporting_turns.v1",
+    "support_gap_m": 0.3,
+    "minimum_target_active_fraction": 0.5
+  },
+  "layout_attempts": [
+    {
+      "candidate": 1,
+      "topology": "unequal_maneuver_ring",
+      "order": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "method": "bounded_supporting_turns.v1",
+      "status": "rejected",
+      "adjustable_geometry": [
+        "supporting_angles",
+        "supporting_straight_lengths"
+      ],
+      "fixed_primary_heading_rad": 2.42861286636753e-17,
+      "initial_connector_lengths_m": [
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "initial_supporting_angles_deg": [
+        97.56010770085693,
+        97.4942483552418,
+        76.25406595367984,
+        88.6915779902214
+      ],
+      "supporting_angle_bounds_deg": [
+        [
+          62.99999999999999,
+          117.0
+        ],
+        [
+          62.99999999999999,
+          117.0
+        ],
+        [
+          62.99999999999999,
+          117.0
+        ],
+        [
+          62.99999999999999,
+          117.0
+        ]
+      ],
+      "failure_stage": "closure",
+      "reason": "Bounded joint closure did not converge within 80 iterations: position=6.35516e-08 m, heading=0.0145525 rad, length=0.568116 m",
+      "optimization": {
+        "iterations": 4,
+        "evaluations": 77,
+        "history": [
+          {
+            "iteration": 0,
+            "maximum_scaled_residual": 10.52145159510912,
+            "position_residual_m": 11.010336120671793,
+            "heading_residual_rad": 0.0,
+            "length_residual_m": 0.6053931127029841,
+            "damping": 1e-05
+          },
+          {
+            "iteration": 1,
+            "maximum_scaled_residual": 1.7889577031615582,
+            "position_residual_m": 2.186675655272132,
+            "heading_residual_rad": 0.06635090577501668,
+            "length_residual_m": 0.4354327284053312,
+            "damping": 3.3333333333333337e-06
+          },
+          {
+            "iteration": 2,
+            "maximum_scaled_residual": 0.5681162793140686,
+            "position_residual_m": 0.0608057410490575,
+            "heading_residual_rad": 0.014552518635445821,
+            "length_residual_m": 0.5681162793140686,
+            "damping": 1.1111111111111112e-06
+          },
+          {
+            "iteration": 3,
+            "maximum_scaled_residual": 0.5681162876637273,
+            "position_residual_m": 9.21141519009316e-05,
+            "heading_residual_rad": 0.014552515375817698,
+            "length_residual_m": 0.5681162876637273,
+            "damping": 3.703703703703704e-07
+          },
+          {
+            "iteration": 4,
+            "maximum_scaled_residual": 0.5681162924349792,
+            "position_residual_m": 6.355159350468385e-08,
+            "heading_residual_rad": 0.01455251351317255,
+            "length_residual_m": 0.5681162924349792,
+            "damping": 1.234567901234568e-07
+          }
+        ],
+        "converged": false
+      }
+    },
+    {
+      "candidate": 2,
+      "topology": "reordered_maneuver_ring",
+      "order": [
+        0,
+        3,
+        2,
+        1
+      ],
+      "method": "bounded_supporting_turns.v1",
+      "status": "rejected",
+      "adjustable_geometry": [
+        "supporting_angles",
+        "supporting_straight_lengths"
+      ],
+      "fixed_primary_heading_rad": 2.42861286636753e-17,
+      "initial_connector_lengths_m": [
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "initial_supporting_angles_deg": [
+        87.19287640692187,
+        83.42552166630026,
+        100.32080961820387,
+        89.060792308574
+      ],
+      "supporting_angle_bounds_deg": [
+        [
+          62.99999999999999,
+          117.0
+        ],
+        [
+          62.99999999999999,
+          117.0
+        ],
+        [
+          62.99999999999999,
+          117.0
+        ],
+        [
+          62.99999999999999,
+          117.0
+        ]
+      ],
+      "failure_stage": "closure",
+      "reason": "Bounded joint closure did not converge within 80 iterations: position=8.53783e-08 m, heading=0.0145525 rad, length=0.568116 m",
+      "optimization": {
+        "iterations": 5,
+        "evaluations": 86,
+        "history": [
+          {
+            "iteration": 0,
+            "maximum_scaled_residual": 15.668334094910676,
+            "position_residual_m": 17.50810081168935,
+            "heading_residual_rad": 1.7763568394002505e-15,
+            "length_residual_m": 0.6053931127029841,
+            "damping": 1e-05
+          },
+          {
+            "iteration": 1,
+            "maximum_scaled_residual": 5.895266474127083,
+            "position_residual_m": 5.959681049097517,
+            "heading_residual_rad": 0.07340141513920173,
+            "length_residual_m": 0.417372578855975,
+            "damping": 3.3333333333333337e-06
+          },
+          {
+            "iteration": 2,
+            "maximum_scaled_residual": 0.6782581755623711,
+            "position_residual_m": 0.7178148642606713,
+            "heading_residual_rad": 0.014552526700541968,
+            "length_residual_m": 0.5681162586550244,
+            "damping": 1.1111111111111112e-06
+          },
+          {
+            "iteration": 3,
+            "maximum_scaled_residual": 0.5681162848968171,
+            "position_residual_m": 0.007646352924140745,
+            "heading_residual_rad": 0.014552516455993647,
+            "length_residual_m": 0.5681162848968171,
+            "damping": 3.703703703703704e-07
+          },
+          {
+            "iteration": 4,
+            "maximum_scaled_residual": 0.5681162968249112,
+            "position_residual_m": 1.401153937914303e-06,
+            "heading_residual_rad": 0.014552511799379886,
+            "length_residual_m": 0.5681162968249112,
+            "damping": 1.234567901234568e-07
+          },
+          {
+            "iteration": 5,
+            "maximum_scaled_residual": 0.5681162872824501,
+            "position_residual_m": 8.537832335479989e-08,
+            "heading_residual_rad": 0.014552515524670184,
+            "length_residual_m": 0.5681162872824501,
+            "damping": 4.11522633744856e-08
+          }
+        ],
+        "converged": false
+      }
+    },
+    {
+      "candidate": 3,
+      "topology": "unequal_maneuver_ring",
+      "order": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "method": "bounded_supporting_turns.v1",
+      "status": "rejected",
+      "adjustable_geometry": [
+        "supporting_angles",
+        "supporting_straight_lengths"
+      ],
+      "fixed_primary_heading_rad": 2.42861286636753e-17,
+      "initial_connector_lengths_m": [
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "initial_supporting_angles_deg": [
+        90.8784665626868,
+        105.86611767873262,
+        100.25541575858054,
+        63.0
+      ],
+      "supporting_angle_bounds_deg": [
+        [
+          62.99999999999999,
+          117.0
+        ],
+        [
+          62.99999999999999,
+          117.0
+        ],
+        [
+          62.99999999999999,
+          117.0
+        ],
+        [
+          62.99999999999999,
+          117.0
+        ]
+      ],
+      "failure_stage": "closure",
+      "reason": "Bounded joint closure did not converge within 80 iterations: position=1.74949e-07 m, heading=0.0145525 rad, length=0.568116 m",
+      "optimization": {
+        "iterations": 4,
+        "evaluations": 77,
+        "history": [
+          {
+            "iteration": 0,
+            "maximum_scaled_residual": 16.188431510398495,
+            "position_residual_m": 17.442267241733223,
+            "heading_residual_rad": 8.881784197001252e-16,
+            "length_residual_m": 0.6053931127029983,
+            "damping": 1e-05
+          },
+          {
+            "iteration": 1,
+            "maximum_scaled_residual": 2.134915933544592,
+            "position_residual_m": 1.8972500611148346,
+            "heading_residual_rad": 0.21349159335445922,
+            "length_residual_m": 0.05852622630534654,
+            "damping": 3.3333333333333337e-06
+          },
+          {
+            "iteration": 2,
+            "maximum_scaled_residual": 0.5681162759952798,
+            "position_residual_m": 0.08946577410461157,
+            "heading_residual_rad": 0.014552519931068986,
+            "length_residual_m": 0.5681162759952798,
+            "damping": 1.1111111111111112e-06
+          },
+          {
+            "iteration": 3,
+            "maximum_scaled_residual": 0.5681162909053938,
+            "position_residual_m": 1.9896430245280796e-05,
+            "heading_residual_rad": 0.014552514110303783,
+            "length_residual_m": 0.5681162909053938,
+            "damping": 3.703703703703704e-07
+          },
+          {
+            "iteration": 4,
+            "maximum_scaled_residual": 0.5681162873269727,
+            "position_residual_m": 1.749492973902624e-07,
+            "heading_residual_rad": 0.014552515507287644,
+            "length_residual_m": 0.5681162873269727,
+            "damping": 1.234567901234568e-07
+          }
+        ],
+        "converged": false
+      }
+    }
+  ],
+  "screening": null
+}

@@ -1,0 +1,202 @@
+{
+  "status": "accepted",
+  "candidate_seed": 480188291780212905,
+  "attempt": 1,
+  "slot_id": "train_specialist_hairpin_02",
+  "native_recipe": {
+    "schema_version": 1,
+    "generator": "map_editor.research_tracks.v1",
+    "inventory": [
+      {
+        "name": "hairpin_1",
+        "family": "hairpin",
+        "parameters": {
+          "radius_m": 21.951843655703442,
+          "turn_angle_rad": 2.8522512776553777,
+          "entry_transition_m": 0.7127668937751165,
+          "exit_transition_m": 0.7127668937751165
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "hairpin_2",
+        "family": "hairpin",
+        "parameters": {
+          "radius_m": 22.060852725295238,
+          "turn_angle_rad": 2.8000329668684856,
+          "entry_transition_m": 0.7127668937751165,
+          "exit_transition_m": 0.7127668937751165
+        },
+        "straight_after_m": 0.0
+      }
+    ],
+    "vehicle": {
+      "length_m": 0.5,
+      "width_m": 0.27,
+      "lf_m": 0.15875,
+      "lr_m": 0.17145,
+      "steering_min_rad": -0.523599,
+      "steering_max_rad": 0.523599,
+      "steering_rate_min_rad_s": -3.2,
+      "steering_rate_max_rad_s": 3.2,
+      "source": "combined_slip.yaml",
+      "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+      "calibration_status": "uncalibrated"
+    },
+    "topologies": [
+      {
+        "name": "unequal_maneuver_ring",
+        "order": [
+          0,
+          1
+        ],
+        "turns": [
+          {
+            "after_index": 0,
+            "angle_bounds_deg": [
+              12.0,
+              24.147968180491603
+            ],
+            "radius_m": 3.7664494394842487,
+            "transition_m": 0.55
+          },
+          {
+            "after_index": 1,
+            "angle_bounds_deg": [
+              12.0,
+              24.147968180491603
+            ],
+            "radius_m": 3.593590423071609,
+            "transition_m": 0.55
+          }
+        ]
+      },
+      {
+        "name": "reordered_maneuver_ring",
+        "order": [
+          0,
+          1
+        ],
+        "turns": [
+          {
+            "after_index": 0,
+            "angle_bounds_deg": [
+              12.0,
+              24.147968180491603
+            ],
+            "radius_m": 3.7664494394842487,
+            "transition_m": 0.55
+          },
+          {
+            "after_index": 1,
+            "angle_bounds_deg": [
+              12.0,
+              24.147968180491603
+            ],
+            "radius_m": 3.593590423071609,
+            "transition_m": 0.55
+          }
+        ]
+      }
+    ],
+    "target_lap_length_m": 158.6120511819921,
+    "lap_length_range_m": [
+      140.0,
+      260.0
+    ],
+    "split": "train",
+    "slot_id": "train_specialist_hairpin_02",
+    "parent_lineage": "lineage_af6f1a0a32990004c16d7df5",
+    "topology_family": "hairpin_2_unequal_ring",
+    "generation_mode": "specialist",
+    "target_family": "hairpin",
+    "minimum_target_exposure": 0.7,
+    "expected_primary_families": 1,
+    "minimum_family_exposure": 0.025,
+    "maximum_family_exposure": 0.78,
+    "connector_length_bounds_m": [
+      0.3,
+      55.51421791369723
+    ],
+    "width": {
+      "left": [
+        [
+          0.0,
+          0.781510906301664
+        ],
+        [
+          0.3,
+          0.8319020867093956
+        ],
+        [
+          0.65,
+          0.7709862733947603
+        ],
+        [
+          1.0,
+          0.781510906301664
+        ]
+      ],
+      "right": [
+        [
+          0.0,
+          0.781510906301664
+        ],
+        [
+          0.25,
+          0.7709862733947603
+        ],
+        [
+          0.7,
+          0.8319020867093956
+        ],
+        [
+          1.0,
+          0.781510906301664
+        ]
+      ],
+      "maximum_gradient": 0.12
+    },
+    "candidate_budget": 3,
+    "optimization_iterations": 80,
+    "spacing_m": 0.12,
+    "resolution_m_per_pixel": 0.06,
+    "padding_m": 1.0,
+    "seam_offset_m": 1.7,
+    "maximum_supporting_fraction": 0.30000000000000004,
+    "minimum_primary_coverage": 0.7,
+    "minimum_useful_corner_m": 0.6,
+    "maximum_offset_curvature": 0.95,
+    "objectives": {},
+    "limits": {
+      "minimum_radius_m": 0.5,
+      "minimum_usable_width_m": 0.7,
+      "maximum_curvature_rate_inv_m2": 2.0,
+      "footprint_margin_m": 0.02,
+      "minimum_nonlocal_boundary_gap_m": 0.1
+    },
+    "seed": 480188291780212905,
+    "attempt": 1,
+    "dataset_id": "phase5_research_v1",
+    "template_version": "scaled_maneuver_inventory.v1",
+    "layout_version": "bounded_supporting_turns.v1",
+    "assembly_method": "bounded_supporting_turns.v1",
+    "support_gap_m": 0.3,
+    "minimum_target_active_fraction": 0.5
+  },
+  "independence_screen": {
+    "status": "accepted",
+    "compared_layouts": 6,
+    "closest_shape": {
+      "related_slot": "train_specialist_hairpin_01",
+      "related_split": "train",
+      "status": "independent_under_policy",
+      "normalized_shape_distance": 0.009065543369049618,
+      "relative_length": 0.2423800722592886,
+      "relative_sustained_radius": 0.12845346961476373,
+      "relative_p95_curvature": 0.2518846063383317,
+      "family_exposure_l1": 0.020910411907817394,
+      "corner_count_difference": 0
+    }
+  }
+}

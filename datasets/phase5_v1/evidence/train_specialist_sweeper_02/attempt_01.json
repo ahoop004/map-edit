@@ -1,0 +1,238 @@
+{
+  "status": "accepted",
+  "candidate_seed": 1121012256851216005,
+  "attempt": 1,
+  "slot_id": "train_specialist_sweeper_02",
+  "native_recipe": {
+    "schema_version": 1,
+    "generator": "map_editor.research_tracks.v1",
+    "inventory": [
+      {
+        "name": "sweeper_1",
+        "family": "sweeper",
+        "parameters": {
+          "radius_m": 74.7526246227483,
+          "turn_angle_rad": 0.8110031286727098,
+          "entry_transition_m": 0.663988105744895,
+          "exit_transition_m": 0.663988105744895
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "sweeper_2",
+        "family": "sweeper",
+        "parameters": {
+          "radius_m": 69.54053008959724,
+          "turn_angle_rad": 0.9443504209839038,
+          "entry_transition_m": 0.663988105744895,
+          "exit_transition_m": 0.663988105744895
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "sweeper_3",
+        "family": "sweeper",
+        "parameters": {
+          "radius_m": 55.22351774488613,
+          "turn_angle_rad": 0.8326930394951838,
+          "entry_transition_m": 0.663988105744895,
+          "exit_transition_m": 0.663988105744895
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "sweeper_4",
+        "family": "sweeper",
+        "parameters": {
+          "radius_m": 67.04470403600548,
+          "turn_angle_rad": 0.9120635362027792,
+          "entry_transition_m": 0.663988105744895,
+          "exit_transition_m": 0.663988105744895
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "sweeper_5",
+        "family": "sweeper",
+        "parameters": {
+          "radius_m": 71.94073046188878,
+          "turn_angle_rad": 1.046742397166218,
+          "entry_transition_m": 0.663988105744895,
+          "exit_transition_m": 0.663988105744895
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "sweeper_6",
+        "family": "sweeper",
+        "parameters": {
+          "radius_m": 81.07294708406607,
+          "turn_angle_rad": 0.6891352334621942,
+          "entry_transition_m": 0.663988105744895,
+          "exit_transition_m": 0.663988105744895
+        },
+        "straight_after_m": 0.0
+      }
+    ],
+    "vehicle": {
+      "length_m": 0.5,
+      "width_m": 0.27,
+      "lf_m": 0.15875,
+      "lr_m": 0.17145,
+      "steering_min_rad": -0.523599,
+      "steering_max_rad": 0.523599,
+      "steering_rate_min_rad_s": -3.2,
+      "steering_rate_max_rad_s": 3.2,
+      "source": "combined_slip.yaml",
+      "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+      "calibration_status": "uncalibrated"
+    },
+    "topologies": [
+      {
+        "name": "unequal_maneuver_ring",
+        "order": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "turns": [
+          {
+            "after_index": 0,
+            "angle_bounds_deg": [
+              15.0,
+              45.0
+            ],
+            "radius_m": 3.841206362117805,
+            "transition_m": 0.65
+          },
+          {
+            "after_index": 3,
+            "angle_bounds_deg": [
+              15.0,
+              45.0
+            ],
+            "radius_m": 3.997525394083863,
+            "transition_m": 0.65
+          }
+        ]
+      },
+      {
+        "name": "reordered_maneuver_ring",
+        "order": [
+          0,
+          5,
+          4,
+          3,
+          2,
+          1
+        ],
+        "turns": [
+          {
+            "after_index": 0,
+            "angle_bounds_deg": [
+              15.0,
+              45.0
+            ],
+            "radius_m": 3.841206362117805,
+            "transition_m": 0.65
+          },
+          {
+            "after_index": 3,
+            "angle_bounds_deg": [
+              15.0,
+              45.0
+            ],
+            "radius_m": 3.997525394083863,
+            "transition_m": 0.65
+          }
+        ]
+      }
+    ],
+    "target_lap_length_m": 427.20788712950275,
+    "lap_length_range_m": [
+      260.0,
+      450.0
+    ],
+    "split": "train",
+    "slot_id": "train_specialist_sweeper_02",
+    "parent_lineage": "lineage_af8ac8314d3d7c99a6537059",
+    "topology_family": "sweeper_6_unequal_ring",
+    "generation_mode": "specialist",
+    "target_family": "sweeper",
+    "minimum_target_exposure": 0.8,
+    "expected_primary_families": 1,
+    "minimum_family_exposure": 0.025,
+    "maximum_family_exposure": 0.78,
+    "connector_length_bounds_m": [
+      0.3,
+      149.52276049532594
+    ],
+    "width": {
+      "left": [
+        [
+          0.0,
+          0.9443296410604025
+        ],
+        [
+          1.0,
+          0.9443296410604025
+        ]
+      ],
+      "right": [
+        [
+          0.0,
+          0.8332046358877263
+        ],
+        [
+          1.0,
+          0.8332046358877263
+        ]
+      ],
+      "maximum_gradient": 0.12
+    },
+    "candidate_budget": 3,
+    "optimization_iterations": 80,
+    "spacing_m": 0.12,
+    "resolution_m_per_pixel": 0.06,
+    "padding_m": 1.0,
+    "seam_offset_m": 1.7,
+    "maximum_supporting_fraction": 0.19999999999999996,
+    "minimum_primary_coverage": 0.8,
+    "minimum_useful_corner_m": 0.6,
+    "maximum_offset_curvature": 0.95,
+    "objectives": {},
+    "limits": {
+      "minimum_radius_m": 0.5,
+      "minimum_usable_width_m": 0.7,
+      "maximum_curvature_rate_inv_m2": 2.0,
+      "footprint_margin_m": 0.02,
+      "minimum_nonlocal_boundary_gap_m": 0.1
+    },
+    "seed": 1121012256851216005,
+    "attempt": 1,
+    "dataset_id": "phase5_research_v1",
+    "template_version": "scaled_maneuver_inventory.v1",
+    "layout_version": "bounded_supporting_turns.v1",
+    "assembly_method": "bounded_supporting_turns.v1",
+    "support_gap_m": 0.3,
+    "minimum_target_active_fraction": 0.5
+  },
+  "independence_screen": {
+    "status": "accepted",
+    "compared_layouts": 7,
+    "closest_shape": {
+      "related_slot": "train_specialist_sweeper_01",
+      "related_split": "train",
+      "status": "independent_under_policy",
+      "normalized_shape_distance": 0.01861218208368395,
+      "relative_length": 0.24839481269113536,
+      "relative_sustained_radius": 0.21454604315023992,
+      "relative_p95_curvature": 0.13589345006156414,
+      "family_exposure_l1": 0.012903357641942836,
+      "corner_count_difference": 0
+    }
+  }
+}

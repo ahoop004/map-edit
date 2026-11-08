@@ -1,0 +1,1050 @@
+{
+  "generator": "map_editor.research_tracks.v1",
+  "geometric_validity": "accepted",
+  "physical_drivability": "unassessed",
+  "driving_difficulty": "unrated",
+  "integration": {
+    "status": "not_run",
+    "reason": "offline_research_dataset"
+  },
+  "split": "train",
+  "slot_id": "train_composite_07",
+  "attempt": 1,
+  "candidate_seed": 458070987429105855,
+  "identity": {
+    "generator": "map_editor.research_tracks.v1",
+    "layout_version": "bounded_supporting_turns.v1",
+    "configuration_sha256": "3dd52d984ce0989175cba5e2cf5ce1ad54f24a98267522936654e39e61943d17",
+    "centerline_fingerprint": "d581754e8deff24d678c274c82ea6eea94eac8f922a3aaf90e9ab1bb17e548bd",
+    "coordinate_fingerprint": "78e2e4b6b7d5947818ec7dab4f677c5b1f4034d097122010a0291f5700d35aa6",
+    "width_sha256": "1f7bcd6fcabdd234350bfcaf79cb76694ed5f5725d519a61536cf4d79350b493",
+    "corridor_fingerprint": "40951783835369d342cda52e436f4598cf82ea199fbbabffa50cce48ad9949c3",
+    "inventory_lineage": "053867249cc5df78fdc3a01cb7a9c6ac0c2391716564f680e89071dc3f505d25",
+    "parent_layout_lineage": "lineage_93d4a848972c85eaadb37d85",
+    "near_duplicate_group": "lineage_93d4a848972c85eaadb37d85",
+    "slot_id": "train_composite_07",
+    "split": "train",
+    "template_topology": "mixed_3_8_ring",
+    "candidate_seed": 458070987429105855,
+    "vehicle": {
+      "length_m": 0.5,
+      "width_m": 0.27,
+      "lf_m": 0.15875,
+      "lr_m": 0.17145,
+      "steering_min_rad": -0.523599,
+      "steering_max_rad": 0.523599,
+      "steering_rate_min_rad_s": -3.2,
+      "steering_rate_max_rad_s": 3.2,
+      "source": "combined_slip.yaml",
+      "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+      "calibration_status": "uncalibrated"
+    }
+  },
+  "statistics": {
+    "analysis_version": "periodic_geometry_scales.v1",
+    "sigma_m": 0.4,
+    "resampling_spacing_m": 0.09995777224452967,
+    "raw_lap_length_m": 218.40773235429734,
+    "smoothed_lap_length_m": 218.2859956568594,
+    "thresholds": {
+      "near_straight_curvature_inv_m": 0.025,
+      "minimum_corner_length_m": 0.6,
+      "minimum_corner_angle_deg": 15.0,
+      "sustained_window_m": 0.9995777224452967
+    },
+    "curvature_abs_percentiles_inv_m": {
+      "50": 0.04490686677073721,
+      "75": 0.05296237691449482,
+      "90": 0.16897723551923927,
+      "95": 0.17587704440109916,
+      "99": 0.20918488415539416,
+      "100": 0.2657987370870663
+    },
+    "maximum_curvature_inv_m": 0.2657987370870663,
+    "p95_curvature_inv_m": 0.17587704440109916,
+    "minimum_sustained_radius_m": 3.957444892321997,
+    "maximum_curvature_rate_inv_m2": 0.25958180951831267,
+    "p95_curvature_rate_inv_m2": 0.14777986911152866,
+    "near_straight_fraction": 0.27703965781717155,
+    "straight_lengths_m": {
+      "count": 12,
+      "minimum": 0.19986218013149953,
+      "median": 5.247741986670087,
+      "p90": 10.29561144702869,
+      "maximum": 10.795391678786807,
+      "values": [
+        8.496368260418,
+        0.4997367929014056,
+        5.397675889992296,
+        0.19986218013149953,
+        6.29730330656029,
+        10.795391678786807,
+        7.896613078892912,
+        0.39978366570496804,
+        10.495527356652099,
+        0.29979314257055234,
+        5.0978080833478785,
+        4.598014107098212
+      ]
+    },
+    "longest_straight_m": 10.795391678786807,
+    "corner_count": 12,
+    "corner_density_per_100m": 5.497375112814716,
+    "curvature_reversals": 8,
+    "curvature_reversals_per_100m": 3.664916741876477,
+    "absolute_heading_change_rad_per_100m": 5.686188931403205,
+    "corner_angles_deg": {
+      "count": 12,
+      "minimum": 37.6435363294733,
+      "median": 46.912881222238475,
+      "p90": 90.46092219190567,
+      "maximum": 102.13720563016246,
+      "values": [
+        37.65125351765422,
+        37.6435363294733,
+        47.46217476919269,
+        47.531133079459856,
+        102.13720563016246,
+        84.92484963119784,
+        42.33227561403585,
+        42.3334170312857,
+        46.36358767528426,
+        46.27934644682008,
+        91.07604136531765,
+        78.54759202733065
+      ]
+    },
+    "corner_mean_radii_m": {
+      "count": 12,
+      "minimum": 6.1389869635116225,
+      "median": 7.527889727621307,
+      "p90": 18.604284884224246,
+      "maximum": 20.556477777318737,
+      "values": [
+        7.898245159826865,
+        7.899867668618378,
+        6.1389869635116225,
+        6.854819361279392,
+        17.99237364238467,
+        18.67227502220642,
+        7.157534295415751,
+        7.157338103766312,
+        6.285175627626441,
+        6.917132360768241,
+        17.28684971309498,
+        20.556477777318737
+      ]
+    },
+    "corner_spacing_m": {
+      "count": 12,
+      "minimum": 5.297761928960071,
+      "median": 11.345207149754113,
+      "p90": 36.57454886427341,
+      "maximum": 42.88188429290324,
+      "values": [
+        5.697593017938196,
+        10.595523857920142,
+        5.297761928960071,
+        11.994932669343562,
+        42.88188429290324,
+        35.58496691905256,
+        5.697593017938175,
+        15.793328014635705,
+        5.397719701204608,
+        10.695481630164664,
+        32.08644489049402,
+        36.68450241374239
+      ]
+    },
+    "shortest_significant_corner_m": 5.085360119787809,
+    "left_corner_count": 8,
+    "right_corner_count": 4,
+    "corners": [
+      {
+        "start_m": 35.58496691905256,
+        "length_m": 5.190239724189917,
+        "signed_angle_deg": -37.65125351765422,
+        "mean_radius_m": 7.898245159826865,
+        "minimum_radius_m": 6.481321144328339,
+        "direction": "right"
+      },
+      {
+        "start_m": 41.28255993699076,
+        "length_m": 5.190241901042065,
+        "signed_angle_deg": 37.6435363294733,
+        "mean_radius_m": 7.899867668618378,
+        "minimum_radius_m": 6.481386116263646,
+        "direction": "left"
+      },
+      {
+        "start_m": 51.8780837949109,
+        "length_m": 5.085360119787809,
+        "signed_angle_deg": -47.46217476919269,
+        "mean_radius_m": 6.1389869635116225,
+        "minimum_radius_m": 4.939560521309596,
+        "direction": "right"
+      },
+      {
+        "start_m": 57.17584572387097,
+        "length_m": 5.686585191187338,
+        "signed_angle_deg": 47.531133079459856,
+        "mean_radius_m": 6.854819361279392,
+        "minimum_radius_m": 5.684643859937619,
+        "direction": "left"
+      },
+      {
+        "start_m": 69.17077839321453,
+        "length_m": 32.073754508695686,
+        "signed_angle_deg": 102.13720563016246,
+        "mean_radius_m": 17.99237364238467,
+        "minimum_radius_m": 3.8353902200644105,
+        "direction": "left"
+      },
+      {
+        "start_m": 112.05266268611777,
+        "length_m": 27.67638667296917,
+        "signed_angle_deg": 84.92484963119784,
+        "mean_radius_m": 18.67227502220642,
+        "minimum_radius_m": 3.7622451143266162,
+        "direction": "left"
+      },
+      {
+        "start_m": 147.63762960517033,
+        "length_m": 5.288255384347652,
+        "signed_angle_deg": -42.33227561403585,
+        "mean_radius_m": 7.157534295415751,
+        "minimum_radius_m": 5.781577864828907,
+        "direction": "right"
+      },
+      {
+        "start_m": 153.3352226231085,
+        "length_m": 5.2882530154157035,
+        "signed_angle_deg": 42.3334170312857,
+        "mean_radius_m": 7.157338103766312,
+        "minimum_radius_m": 5.7819683092237675,
+        "direction": "left"
+      },
+      {
+        "start_m": 169.1285506377442,
+        "length_m": 5.085946883740054,
+        "signed_angle_deg": -46.36358767528426,
+        "mean_radius_m": 6.285175627626441,
+        "minimum_radius_m": 5.058201739777695,
+        "direction": "right"
+      },
+      {
+        "start_m": 174.52627033894882,
+        "length_m": 5.58715437093252,
+        "signed_angle_deg": 46.27934644682008,
+        "mean_radius_m": 6.917132360768241,
+        "minimum_radius_m": 5.821483044210627,
+        "direction": "left"
+      },
+      {
+        "start_m": 185.22175196911348,
+        "length_m": 27.47877510221118,
+        "signed_angle_deg": 91.07604136531765,
+        "mean_radius_m": 17.28684971309498,
+        "minimum_radius_m": 4.783783417971793,
+        "direction": "left"
+      },
+      {
+        "start_m": 217.3081968596075,
+        "length_m": 28.18116523928339,
+        "signed_angle_deg": 78.54759202733065,
+        "mean_radius_m": 20.556477777318737,
+        "minimum_radius_m": 5.681400286913255,
+        "direction": "left"
+      }
+    ],
+    "primary_coverage": 0.6999994915158876,
+    "supporting_fraction": 0.3000005084841124,
+    "primary_family_count": 3,
+    "family_exposure_fractions": {
+      "chicane": 0.09999923686165578,
+      "corner": 0.5000014093967512,
+      "s_curve": 0.09999884525748061,
+      "transition": 0.30000050848411236
+    },
+    "left_turn_fraction": 0.7532108024579626,
+    "minimum_corner_angle_deg": 37.6435363294733,
+    "maximum_corner_angle_deg": 102.13720563016246,
+    "median_corner_angle_deg": 46.912881222238475,
+    "p90_corner_angle_deg": 90.46092219190567,
+    "corner_angle_std_deg": 22.353879642876596,
+    "symmetry_error_m": 4.828049340769846,
+    "repetition_fraction": 0.06991525360159152,
+    "annotation_order": [
+      "corner",
+      "transition",
+      "transition",
+      "chicane",
+      "transition",
+      "s_curve",
+      "transition",
+      "corner",
+      "transition",
+      "transition",
+      "corner",
+      "transition",
+      "transition",
+      "chicane",
+      "transition",
+      "s_curve",
+      "transition",
+      "corner",
+      "transition",
+      "transition"
+    ],
+    "physical_drivability": "unassessed",
+    "driving_difficulty": "unrated",
+    "long_straight_to_tight_corner_count": 0,
+    "primary_family_exposure_fractions": {
+      "chicane": 0.09999923686165575,
+      "corner": 0.5000014093967511,
+      "s_curve": 0.09999884525748058
+    },
+    "measured_primary_families": [
+      "chicane",
+      "corner",
+      "s_curve"
+    ],
+    "active_curvature_fraction": 0.7294438844619661,
+    "primary_active_curvature_exposure": {
+      "chicane": 0.09700000000000002,
+      "corner": 0.5000000000000002,
+      "s_curve": 0.10000000000000002
+    },
+    "target_family": null,
+    "target_exposure_fraction": null,
+    "primary_order_transition_matrix": {
+      "chicane": {
+        "chicane": 0,
+        "corner": 0,
+        "s_curve": 2
+      },
+      "corner": {
+        "chicane": 2,
+        "corner": 2,
+        "s_curve": 0
+      },
+      "s_curve": {
+        "chicane": 0,
+        "corner": 2,
+        "s_curve": 0
+      }
+    },
+    "primary_family_switch_count": 6,
+    "primary_switch_density_per_100m": 2.747155485441743,
+    "requested_primary_inventory": [
+      {
+        "name": "core_1",
+        "family": "corner",
+        "parameters": {
+          "radius_m": 22.271930117068152,
+          "turn_angle_deg": 67.24738008290909,
+          "transition_m": 0.935601472402802
+        }
+      },
+      {
+        "name": "chicane_1",
+        "family": "chicane",
+        "parameters": {
+          "radius_m": 6.49425720547999,
+          "lateral_displacement_m": 3.607162719536608,
+          "separation_m": 0.3276129241580567,
+          "transition_length_m": 0.935601472402802,
+          "direction": "right_left"
+        }
+      },
+      {
+        "name": "s_curve_1",
+        "family": "s_curve",
+        "parameters": {
+          "radii_m": [
+            4.956177991067112,
+            5.699604689727178
+          ],
+          "turn_angle_rad": 0.8492316455339362,
+          "transition_length_m": 0.935601472402802,
+          "direction": "right_left"
+        }
+      },
+      {
+        "name": "core_2",
+        "family": "corner",
+        "parameters": {
+          "radius_m": 21.530482309722878,
+          "turn_angle_deg": 77.97578284278782,
+          "transition_m": 0.935601472402802
+        }
+      },
+      {
+        "name": "core_3",
+        "family": "corner",
+        "parameters": {
+          "radius_m": 24.377660862498033,
+          "turn_angle_deg": 58.373008738077424,
+          "transition_m": 0.935601472402802
+        }
+      },
+      {
+        "name": "chicane_3",
+        "family": "chicane",
+        "parameters": {
+          "radius_m": 5.796186100838095,
+          "lateral_displacement_m": 3.994224001310811,
+          "separation_m": 0.3276129241580567,
+          "transition_length_m": 0.935601472402802,
+          "direction": "right_left"
+        }
+      },
+      {
+        "name": "s_curve_3",
+        "family": "s_curve",
+        "parameters": {
+          "radii_m": [
+            5.07479090899959,
+            5.836009545349529
+          ],
+          "turn_angle_rad": 0.8293825827284623,
+          "transition_length_m": 0.935601472402802,
+          "direction": "right_left"
+        }
+      },
+      {
+        "name": "core_4",
+        "family": "corner",
+        "parameters": {
+          "radius_m": 18.88569396849488,
+          "turn_angle_deg": 76.40382833622564,
+          "transition_m": 0.935601472402802
+        }
+      }
+    ],
+    "minimum_width_m": 1.7883133868431353,
+    "maximum_width_m": 1.7883154544200597,
+    "mean_width_m": 1.7883144134719655,
+    "width_std_m": 4.17092956127686e-07,
+    "minimum_left_width_m": 0.8350242123068162,
+    "minimum_right_width_m": 0.9532889485401953,
+    "minimum_raster_width_m": 1.6553549057202037
+  },
+  "validation": {
+    "exported_global_boundary_separation_m": 1.7880975412004656,
+    "minimum_usable_corridor_width_m": 1.7480975412004656,
+    "nonlocal_boundary_gap": {
+      "lower_bound_m": 0.1,
+      "local_arc_exclusion_m": 5.3649434150772315,
+      "status": "passed"
+    },
+    "footprint": "passed_at_sampled_poses",
+    "footprint_poses_checked": 1855,
+    "limits": {
+      "minimum_radius_m": 0.5,
+      "minimum_usable_width_m": 0.7,
+      "maximum_curvature_rate_inv_m2": 2.0,
+      "footprint_margin_m": 0.02,
+      "minimum_nonlocal_boundary_gap_m": 0.1
+    },
+    "vehicle": {
+      "length_m": 0.5,
+      "width_m": 0.27,
+      "lf_m": 0.15875,
+      "lr_m": 0.17145,
+      "steering_min_rad": -0.523599,
+      "steering_max_rad": 0.523599,
+      "steering_rate_min_rad_s": -3.2,
+      "steering_rate_max_rad_s": 3.2,
+      "source": "combined_slip.yaml",
+      "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+      "calibration_status": "uncalibrated"
+    },
+    "raster_footprint": {
+      "status": "passed_at_sampled_poses",
+      "poses_checked": 1855,
+      "margin_m": 0.02
+    },
+    "minimum_raster_width_m": 1.6553549057202037,
+    "minimum_raster_side_clearance_m": 0.759740504831772,
+    "raster_width_poses_checked": 1855,
+    "raster_width_measurement": "exact normal ray traversal of occupied cell rectangles at every retained pose",
+    "maximum_curvature_rate_inv_m2": 0.8235883829603177,
+    "minimum_source_radius_m": 3.6425963042566942,
+    "geometric_steering_range_rad": [
+      -0.06656532836301846,
+      0.09050230428712296
+    ],
+    "geometric_steering_within_bounds": true,
+    "csv_coordinate_precision_m": 1e-06,
+    "source_curve_length_m": 218.40861610537107,
+    "polygon_winding_rad": 6.283185307179586,
+    "continuity_residuals": [
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 6.938893903907228e-18
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 2.7755575615628914e-17
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 2.7755575615628914e-17
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 6.938893903907228e-18
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 6.938893903907228e-18
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 2.7755575615628914e-17
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 1.3877787807814457e-17
+      },
+      {
+        "position_m": 0.0,
+        "heading_rad": 0.0,
+        "curvature_inv_m": 0.0
+      },
+      {
+        "position_m": 4.6064365611905074e-11,
+        "heading_rad": 2.4492935982947064e-16,
+        "curvature_inv_m": 0.0
+      }
+    ],
+    "lap_seam": {
+      "requested_offset_m": 1.7,
+      "actual_csv_offset_m": 1.6523213506804506
+    },
+    "centerline_objective_evaluation": {
+      "requested_targets": {
+        "raw_lap_length_m": [
+          140.0,
+          260.0
+        ],
+        "primary_coverage": [
+          0.6,
+          1.0
+        ],
+        "supporting_fraction": [
+          0.0,
+          0.4
+        ]
+      },
+      "measured_outcomes": {
+        "raw_lap_length_m": 218.40773235429734,
+        "primary_coverage": 0.6999994915158876,
+        "supporting_fraction": 0.3000005084841124
+      },
+      "failures": []
+    },
+    "physical_drivability": "unassessed",
+    "width_objective_evaluation": {
+      "requested_targets": {},
+      "measured_outcomes": {},
+      "failures": []
+    }
+  },
+  "recipe_replay": {
+    "status": "passed",
+    "byte_identical": true,
+    "artifacts_compared": 10
+  },
+  "artifact_sha256": {
+    "research_3dd52d984ce0989175cba5e2.yaml": "2204309fd583531652b9c4a51cefbcfecdbd6f9a98990798806f9733548a8028",
+    "research_3dd52d984ce0989175cba5e2.png": "6afd57247473ccd784f7d172a0bd476605392e154340eadee9275a71042510fa",
+    "research_3dd52d984ce0989175cba5e2.pgm": "855e759d7d75fbb92d0848c6420b46e61f1f8f0b8f49214d34043d677e5f7089",
+    "research_3dd52d984ce0989175cba5e2_centerline.csv": "d76a6db481c4556b1e66761a16f0c366d7cbbdea14295a8af68c71a4d2fe00e9",
+    "research_3dd52d984ce0989175cba5e2_walls.csv": "82ad8d8c925af4b7e6b12623d4cc0dbeb5a4250eff15720b8936bfbeabab8027",
+    "research_3dd52d984ce0989175cba5e2_track_profile.csv": "07ada54570f08274a3ee46940f355e9dda7b960d7f949eaf2ad28412c42c03a8",
+    "research_3dd52d984ce0989175cba5e2_preview.png": "e8ad6d4f937d7e235989f26b232a5bd717158fe5c5866c14b35ceccd634e6ce8",
+    "research_3dd52d984ce0989175cba5e2_generation.yaml": "3629103332e7a5c44cacd4addbdd507f429ba821c7b8c07c044941f67a1ee4d3",
+    "research_3dd52d984ce0989175cba5e2_metadata.json": "28113fe1622002e574f7ec60181d9f8e2baf3a7c6efa0f36950030bce677a016",
+    "research_3dd52d984ce0989175cba5e2_evaluation.csv": "621ec785a95df3d7a7b1e84070b72d141e589b4788275fccbbbd972c12b0b5a8"
+  },
+  "layout_attempts": [
+    {
+      "candidate": 1,
+      "topology": "mixed_feature_ring",
+      "order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "method": "bounded_supporting_turns.v1",
+      "status": "valid_not_selected",
+      "adjustable_geometry": [
+        "supporting_angles",
+        "supporting_straight_lengths"
+      ],
+      "fixed_primary_heading_rad": 4.886921905584122,
+      "initial_connector_lengths_m": [
+        10.276101504503325,
+        5.634001432291905,
+        9.57319266551101,
+        6.515231780909859,
+        5.944519048284844,
+        7.2586485406881405,
+        6.585370918006904,
+        8.777012613773232
+      ],
+      "initial_supporting_angles_deg": [
+        24.437809326400966,
+        29.945648992247797,
+        13.616541681351237,
+        12.000000000000002
+      ],
+      "supporting_angle_bounds_deg": [
+        [
+          12.0,
+          44.0
+        ],
+        [
+          12.0,
+          44.0
+        ],
+        [
+          12.0,
+          44.0
+        ],
+        [
+          12.0,
+          44.0
+        ]
+      ],
+      "optimization": {
+        "iterations": 4,
+        "evaluations": 53,
+        "history": [
+          {
+            "iteration": 0,
+            "maximum_scaled_residual": 3.5261315817320478,
+            "position_residual_m": 4.138798909769226,
+            "heading_residual_rad": 8.881784197001252e-16,
+            "length_residual_m": 2.1275175787783667,
+            "damping": 1e-05
+          },
+          {
+            "iteration": 1,
+            "maximum_scaled_residual": 2.894597742506475,
+            "position_residual_m": 2.9657084622409906,
+            "heading_residual_rad": 0.04803771607070928,
+            "length_residual_m": 0.17498503063899307,
+            "damping": 3.3333333333333337e-06
+          },
+          {
+            "iteration": 2,
+            "maximum_scaled_residual": 0.08287398792542032,
+            "position_residual_m": 0.08560322625325617,
+            "heading_residual_rad": 8.643264415297836e-08,
+            "length_residual_m": 2.1698753016607952e-08,
+            "damping": 1.1111111111111112e-06
+          },
+          {
+            "iteration": 3,
+            "maximum_scaled_residual": 1.0749526300202206e-05,
+            "position_residual_m": 1.11706789531035e-05,
+            "heading_residual_rad": 3.3122411480235314e-09,
+            "length_residual_m": 6.831442078691907e-10,
+            "damping": 3.703703703703704e-07
+          },
+          {
+            "iteration": 4,
+            "maximum_scaled_residual": 5.474663331081231e-11,
+            "position_residual_m": 5.690206216419992e-11,
+            "heading_residual_rad": 1.7763568394002505e-15,
+            "length_residual_m": 5.684341886080802e-14,
+            "damping": 1.234567901234568e-07
+          }
+        ],
+        "maximum_scaled_residual": 5.474663331081231e-11,
+        "converged": true
+      },
+      "connector_lengths_m": [
+        9.839562317252549,
+        5.1974622450412635,
+        9.136653478261868,
+        6.275869733450954,
+        5.833925745834806,
+        7.148055238235779,
+        6.4747776155605,
+        8.530254551553151
+      ],
+      "supporting_angles_deg": [
+        28.215253757353963,
+        27.784744476773522,
+        12.000001765872558,
+        12.000000000000002
+      ],
+      "closure_residual_scaled": [
+        1.5512924278482387e-11,
+        -5.474663331081231e-11,
+        1.7763568394002505e-14,
+        5.684341886080802e-14
+      ],
+      "geometric_selection_score": 0.5664341912681166,
+      "composition": {
+        "primary_families": [
+          "chicane",
+          "corner",
+          "s_curve"
+        ],
+        "exposure": {
+          "chicane": 0.09999923739020812,
+          "corner": 0.500001424677308,
+          "s_curve": 0.0999988507805482
+        }
+      }
+    },
+    {
+      "candidate": 2,
+      "topology": "reordered_feature_ring",
+      "order": [
+        0,
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "method": "bounded_supporting_turns.v1",
+      "status": "valid_not_selected",
+      "adjustable_geometry": [
+        "supporting_angles",
+        "supporting_straight_lengths"
+      ],
+      "fixed_primary_heading_rad": 4.886921905584122,
+      "initial_connector_lengths_m": [
+        8.378789485894881,
+        6.409775629610837,
+        8.443698015537318,
+        9.42065803339987,
+        8.945044264464084,
+        6.5176751192041475,
+        10.309224435948321,
+        9.567730757585435
+      ],
+      "initial_supporting_angles_deg": [
+        30.462397717606418,
+        25.214136177980453,
+        12.000000000000002,
+        12.323466104413127
+      ],
+      "supporting_angle_bounds_deg": [
+        [
+          12.0,
+          44.0
+        ],
+        [
+          12.0,
+          44.0
+        ],
+        [
+          12.0,
+          44.0
+        ],
+        [
+          12.0,
+          44.0
+        ]
+      ],
+      "optimization": {
+        "iterations": 4,
+        "evaluations": 53,
+        "history": [
+          {
+            "iteration": 0,
+            "maximum_scaled_residual": 12.844529197870935,
+            "position_residual_m": 13.74053475843184,
+            "heading_residual_rad": 0.0,
+            "length_residual_m": 9.55603481645403,
+            "damping": 1e-05
+          },
+          {
+            "iteration": 1,
+            "maximum_scaled_residual": 0.8173002554914225,
+            "position_residual_m": 1.0392399699626587,
+            "heading_residual_rad": 4.0332737416548525e-07,
+            "length_residual_m": 1.194045032093527e-05,
+            "damping": 3.3333333333333337e-06
+          },
+          {
+            "iteration": 2,
+            "maximum_scaled_residual": 0.007038894559503461,
+            "position_residual_m": 0.009586818575041959,
+            "heading_residual_rad": 7.275104962900514e-10,
+            "length_residual_m": 6.747313818777911e-11,
+            "damping": 1.1111111111111112e-06
+          },
+          {
+            "iteration": 3,
+            "maximum_scaled_residual": 1.527979751614339e-07,
+            "position_residual_m": 1.6361778901642347e-07,
+            "heading_residual_rad": 3.1956659540810506e-12,
+            "length_residual_m": 1.1368683772161603e-13,
+            "damping": 3.703703703703704e-07
+          },
+          {
+            "iteration": 4,
+            "maximum_scaled_residual": 7.643390369431425e-13,
+            "position_residual_m": 8.231432484540004e-13,
+            "heading_residual_rad": 8.881784197001252e-16,
+            "length_residual_m": 5.684341886080802e-14,
+            "damping": 1.234567901234568e-07
+          }
+        ],
+        "maximum_scaled_residual": 7.643390369431425e-13,
+        "converged": true
+      },
+      "connector_lengths_m": [
+        7.187665899516182,
+        5.208807918499607,
+        7.24273030442609,
+        8.219690322288782,
+        7.745527991716244,
+        5.330177844539427,
+        9.121727161283566,
+        8.380233482920948
+      ],
+      "supporting_angles_deg": [
+        19.84618743328518,
+        23.309997990320362,
+        23.370351070887914,
+        13.473463505506594
+      ],
+      "closure_residual_scaled": [
+        3.055333763768431e-13,
+        7.643390369431425e-13,
+        8.881784197001252e-15,
+        5.684341886080802e-14
+      ],
+      "geometric_selection_score": 0.3574383320349804,
+      "composition": {
+        "primary_families": [
+          "chicane",
+          "corner",
+          "s_curve"
+        ],
+        "exposure": {
+          "chicane": 0.09999923991654809,
+          "corner": 0.500001425261804,
+          "s_curve": 0.09999884736641654
+        }
+      }
+    },
+    {
+      "candidate": 3,
+      "topology": "mixed_feature_ring",
+      "order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "method": "bounded_supporting_turns.v1",
+      "status": "selected",
+      "adjustable_geometry": [
+        "supporting_angles",
+        "supporting_straight_lengths"
+      ],
+      "fixed_primary_heading_rad": 4.886921905584122,
+      "initial_connector_lengths_m": [
+        8.520153611269091,
+        5.139319102174983,
+        5.513742927093789,
+        10.217212334604309,
+        7.954754215580301,
+        10.314055258673292,
+        4.397058870132926,
+        4.1184991335281635
+      ],
+      "initial_supporting_angles_deg": [
+        18.289143211588005,
+        21.014624665688803,
+        17.00763396874432,
+        23.688598153978877
+      ],
+      "supporting_angle_bounds_deg": [
+        [
+          12.0,
+          44.0
+        ],
+        [
+          12.0,
+          44.0
+        ],
+        [
+          12.0,
+          44.0
+        ],
+        [
+          12.0,
+          44.0
+        ]
+      ],
+      "optimization": {
+        "iterations": 4,
+        "evaluations": 53,
+        "history": [
+          {
+            "iteration": 0,
+            "maximum_scaled_residual": 14.28471097889594,
+            "position_residual_m": 14.305526092205984,
+            "heading_residual_rad": 0.0,
+            "length_residual_m": 2.261765472133959,
+            "damping": 1e-05
+          },
+          {
+            "iteration": 1,
+            "maximum_scaled_residual": 1.1195384131080506,
+            "position_residual_m": 1.477393416340166,
+            "heading_residual_rad": 0.043260591288808214,
+            "length_residual_m": 0.157577616284442,
+            "damping": 3.3333333333333337e-06
+          },
+          {
+            "iteration": 2,
+            "maximum_scaled_residual": 0.02635828550897923,
+            "position_residual_m": 0.03141609555576984,
+            "heading_residual_rad": 2.0578374559931945e-09,
+            "length_residual_m": 2.0037305148434825e-10,
+            "damping": 1.1111111111111112e-06
+          },
+          {
+            "iteration": 3,
+            "maximum_scaled_residual": 6.973262451744057e-06,
+            "position_residual_m": 9.006541884348133e-06,
+            "heading_residual_rad": 2.098765605751396e-12,
+            "length_residual_m": 2.842170943040401e-14,
+            "damping": 3.703703703703704e-07
+          },
+          {
+            "iteration": 4,
+            "maximum_scaled_residual": 3.553779492904141e-11,
+            "position_residual_m": 4.6001638210709706e-11,
+            "heading_residual_rad": 8.881784197001252e-16,
+            "length_residual_m": 5.684341886080802e-14,
+            "damping": 1.234567901234568e-07
+          }
+        ],
+        "maximum_scaled_residual": 3.553779492904141e-11,
+        "converged": true
+      },
+      "connector_lengths_m": [
+        8.81017202273313,
+        5.429337513477885,
+        5.803761338396607,
+        10.493747623514352,
+        8.230200957007192,
+        10.58950200001978,
+        4.6725056114795365,
+        4.407333858562311
+      ],
+      "supporting_angles_deg": [
+        12.033007122466868,
+        25.042715991498266,
+        27.490396039533437,
+        15.43388084650137
+      ],
+      "closure_residual_scaled": [
+        3.553779492904141e-11,
+        2.92098587749141e-11,
+        -8.881784197001252e-15,
+        -5.684341886080802e-14
+      ],
+      "geometric_selection_score": -0.08831274206240125,
+      "composition": {
+        "primary_families": [
+          "chicane",
+          "corner",
+          "s_curve"
+        ],
+        "exposure": {
+          "chicane": 0.09999923686165575,
+          "corner": 0.5000014093967511,
+          "s_curve": 0.09999884525748058
+        }
+      }
+    }
+  ]
+}

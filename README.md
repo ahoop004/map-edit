@@ -59,6 +59,15 @@ widths. Review the [twelve-track pilot](examples/phase4b_pilot/manifest.json),
 [extended geometry contract](docs/extended_geometry.md). New workflows use a
 local resolved vehicle snapshot and require no simulator checkout or smoke test.
 
+The [Phase 5 results](docs/phase5_results.md) provide the complete offline
+[60-track research dataset](datasets/phase5_v1/README.md), with preassigned
+train/validation/test splits, exact family/scale quotas, screened geometric
+independence, immutable bundles and native byte replay. Review the
+[60-track gallery](datasets/phase5_v1/plots/overview.png),
+[master manifest](datasets/phase5_v1/manifest.json), and
+[dataset/replay contract](docs/research_dataset.md). Physical drivability remains
+unassessed; no simulator or learning experiments are included.
+
 ## Annotation Placement Workflow
 
 1. Open a map bundle (File → Open Map…, select the YAML file).

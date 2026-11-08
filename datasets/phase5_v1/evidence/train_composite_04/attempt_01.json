@@ -1,0 +1,320 @@
+{
+  "status": "accepted",
+  "candidate_seed": 398325263133933044,
+  "attempt": 1,
+  "slot_id": "train_composite_04",
+  "native_recipe": {
+    "schema_version": 1,
+    "generator": "map_editor.research_tracks.v1",
+    "inventory": [
+      {
+        "name": "core_1",
+        "family": "corner",
+        "parameters": {
+          "radius_m": 10.675574236131197,
+          "turn_angle_deg": 64.83238519760467,
+          "transition_m": 0.9458626080295618
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "chicane_1",
+        "family": "chicane",
+        "parameters": {
+          "radius_m": 2.233870644088418,
+          "lateral_displacement_m": 2.018187963466641,
+          "separation_m": 0.16419625244669878,
+          "transition_length_m": 0.9458626080295618,
+          "direction": "left_right"
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "s_curve_1",
+        "family": "s_curve",
+        "parameters": {
+          "radii_m": [
+            2.0893829004367963,
+            2.4027903355023157
+          ],
+          "turn_angle_rad": 0.7972718349723458,
+          "transition_length_m": 0.9458626080295618,
+          "direction": "left_right"
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "core_2",
+        "family": "corner",
+        "parameters": {
+          "radius_m": 8.26622818993424,
+          "turn_angle_deg": 67.92937947810509,
+          "transition_m": 0.9458626080295618
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "core_3",
+        "family": "corner",
+        "parameters": {
+          "radius_m": 11.248772558586442,
+          "turn_angle_deg": 78.71024552665273,
+          "transition_m": 0.9458626080295618
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "chicane_3",
+        "family": "chicane",
+        "parameters": {
+          "radius_m": 1.9306290945319677,
+          "lateral_displacement_m": 2.2829138025287143,
+          "separation_m": 0.16419625244669878,
+          "transition_length_m": 0.9458626080295618,
+          "direction": "right_left"
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "s_curve_3",
+        "family": "s_curve",
+        "parameters": {
+          "radii_m": [
+            2.0659219002909484,
+            2.3758101853345903
+          ],
+          "turn_angle_rad": 0.8063258048411642,
+          "transition_length_m": 0.9458626080295618,
+          "direction": "right_left"
+        },
+        "straight_after_m": 0.0
+      },
+      {
+        "name": "core_4",
+        "family": "corner",
+        "parameters": {
+          "radius_m": 11.383747628147145,
+          "turn_angle_deg": 68.52798979763755,
+          "transition_m": 0.9458626080295618
+        },
+        "straight_after_m": 0.0
+      }
+    ],
+    "vehicle": {
+      "length_m": 0.5,
+      "width_m": 0.27,
+      "lf_m": 0.15875,
+      "lr_m": 0.17145,
+      "steering_min_rad": -0.523599,
+      "steering_max_rad": 0.523599,
+      "steering_rate_min_rad_s": -3.2,
+      "steering_rate_max_rad_s": 3.2,
+      "source": "combined_slip.yaml",
+      "source_sha256": "fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016",
+      "calibration_status": "uncalibrated"
+    },
+    "topologies": [
+      {
+        "name": "mixed_feature_ring",
+        "order": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "turns": [
+          {
+            "after_index": 0,
+            "angle_bounds_deg": [
+              12.0,
+              44.0
+            ],
+            "radius_m": 3.2,
+            "transition_m": 0.5
+          },
+          {
+            "after_index": 3,
+            "angle_bounds_deg": [
+              12.0,
+              44.0
+            ],
+            "radius_m": 3.2,
+            "transition_m": 0.5
+          },
+          {
+            "after_index": 4,
+            "angle_bounds_deg": [
+              12.0,
+              44.0
+            ],
+            "radius_m": 3.2,
+            "transition_m": 0.5
+          },
+          {
+            "after_index": 7,
+            "angle_bounds_deg": [
+              12.0,
+              44.0
+            ],
+            "radius_m": 3.2,
+            "transition_m": 0.5
+          }
+        ]
+      },
+      {
+        "name": "reordered_feature_ring",
+        "order": [
+          0,
+          7,
+          6,
+          5,
+          4,
+          3,
+          2,
+          1
+        ],
+        "turns": [
+          {
+            "after_index": 0,
+            "angle_bounds_deg": [
+              12.0,
+              44.0
+            ],
+            "radius_m": 3.2,
+            "transition_m": 0.5
+          },
+          {
+            "after_index": 3,
+            "angle_bounds_deg": [
+              12.0,
+              44.0
+            ],
+            "radius_m": 3.2,
+            "transition_m": 0.5
+          },
+          {
+            "after_index": 4,
+            "angle_bounds_deg": [
+              12.0,
+              44.0
+            ],
+            "radius_m": 3.2,
+            "transition_m": 0.5
+          },
+          {
+            "after_index": 7,
+            "angle_bounds_deg": [
+              12.0,
+              44.0
+            ],
+            "radius_m": 3.2,
+            "transition_m": 0.5
+          }
+        ]
+      }
+    ],
+    "target_lap_length_m": 109.46416829779918,
+    "lap_length_range_m": [
+      70.0,
+      140.0
+    ],
+    "split": "train",
+    "slot_id": "train_composite_04",
+    "parent_lineage": "lineage_fd9d28ce0a4991db84a62e30",
+    "topology_family": "mixed_3_8_ring",
+    "generation_mode": "composite",
+    "target_family": null,
+    "minimum_target_exposure": 0.7,
+    "expected_primary_families": 3,
+    "minimum_family_exposure": 0.025,
+    "maximum_family_exposure": 0.78,
+    "connector_length_bounds_m": [
+      0.3,
+      32.839250489339754
+    ],
+    "width": {
+      "left": [
+        [
+          0.0,
+          0.8195694792498748
+        ],
+        [
+          0.3,
+          0.8130979477354822
+        ],
+        [
+          0.65,
+          0.7779925302918568
+        ],
+        [
+          1.0,
+          0.8195694792498748
+        ]
+      ],
+      "right": [
+        [
+          0.0,
+          0.8195694792498748
+        ],
+        [
+          0.25,
+          0.7779925302918568
+        ],
+        [
+          0.7,
+          0.8130979477354822
+        ],
+        [
+          1.0,
+          0.8195694792498748
+        ]
+      ],
+      "maximum_gradient": 0.12
+    },
+    "candidate_budget": 3,
+    "optimization_iterations": 80,
+    "spacing_m": 0.12,
+    "resolution_m_per_pixel": 0.06,
+    "padding_m": 1.0,
+    "seam_offset_m": 1.7,
+    "maximum_supporting_fraction": 0.4,
+    "minimum_primary_coverage": 0.6,
+    "minimum_useful_corner_m": 0.6,
+    "maximum_offset_curvature": 0.95,
+    "objectives": {},
+    "limits": {
+      "minimum_radius_m": 0.5,
+      "minimum_usable_width_m": 0.7,
+      "maximum_curvature_rate_inv_m2": 2.0,
+      "footprint_margin_m": 0.02,
+      "minimum_nonlocal_boundary_gap_m": 0.1
+    },
+    "seed": 398325263133933044,
+    "attempt": 1,
+    "dataset_id": "phase5_research_v1",
+    "template_version": "scaled_maneuver_inventory.v1",
+    "layout_version": "bounded_supporting_turns.v1",
+    "assembly_method": "bounded_supporting_turns.v1",
+    "support_gap_m": 0.3,
+    "minimum_target_active_fraction": 0.5
+  },
+  "independence_screen": {
+    "status": "accepted",
+    "compared_layouts": 23,
+    "closest_shape": {
+      "related_slot": "train_composite_03",
+      "related_split": "train",
+      "status": "independent_under_policy",
+      "normalized_shape_distance": 0.08144565912152549,
+      "relative_length": 0.29078598870830413,
+      "relative_sustained_radius": 0.11448464146374573,
+      "relative_p95_curvature": 0.19678462768001323,
+      "family_exposure_l1": 0.6605598624496707,
+      "corner_count_difference": 1
+    }
+  }
+}

@@ -1,0 +1,163 @@
+schema_version: 1
+generator: map_editor.research_tracks.v1
+inventory:
+- name: sweeper_1
+  family: sweeper
+  parameters:
+    radius_m: 68.06345034318369
+    turn_angle_rad: 1.431700364461072
+    entry_transition_m: 0.9158173086775274
+    exit_transition_m: 0.9158173086775274
+  straight_after_m: 0.0
+- name: sweeper_2
+  family: sweeper
+  parameters:
+    radius_m: 82.23775991171641
+    turn_angle_rad: 1.373930354554804
+    entry_transition_m: 0.9158173086775274
+    exit_transition_m: 0.9158173086775274
+  straight_after_m: 0.0
+- name: sweeper_3
+  family: sweeper
+  parameters:
+    radius_m: 64.50897609878812
+    turn_angle_rad: 1.1003197774234836
+    entry_transition_m: 0.9158173086775274
+    exit_transition_m: 0.9158173086775274
+  straight_after_m: 0.0
+- name: sweeper_4
+  family: sweeper
+  parameters:
+    radius_m: 63.44889279705576
+    turn_angle_rad: 1.330037259543629
+    entry_transition_m: 0.9158173086775274
+    exit_transition_m: 0.9158173086775274
+  straight_after_m: 0.0
+vehicle:
+  length_m: 0.5
+  width_m: 0.27
+  lf_m: 0.15875
+  lr_m: 0.17145
+  steering_min_rad: -0.523599
+  steering_max_rad: 0.523599
+  steering_rate_min_rad_s: -3.2
+  steering_rate_max_rad_s: 3.2
+  source: combined_slip.yaml
+  source_sha256: fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016
+  calibration_status: uncalibrated
+topologies:
+- name: unequal_maneuver_ring
+  order:
+  - 0
+  - 1
+  - 2
+  - 3
+  turns:
+  - after_index: 0
+    angle_bounds_deg:
+    - 15.0
+    - 45.0
+    radius_m: 2.724067045651448
+    transition_m: 0.65
+  - after_index: 2
+    angle_bounds_deg:
+    - 15.0
+    - 45.0
+    radius_m: 2.5054058757950837
+    transition_m: 0.65
+- name: reordered_maneuver_ring
+  order:
+  - 0
+  - 3
+  - 2
+  - 1
+  turns:
+  - after_index: 0
+    angle_bounds_deg:
+    - 15.0
+    - 45.0
+    radius_m: 2.724067045651448
+    transition_m: 0.65
+  - after_index: 2
+    angle_bounds_deg:
+    - 15.0
+    - 45.0
+    radius_m: 2.5054058757950837
+    transition_m: 0.65
+target_lap_length_m: 435.88927835191953
+lap_length_range_m:
+- 260.0
+- 450.0
+split: validation
+slot_id: validation_specialist_sweeper_01
+parent_lineage: lineage_ec57563fafe65118fccd6dc3
+topology_family: sweeper_4_unequal_ring
+generation_mode: specialist
+target_family: sweeper
+minimum_target_exposure: 0.8
+expected_primary_families: 1
+minimum_family_exposure: 0.025
+maximum_family_exposure: 0.78
+connector_length_bounds_m:
+- 0.3
+- 152.56124742317184
+width:
+  left:
+  - - 0.0
+    - 0.8641114020502033
+  - - 0.3
+    - 0.8568984678213278
+  - - 0.65
+    - 0.82879672277907
+  - - 1.0
+    - 0.8641114020502033
+  right:
+  - - 0.0
+    - 0.8641114020502033
+  - - 0.25
+    - 0.82879672277907
+  - - 0.7
+    - 0.8568984678213278
+  - - 1.0
+    - 0.8641114020502033
+  maximum_gradient: 0.12
+candidate_budget: 3
+optimization_iterations: 80
+spacing_m: 0.12
+resolution_m_per_pixel: 0.06
+padding_m: 1.0
+seam_offset_m: 1.7
+maximum_supporting_fraction: 0.19999999999999996
+minimum_primary_coverage: 0.8
+minimum_useful_corner_m: 0.6
+maximum_offset_curvature: 0.95
+objectives: {}
+limits:
+  minimum_radius_m: 0.5
+  minimum_usable_width_m: 0.7
+  maximum_curvature_rate_inv_m2: 2.0
+  footprint_margin_m: 0.02
+  minimum_nonlocal_boundary_gap_m: 0.1
+seed: 948199348063258590
+attempt: 6
+dataset_id: phase5_research_v1
+template_version: scaled_maneuver_inventory.v1
+layout_version: bounded_supporting_turns.v1
+assembly_method: bounded_supporting_turns.v1
+support_gap_m: 0.3
+minimum_target_active_fraction: 0.5
+achieved:
+  length_m: 435.8890589531954
+  minimum_radius_m: 2.5047595821252298
+  minimum_width_m: 1.6836715270516913
+  maximum_width_m: 1.728222690565971
+  mean_width_m: 1.6984368173060682
+  sample_count: 3642
+files:
+  map: research_d273ffca330f0a995985c552.yaml
+  image: research_d273ffca330f0a995985c552.png
+  pgm: research_d273ffca330f0a995985c552.pgm
+  centerline: research_d273ffca330f0a995985c552_centerline.csv
+  walls: research_d273ffca330f0a995985c552_walls.csv
+  track_profile: research_d273ffca330f0a995985c552_track_profile.csv
+  metadata: research_d273ffca330f0a995985c552_metadata.json
