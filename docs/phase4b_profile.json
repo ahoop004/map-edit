@@ -1,0 +1,349 @@
+{
+  "track_id": "extended_1d3f743cda9d15da50a37c8f",
+  "variant": "long_technical_4",
+  "samples": 5371,
+  "source_length_m": 424.99999999999994,
+  "profiled_preparation_seconds": 7.018738882994512,
+  "phases": {
+    "closure_search_seconds": 0.1220980400685221,
+    "centerline_analysis_seconds": 3.3218098249926697,
+    "corridor_validation_seconds": 2.082001267001033,
+    "measured_width_profile_seconds": 0.5680291559838224,
+    "raster_validation_seconds": 0.7883202669909224,
+    "total_preparation_seconds": 7.012798684998415
+  },
+  "top_calls": [
+    {
+      "file": "src/map_editor/services/extended_tracks.py",
+      "line": 228,
+      "function": "prepare_extended",
+      "primitive_calls": 1,
+      "total_calls": 1,
+      "own_seconds": 0.004418636,
+      "cumulative_seconds": 7.012801274
+    },
+    {
+      "file": "src/map_editor/services/extended_tracks.py",
+      "line": 168,
+      "function": "_finish_corridor",
+      "primitive_calls": 1,
+      "total_calls": 1,
+      "own_seconds": 0.029522854,
+      "cumulative_seconds": 3.5681597000000003
+    },
+    {
+      "file": "src/map_editor/services/extended_tracks.py",
+      "line": 94,
+      "function": "_centerline_result",
+      "primitive_calls": 6,
+      "total_calls": 6,
+      "own_seconds": 0.024768929000000002,
+      "cumulative_seconds": 3.3181892200000003
+    },
+    {
+      "file": "src/map_editor/geometry/spatial.py",
+      "line": 36,
+      "function": "self_intersects",
+      "primitive_calls": 15,
+      "total_calls": 15,
+      "own_seconds": 0.35117484200000004,
+      "cumulative_seconds": 2.102863143
+    },
+    {
+      "file": "src/map_editor/geometry/corridor.py",
+      "line": 83,
+      "function": "validate_corridor",
+      "primitive_calls": 1,
+      "total_calls": 1,
+      "own_seconds": 0.084357601,
+      "cumulative_seconds": 1.986549236
+    },
+    {
+      "file": "src/map_editor/geometry/sequence.py",
+      "line": 85,
+      "function": "sample",
+      "primitive_calls": 6,
+      "total_calls": 6,
+      "own_seconds": 0.023006443,
+      "cumulative_seconds": 1.680058236
+    },
+    {
+      "file": "src/map_editor/geometry/spatial.py",
+      "line": 76,
+      "function": "minimum_boundary_separation",
+      "primitive_calls": 1,
+      "total_calls": 1,
+      "own_seconds": 0.218580827,
+      "cumulative_seconds": 1.032644868
+    },
+    {
+      "file": "src/map_editor/services/procedural_track.py",
+      "line": 960,
+      "function": "_segments_intersect",
+      "primitive_calls": 312333,
+      "total_calls": 312333,
+      "own_seconds": 0.313500812,
+      "cumulative_seconds": 0.9888607100000001
+    },
+    {
+      "file": "src/map_editor/geometry/maneuvers.py",
+      "line": 46,
+      "function": "sample",
+      "primitive_calls": 312,
+      "total_calls": 312,
+      "own_seconds": 0.002270093,
+      "cumulative_seconds": 0.581578463
+    },
+    {
+      "file": "src/map_editor/geometry/spatial.py",
+      "line": 19,
+      "function": "_cells",
+      "primitive_calls": 527278,
+      "total_calls": 527278,
+      "own_seconds": 0.273570142,
+      "cumulative_seconds": 0.550928135
+    },
+    {
+      "file": "src/map_editor/geometry/corridor.py",
+      "line": 134,
+      "function": "validate_raster_corridor",
+      "primitive_calls": 1,
+      "total_calls": 1,
+      "own_seconds": 0.010741977000000002,
+      "cumulative_seconds": 0.5494252510000001
+    },
+    {
+      "file": "src/map_editor/geometry/corridor.py",
+      "line": 58,
+      "function": "ray",
+      "primitive_calls": 10742,
+      "total_calls": 10742,
+      "own_seconds": 0.412946684,
+      "cumulative_seconds": 0.52465869
+    },
+    {
+      "file": "dataclasses.py",
+      "line": 1533,
+      "function": "replace",
+      "primitive_calls": 130162,
+      "total_calls": 130162,
+      "own_seconds": 0.271679514,
+      "cumulative_seconds": 0.516025821
+    },
+    {
+      "file": "src/map_editor/geometry/spatial.py",
+      "line": 14,
+      "function": "_bounds",
+      "primitive_calls": 480336,
+      "total_calls": 480336,
+      "own_seconds": 0.22036193,
+      "cumulative_seconds": 0.504582776
+    },
+    {
+      "file": "src/map_editor/geometry/curves.py",
+      "line": 71,
+      "function": "at",
+      "primitive_calls": 35277,
+      "total_calls": 35277,
+      "own_seconds": 0.173674441,
+      "cumulative_seconds": 0.49520013300000004
+    },
+    {
+      "file": "src/map_editor/geometry/spatial.py",
+      "line": 28,
+      "function": "_index",
+      "primitive_calls": 18,
+      "total_calls": 18,
+      "own_seconds": 0.08467599,
+      "cumulative_seconds": 0.471509082
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.max>",
+      "primitive_calls": 2400053,
+      "total_calls": 2400083,
+      "own_seconds": 0.418177073,
+      "cumulative_seconds": 0.453643073
+    },
+    {
+      "file": "src/map_editor/geometry/curves.py",
+      "line": 104,
+      "function": "sample",
+      "primitive_calls": 570,
+      "total_calls": 570,
+      "own_seconds": 0.01089733,
+      "cumulative_seconds": 0.424649843
+    },
+    {
+      "file": "src/map_editor/geometry/curves.py",
+      "line": 114,
+      "function": "<genexpr>",
+      "primitive_calls": 33357,
+      "total_calls": 33357,
+      "own_seconds": 0.011794029000000001,
+      "cumulative_seconds": 0.41043936200000003
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.min>",
+      "primitive_calls": 2174897,
+      "total_calls": 2207114,
+      "own_seconds": 0.38120883800000005,
+      "cumulative_seconds": 0.409540269
+    },
+    {
+      "file": "src/map_editor/services/procedural_track.py",
+      "line": 961,
+      "function": "orientation",
+      "primitive_calls": 1249332,
+      "total_calls": 1249332,
+      "own_seconds": 0.30349257900000004,
+      "cumulative_seconds": 0.38265866400000004
+    },
+    {
+      "file": "src/map_editor/geometry/validation.py",
+      "line": 172,
+      "function": "validate_raster_footprint",
+      "primitive_calls": 1,
+      "total_calls": 1,
+      "own_seconds": 0.170165548,
+      "cumulative_seconds": 0.36393720300000004
+    },
+    {
+      "file": "src/map_editor/geometry/spatial.py",
+      "line": 53,
+      "function": "<genexpr>",
+      "primitive_calls": 879842,
+      "total_calls": 879842,
+      "own_seconds": 0.09944633800000001,
+      "cumulative_seconds": 0.316615933
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.any>",
+      "primitive_calls": 13055,
+      "total_calls": 13055,
+      "own_seconds": 0.006689961,
+      "cumulative_seconds": 0.30288710500000005
+    },
+    {
+      "file": "src/map_editor/geometry/spatial.py",
+      "line": 69,
+      "function": "segment_distance",
+      "primitive_calls": 39690,
+      "total_calls": 39690,
+      "own_seconds": 0.040436681,
+      "cumulative_seconds": 0.29625329
+    },
+    {
+      "file": "src/map_editor/services/extended_tracks.py",
+      "line": 82,
+      "function": "_measured",
+      "primitive_calls": 312,
+      "total_calls": 312,
+      "own_seconds": 0.001685875,
+      "cumulative_seconds": 0.294582133
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'extend' of 'list' objects>",
+      "primitive_calls": 951,
+      "total_calls": 951,
+      "own_seconds": 0.007464437000000001,
+      "cumulative_seconds": 0.29432486
+    },
+    {
+      "file": "src/map_editor/services/procedural_track.py",
+      "line": 967,
+      "function": "on_segment",
+      "primitive_calls": 497086,
+      "total_calls": 497086,
+      "own_seconds": 0.14340644300000002,
+      "cumulative_seconds": 0.29270123400000003
+    },
+    {
+      "file": "src/map_editor/geometry/corridor.py",
+      "line": 85,
+      "function": "<genexpr>",
+      "primitive_calls": 3,
+      "total_calls": 3,
+      "own_seconds": 0.000597408,
+      "cumulative_seconds": 0.2851676
+    },
+    {
+      "file": "src/map_editor/geometry/spatial.py",
+      "line": 20,
+      "function": "<genexpr>",
+      "primitive_calls": 1100875,
+      "total_calls": 1100875,
+      "own_seconds": 0.20608614400000003,
+      "cumulative_seconds": 0.277357993
+    },
+    {
+      "file": "src/map_editor/geometry/measurement.py",
+      "line": 95,
+      "function": "validate_maneuver",
+      "primitive_calls": 432,
+      "total_calls": 432,
+      "own_seconds": 0.003347547,
+      "cumulative_seconds": 0.26512987200000004
+    },
+    {
+      "file": "src/map_editor/geometry/validation.py",
+      "line": 140,
+      "function": "_nonlocal_gap_certificate",
+      "primitive_calls": 1,
+      "total_calls": 1,
+      "own_seconds": 0.10828718000000001,
+      "cumulative_seconds": 0.25788038
+    },
+    {
+      "file": "src/map_editor/geometry/measurement.py",
+      "line": 40,
+      "function": "measure",
+      "primitive_calls": 432,
+      "total_calls": 432,
+      "own_seconds": 0.053698024000000004,
+      "cumulative_seconds": 0.251905027
+    },
+    {
+      "file": "src/map_editor/services/offline_export.py",
+      "line": 22,
+      "function": "rasterize_corridor",
+      "primitive_calls": 1,
+      "total_calls": 1,
+      "own_seconds": 0.109626231,
+      "cumulative_seconds": 0.190002671
+    },
+    {
+      "file": "src/map_editor/geometry/corridor.py",
+      "line": 112,
+      "function": "raster_ray_distance",
+      "primitive_calls": 10742,
+      "total_calls": 10742,
+      "own_seconds": 0.094001227,
+      "cumulative_seconds": 0.17015897500000002
+    }
+  ],
+  "raster_comparison": {
+    "byte_identical": true,
+    "pixels_sha256": "27812efd66903e192d0d57710f9e3232454b0bf5e29cd9ef2c00e25117e33bb6",
+    "width": 2495,
+    "height": 2453,
+    "legacy_seconds": 1.2403238489932846,
+    "active_edge_seconds": 0.11295195700949989,
+    "speedup": 10.980985915002487
+  },
+  "opposing_distance_comparison": {
+    "absolute_difference_m": 0.0,
+    "distance_m": 1.4995616390483697,
+    "legacy_seconds": 0.483306823996827,
+    "vectorized_seconds": 0.9115890849789139,
+    "speedup": 0.5301805736386219
+  },
+  "scope": "local geometry only; no simulator imports, access, integration or rollouts"
+}

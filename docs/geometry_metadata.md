@@ -136,3 +136,10 @@ types. Schema 1.0.0 remains unchanged and supported. Only the new technical
 backend opts into schema 2; existing generator recipes retain their versions,
 labels and byte-for-byte replay. Both versions use the same periodic interval,
 artifact-path and evaluation-only labeling rules.
+
+Phase 4B's [extended offline geometry](extended_geometry.md) retains schema
+2.0.0 and the existing vocabulary. Its separate generator records bounded
+supporting motion, periodic independent side widths, actual vector/raster width
+measurements and offline acceptance in provenance. Centerline and corridor
+identities are distinct so matched width experiments preserve exact centerline
+bytes. Integration remains explicitly unrun; policy observations are unchanged.

@@ -1,0 +1,307 @@
+schema_version: 1
+generator: map_editor.extended_geometry.v1
+inventory:
+- name: cluster_1_turn_1
+  family: corner
+  parameters:
+    radius_m: 1.9500000000000002
+    turn_angle_deg: 100
+    direction: left
+    transition_m: 0.75
+    end_radius_m: 2.73
+  straight_after_m: 4.0
+- name: cluster_1_turn_2
+  family: corner
+  parameters:
+    radius_m: 3.105
+    turn_angle_deg: 70
+    direction: right
+    transition_m: 0.75
+    end_radius_m: 2.3
+  straight_after_m: 5.0
+- name: cluster_1_turn_3
+  family: corner
+  parameters:
+    radius_m: 2.65
+    turn_angle_deg: 40
+    direction: left
+    transition_m: 0.75
+  straight_after_m: 30.0
+- name: cluster_2_turn_1
+  family: corner
+  parameters:
+    radius_m: 3.105
+    turn_angle_deg: 80
+    direction: left
+    transition_m: 0.75
+    end_radius_m: 2.3
+  straight_after_m: 5.0
+- name: cluster_2_turn_2
+  family: corner
+  parameters:
+    radius_m: 2.65
+    turn_angle_deg: 55
+    direction: right
+    transition_m: 0.75
+  straight_after_m: 6.0
+- name: cluster_2_turn_3
+  family: corner
+  parameters:
+    radius_m: 3.0
+    turn_angle_deg: 45
+    direction: left
+    transition_m: 0.75
+  straight_after_m: 33.0
+- name: cluster_3_turn_1
+  family: compound_corner
+  parameters:
+    radius_m: 2.65
+    turn_angle_deg: 110
+    direction: left
+    transition_m: 0.75
+    apex_radii_m:
+    - 3.9749999999999996
+    - 2.65
+    - 4.505
+    - 2.915
+    - 3.9749999999999996
+  straight_after_m: 6.0
+- name: cluster_3_turn_2
+  family: corner
+  parameters:
+    radius_m: 3.0
+    turn_angle_deg: 75
+    direction: right
+    transition_m: 0.75
+  straight_after_m: 3.0
+- name: cluster_3_turn_3
+  family: kink
+  parameters:
+    radius_m: 1.6
+    turn_angle_deg: 35
+    direction: left
+    transition_m: 0.75
+  straight_after_m: 30.0
+- name: cluster_4_turn_1
+  family: corner
+  parameters:
+    radius_m: 3.0
+    turn_angle_deg: 90
+    direction: left
+    transition_m: 0.75
+  straight_after_m: 3.0
+- name: cluster_4_turn_2
+  family: corner
+  parameters:
+    radius_m: 1.6
+    turn_angle_deg: 60
+    direction: right
+    transition_m: 0.75
+    end_radius_m: 2.2399999999999998
+  straight_after_m: 4.0
+- name: cluster_4_turn_3
+  family: corner
+  parameters:
+    radius_m: 2.6325000000000003
+    turn_angle_deg: 40
+    direction: left
+    transition_m: 0.75
+    end_radius_m: 1.9500000000000002
+  straight_after_m: 33.0
+vehicle:
+  length_m: 0.5
+  width_m: 0.27
+  lf_m: 0.15875
+  lr_m: 0.17145
+  steering_min_rad: -0.523599
+  steering_max_rad: 0.523599
+  steering_rate_min_rad_s: -3.2
+  steering_rate_max_rad_s: 3.2
+  source: combined_slip.yaml
+  source_sha256: fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016
+  calibration_status: uncalibrated
+topologies:
+- name: cluster_exits
+  order:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  turns:
+  - after_index: 2
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+  - after_index: 5
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+  - after_index: 8
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+  - after_index: 11
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+- name: inside_clusters
+  order:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  turns:
+  - after_index: 1
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+  - after_index: 4
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+  - after_index: 7
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+  - after_index: 10
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+- name: reordered_clusters
+  order:
+  - 0
+  - 1
+  - 2
+  - 6
+  - 7
+  - 8
+  - 3
+  - 4
+  - 5
+  - 9
+  - 10
+  - 11
+  turns:
+  - after_index: 2
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+  - after_index: 5
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+  - after_index: 8
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+  - after_index: 11
+    angle_bounds_deg:
+    - 12.0
+    - 55.0
+    radius_m: 5.0
+    transition_m: 0.7
+target_lap_length_m: 260.0
+lap_length_range_m:
+- 250.0
+- 290.0
+connector_length_bounds_m:
+- 0.4
+- 32.0
+width:
+  left:
+  - - 0.0
+    - 0.75
+  - - 1.0
+    - 0.75
+  right:
+  - - 0.0
+    - 0.75
+  - - 1.0
+    - 0.75
+  maximum_gradient: 0.12
+candidate_budget: 6
+optimization_iterations: 70
+spacing_m: 0.08
+resolution_m_per_pixel: 0.05
+padding_m: 1.0
+seam_offset_m: 1.7
+maximum_supporting_fraction: 0.4
+minimum_primary_coverage: 0.6
+minimum_useful_corner_m: 0.6
+maximum_offset_curvature: 0.95
+objectives:
+  corner_count:
+  - 12
+  - 20
+  primary_coverage:
+  - 0.6
+  - 1.0
+  symmetry_error_m:
+  - 0.2
+  - 150.0
+limits:
+  minimum_radius_m: 0.5
+  minimum_usable_width_m: 0.7
+  maximum_curvature_rate_inv_m2: 2.0
+  footprint_margin_m: 0.02
+  minimum_nonlocal_boundary_gap_m: 0.1
+seed: 4200
+variant: width_pair_1_uniform
+category: width_comparison
+dataset_id: phase4b_pilot
+matched_group: width_pair_1
+generation_mode: composite
+layout_version: bounded_supporting_turns.v1
+achieved:
+  length_m: 259.99869020950405
+  minimum_radius_m: 1.5992697549411807
+  minimum_width_m: 1.4999986638043614
+  maximum_width_m: 1.5000013193249648
+  mean_width_m: 1.5000002527890748
+  sample_count: 3303
+files:
+  map: extended_5b56108045a4676640373779.yaml
+  image: extended_5b56108045a4676640373779.png
+  pgm: extended_5b56108045a4676640373779.pgm
+  centerline: extended_5b56108045a4676640373779_centerline.csv
+  walls: extended_5b56108045a4676640373779_walls.csv
+  track_profile: extended_5b56108045a4676640373779_track_profile.csv
+  metadata: extended_5b56108045a4676640373779_metadata.json

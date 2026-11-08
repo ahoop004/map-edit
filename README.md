@@ -51,6 +51,14 @@ distributed connector optimization, measured layout objectives and a
 and [technical geometry contract](docs/technical_geometry.md). New corner labels
 use metadata schema 2; older generators keep their existing schemas and replay.
 
+The [Phase 4B results](docs/phase4b_results.md) add offline long circuits,
+bounded supporting-turn closure and independent variable left/right corridor
+widths. Review the [twelve-track pilot](examples/phase4b_pilot/manifest.json),
+[gallery](examples/phase4b_pilot/plots/overview.png),
+[matched width comparisons](examples/phase4b_pilot/plots/width_pair_1.png), and
+[extended geometry contract](docs/extended_geometry.md). New workflows use a
+local resolved vehicle snapshot and require no simulator checkout or smoke test.
+
 ## Annotation Placement Workflow
 
 1. Open a map bundle (File → Open Map…, select the YAML file).
