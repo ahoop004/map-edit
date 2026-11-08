@@ -445,3 +445,56 @@ def test_reliability_previously_flagged_specialists_have_independent_extremes(fa
     shapes=[normalized_shape([(p.x,p.y) for p in q.sampled.states[:-1]]) for q in prepared]
     metrics=pair_metrics(prepared[0].statistics,prepared[1].statistics,*shapes)
     assert classify_pair(metrics,default_dataset_spec().policy)=='independent_under_policy'
+
+
+@pytest.mark.parametrize('scale,complexity',[('medium',4),('medium',5),('long',5)])
+def test_final_v2_promoted_asymmetric_profiles_have_distinct_physical_inventory(scale,complexity,vehicle):
+    from map_editor.services.research_reliable_design import irregular_composite_spec,IRREGULAR_VARIANTS
+    from map_editor.services.specialist_templates import canonical_hash
+    profiles=IRREGULAR_VARIANTS[(scale,complexity)]
+    assert len(profiles)==2
+    inventory_ids=[]
+    for variant in profiles:
+        spec=irregular_composite_spec(scale,complexity,variant,85000,vehicle)
+        assert spec.recipe()==irregular_composite_spec(scale,complexity,variant,85000,vehicle).recipe()
+        assert spec_from_recipe(spec.recipe()).configuration_id==spec.configuration_id
+        assert spec.assembly_method=='bounded_supporting_turns.v1' and spec.candidate_budget==1
+        assert spec.minimum_primary_coverage==.6 and spec.maximum_supporting_fraction==.4
+        assert len({r.family for r in spec.inventory})==spec.expected_primary_families==complexity
+        curves=[r.build() for r in spec.inventory]
+        assert abs(sum(c.at(c.length_m).heading for c in curves)-math.tau)<1e-8
+        assert sum(c.length_m for c in curves)/spec.target_lap_length_m>=.6
+        assert sum(r.build().length_m for r in spec.inventory if r.family=='straight')/spec.target_lap_length_m<=.30
+        for r in spec.inventory:
+            p=r.parameters
+            if r.family=='hairpin':
+                assert 3<=p['radius_m']<=6 and math.radians(160)<=p['turn_angle_rad']<=math.radians(190)
+            elif r.family=='sweeper':
+                assert 6<=p['radius_m']<=15 and math.radians(45)<=p['turn_angle_rad']<=math.radians(120)
+            elif r.family=='s_curve':assert all(3<=radius<=8 for radius in p['radii_m'])
+            elif r.family=='chicane':assert 2<=p['radius_m']<=5 and 1.5<=p['lateral_displacement_m']<=4
+        inventory_ids.append(canonical_hash([dict(family=r.family,parameters=r.parameters) for r in spec.inventory]))
+    assert len(set(inventory_ids))==2
+
+
+def test_final_v2_allocation_selects_only_promoted_problem_profiles(vehicle):
+    from map_editor.services.research_reliable_design import IRREGULAR_VARIANTS,irregular_composite_spec
+    dataset=default_dataset_spec(design_version='research_design.v2')
+    seen=set()
+    for slot in dataset.slots:
+        if slot.generation_mode!='composite' or (slot.scale,slot.complexity) not in IRREGULAR_VARIANTS:continue
+        seen.add((slot.scale,slot.complexity));profiles=IRREGULAR_VARIANTS[(slot.scale,slot.complexity)]
+        for attempt in (1,2,3):
+            native=candidate_spec(dataset,slot,attempt,vehicle)
+            profile=profiles[(slot.design_seed+attempt-1)%len(profiles)]
+            expected=irregular_composite_spec(slot.scale,slot.complexity,profile,candidate_seed(dataset,slot,attempt),vehicle,attempt)
+            assert native.inventory==expected.inventory and native.topology_family==expected.topology_family
+            assert native.split==slot.split and native.parent_lineage==slot.parent_lineage
+    assert seen==set(IRREGULAR_VARIANTS)
+
+
+def test_final_v2_unpromoted_five_family_profile_declares_its_actual_complexity(vehicle):
+    from map_editor.services.research_reliable_design import irregular_composite_spec,IRREGULAR_VARIANTS
+    spec=irregular_composite_spec('medium',5,1,85001,vehicle)
+    assert len({r.family for r in spec.inventory})==spec.expected_primary_families==5
+    assert 1 not in IRREGULAR_VARIANTS[('medium',5)]

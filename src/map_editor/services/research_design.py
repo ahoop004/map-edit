@@ -164,10 +164,15 @@ def _candidate_spec(dataset,slot,attempt,vehicle):
 def candidate_spec(dataset,slot,attempt,vehicle):
     from map_editor.geometry.validation import GeometryLimits
     if dataset.design_version=='research_design.v2':
-        from .research_reliable_design import reliable_spec
-        variant=(slot.design_seed+attempt-1)%(3 if slot.family=='hairpin' else 4)
-        spec=reliable_spec(slot.family or 'composite',slot.scale,variant,
-            candidate_seed(dataset,slot,attempt),vehicle,complexity=slot.complexity)
+        from .research_reliable_design import reliable_spec,irregular_composite_spec,IRREGULAR_VARIANTS
+        profiles=IRREGULAR_VARIANTS.get((slot.scale,slot.complexity)) if slot.generation_mode=='composite' else None
+        if profiles:
+            variant=profiles[(slot.design_seed+attempt-1)%len(profiles)]
+            spec=irregular_composite_spec(slot.scale,slot.complexity,variant,candidate_seed(dataset,slot,attempt),vehicle,attempt)
+        else:
+            variant=(slot.design_seed+attempt-1)%(3 if slot.family=='hairpin' else 4)
+            spec=reliable_spec(slot.family or 'composite',slot.scale,variant,
+                candidate_seed(dataset,slot,attempt),vehicle,complexity=slot.complexity)
         spec=replace(spec,seed=candidate_seed(dataset,slot,attempt),attempt=attempt,
             split=slot.split,slot_id=slot.slot_id,parent_lineage=slot.parent_lineage,
             dataset_id=dataset.dataset_id)
