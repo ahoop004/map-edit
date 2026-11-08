@@ -477,20 +477,20 @@ def test_final_v2_promoted_asymmetric_profiles_have_distinct_physical_inventory(
     assert len(set(inventory_ids))==2
 
 
-def test_final_v2_allocation_selects_only_promoted_problem_profiles(vehicle):
-    from map_editor.services.research_reliable_design import IRREGULAR_VARIANTS,irregular_composite_spec
+def test_pool_v2_allocation_preserves_lineage_and_uses_diverse_profiles(vehicle):
+    from map_editor.services.research_reliable_design import IRREGULAR_VARIANTS,diverse_composite_spec
     dataset=default_dataset_spec(design_version='research_design.v2')
     seen=set()
     for slot in dataset.slots:
-        if slot.generation_mode!='composite' or (slot.scale,slot.complexity) not in IRREGULAR_VARIANTS:continue
-        seen.add((slot.scale,slot.complexity));profiles=IRREGULAR_VARIANTS[(slot.scale,slot.complexity)]
+        if slot.generation_mode!='composite':continue
+        seen.add((slot.scale,slot.complexity))
         for attempt in (1,2,3):
             native=candidate_spec(dataset,slot,attempt,vehicle)
-            profile=profiles[(slot.design_seed+attempt-1)%len(profiles)]
-            expected=irregular_composite_spec(slot.scale,slot.complexity,profile,candidate_seed(dataset,slot,attempt),vehicle,attempt)
+            profile=(slot.design_seed+attempt-1)%6
+            expected=diverse_composite_spec(slot.scale,slot.complexity,profile,candidate_seed(dataset,slot,attempt),vehicle,attempt)
             assert native.inventory==expected.inventory and native.topology_family==expected.topology_family
             assert native.split==slot.split and native.parent_lineage==slot.parent_lineage
-    assert seen==set(IRREGULAR_VARIANTS)
+    assert seen.issuperset(IRREGULAR_VARIANTS)
 
 
 def test_final_v2_unpromoted_five_family_profile_declares_its_actual_complexity(vehicle):

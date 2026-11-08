@@ -225,3 +225,93 @@ def irregular_composite_spec(scale,complexity,variant,seed,vehicle,attempt=1):
         expected_primary_families=complexity,
         slot_id=f'phase5_2d_{complexity}_{scale}_{variant}',parent_lineage=f'phase5_2d:{complexity}:{scale}:{variant}:{seed}',
         seed=seed,attempt=attempt,dataset_id='phase5_2d_preflight',design_version='research_design.v2')
+
+
+# Phase 5.2E: six structural profiles, including preserved 5.2D arrangements.
+DIVERSE_PROFILE_IDS={('medium',4):(0,1,5,2,3,4),('medium',5):(0,2,3,4,1,5),('long',5):(0,1,2,5,3,4)}
+
+
+def diverse_composite_spec(scale,complexity,profile,seed,vehicle,attempt=1):
+    """Asymmetric technical libraries; no source radii depend on requested lap.
+
+    Phase 3B/4B fixed following straights remain primary requests. Only gaps and
+    the already designated supporting turns are solved. Changing a kink to a
+    corner changes its actual angle to >=40 degrees and balances the turn word.
+    """
+    profile%=6
+    if (scale,complexity) in DIVERSE_PROFILE_IDS:
+        return irregular_composite_spec(scale,complexity,DIVERSE_PROFILE_IDS[(scale,complexity)][profile],seed,vehicle,attempt)
+    if complexity not in (2,3):
+        # The two compact high-complexity slots retain their bounded old options.
+        return reliable_spec('composite',scale,profile%4,seed,vehicle,attempt,complexity=complexity)
+    from .technical_pilot import default_technical_specs
+    from .extended_pilot import default_extended_specs
+    technical=default_technical_specs(vehicle)
+    if scale=='long':
+        index=(0,2,4,6,1,3)[profile]
+        source=default_extended_specs(vehicle)[index]
+        requests=source.inventory;target=source.target_lap_length_m
+        topology=source.topologies[profile%len(source.topologies)]
+        source_order=topology.order;source_turns=topology.turns
+        lo=.4
+    else:
+        index=(0,1,2,3,4,5)[profile] if scale=='short' else (9,10,11,3,4,5)[profile]
+        source=technical[index];requests=source.inventory;target=source.target_lap_length_m
+        source_order=source.topology_orders[0];source_turns=();lo=.4
+    old_fixed=sum(r.build().length_m+r.straight_after_m for r in requests)
+    # Keep the already meaningful two-kink compact template as one honest
+    # three-family option. Otherwise use corner+straight and add a full opposing
+    # maneuver for the third family; a tiny kink is not counted as a whole family.
+    keep_kinks=complexity==3 and scale=='short' and profile==1
+    converted=[];heading_delta=0.
+    for r in requests:
+        p=dict(r.parameters);kind=r.family
+        if kind in ('kink','compound_corner') and not keep_kinks:
+            p.pop('apex_radii_m',None)
+            if kind=='kink':
+                angle=p['turn_angle_deg'];p['turn_angle_deg']=40.
+                heading_delta+=(40.-angle)*(1 if p['direction']=='left' else -1)
+            kind='corner'
+        converted.append(ResearchFeature(r.name,kind,p,r.straight_after_m))
+    if abs(heading_delta)>1e-8:
+        i=next(i for i,r in enumerate(converted) if r.family=='corner' and r.parameters['direction']=='left' and r.parameters['turn_angle_deg']>60)
+        r=converted[i];p=dict(r.parameters);p['turn_angle_deg']-=heading_delta
+        converted[i]=replace(r,parameters=p)
+    inventory=[];index_map={}
+    for old_index in source_order:
+        inventory.append(converted[old_index]);index_map[old_index]=len(inventory)-1
+    # Short-source medium variants add two real opposing technical corners and
+    # fixed unequal approaches; they are not length-only versions of a short lap.
+    if scale=='medium' and profile>=3:
+        added=[]
+        for i,(angle,direction,length) in enumerate(((75.,'left',8.),(75.,'right',14.))):
+            added.append(ResearchFeature(f'e_technical_pair_{i}','corner',dict(radius_m=2.1+.3*i,
+                turn_angle_deg=angle,direction=direction,transition_m=.7),length))
+        inventory=added+inventory;index_map={k:v+2 for k,v in index_map.items()};target+=20.
+    if complexity==3 and not keep_kinks:
+        # Split one declared following straight around an added physical window;
+        # no supporting length is relabeled. Each source index still maps to its
+        # group exit so original supporting turns remain after the whole request.
+        anchor=max(range(len(inventory)),key=lambda i:inventory[i].straight_after_m)
+        r=inventory[anchor];kind='chicane' if profile%2==0 else 's_curve'
+        extra=_opposing_feature('e_opposing_window',kind,3.4 if kind=='chicane' else 4.2,
+            .95 if kind=='chicane' else 1.05,.65,'left_right' if profile%3 else 'right_left',.25 if kind=='chicane' else 0.,1.1)
+        lead=replace(r,straight_after_m=r.straight_after_m*.4)
+        extra=replace(extra,straight_after_m=r.straight_after_m*.6)
+        inventory[anchor:anchor+1]=[lead,extra]
+        index_map={k:(v+1 if v>=anchor else v) for k,v in index_map.items()}
+    new_fixed=sum(r.build().length_m+r.straight_after_m for r in inventory)
+    target+=new_fixed-old_fixed
+    if not SCALES[scale][0]+1<target<SCALES[scale][1]-1:
+        raise GeometryError('Technical template leaves its assigned scale')
+    families={r.family for r in inventory}|{'straight'}
+    if len(families)!=complexity:raise GeometryError('Technical template family intent mismatch')
+    if new_fixed/target<.60:raise GeometryError('Technical template source coverage below 60%')
+    turns=tuple(replace(t,after_index=index_map[t.after_index]) for t in source_turns)
+    name=f'phase5_2e_technical_{scale}_{index}_families_{complexity}_profile_{profile}'
+    return ResearchSpec(tuple(inventory),vehicle,(LayoutTopology(name,tuple(range(len(inventory))),turns),),
+        target,SCALES[scale],'train',name,'phase5_2e:'+name+':'+str(seed),name,
+        expected_primary_families=complexity,minimum_primary_coverage=.6,maximum_supporting_fraction=.4,
+        minimum_family_exposure=.025,maximum_family_exposure=.78,connector_length_bounds_m=(lo,max(25.,target*.25)),
+        width=WidthProfile.constant(1.5),candidate_budget=1,seed=seed,attempt=attempt,
+        dataset_id='phase5_2e_pool_preflight',design_version='research_design.v2')
