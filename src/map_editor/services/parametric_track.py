@@ -37,9 +37,13 @@ class ParametricTrackSpec:
     random_seed: int | None = None
     dataset_id: str | None = None
     split: str = "unspecified"
+    metadata_schema_version: str = "1.0.0"
 
     def recipe(self):
-        return dict(schema_version=1,generator=GENERATOR_VERSION,closed=True,**asdict(self))
+        values=asdict(self)
+        if self.metadata_schema_version == "1.0.0":
+            values.pop("metadata_schema_version")
+        return dict(schema_version=1,generator=GENERATOR_VERSION,closed=True,**values)
 
 
 def load_parametric_spec(path: Path):
@@ -50,7 +54,10 @@ def load_parametric_spec(path: Path):
     for key in ("schema_version","generator","closed","achieved","files"):
         data.pop(key,None)
     try:
-        data["maneuvers"]=tuple(Maneuver(type=m["type"],direction=m["direction"],requested=m["requested"],
+        from map_editor.geometry.technical import TechnicalManeuver
+        data["maneuvers"]=tuple((TechnicalManeuver if data.get("metadata_schema_version")=="2.0.0"
+                                and m["type"] in {"corner","kink","compound_corner"} else Maneuver)(
+                                type=m["type"],direction=m["direction"],requested=m["requested"],
                                 segments=tuple(CurvatureSegment(**s) for s in m["segments"])) for m in data["maneuvers"])
         for key,cls in [("frame",Frame),("continuity",ContinuityTolerances),("measurements",MeasurementTolerances),
                         ("limits",GeometryLimits),("vehicle",VehicleProfile)]:
@@ -80,7 +87,11 @@ def prepare_parametric_track(spec: ParametricTrackSpec):
     _validate_spec(proxy)
     measured=[]
     for maneuver,(start,end) in zip(sampled.maneuvers,sampled.spans):
-        measured.append(validate_maneuver(maneuver,sampled.states[start:end+1],width_m=spec.width_m,tolerances=spec.measurements))
+        if maneuver.type in {"corner", "kink", "compound_corner"}:
+            from map_editor.geometry.technical import validate_technical
+            measured.append(validate_technical(maneuver,sampled.states[start:end+1],width_m=spec.width_m))
+        else:
+            measured.append(validate_maneuver(maneuver,sampled.states[start:end+1],width_m=spec.width_m,tolerances=spec.measurements))
     walls,validation=validate_geometry(sampled,spec.width_m,limits=spec.limits,vehicle=spec.vehicle)
     pixels,width,height,ox,oy=_rasterize_walls(walls,resolution=spec.resolution,padding=spec.padding,thickness_px=1,occupancy_mode="corridor")
     _validate_corridor_raster(sampled.points,pixels,width,height,ox,oy,spec.resolution)
@@ -104,6 +115,7 @@ def prepare_parametric_track(spec: ParametricTrackSpec):
     metrics=profile_metrics(sampled.points,profile)
     geometry=TrackGeometry([CenterlineSample(p.x,p.y,p.heading) for p in states[:-1]],walls,profile,metrics)
     metadata=build_geometry_metadata(proxy,metrics)
+    metadata["schema_version"] = spec.metadata_schema_version
     metadata.update(generator_version=GENERATOR_VERSION,dataset_id=spec.dataset_id,random_seed=spec.random_seed,split=spec.split,
                     generation_mode="composite" if len({m.type for m in spec.maneuvers})>1 else "specialist",
                     difficulty={"label":"unrated"})

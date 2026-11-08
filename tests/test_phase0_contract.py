@@ -162,7 +162,7 @@ def test_metadata_supports_specialists_composites_and_seam_intervals(geometry):
 
 
 @pytest.mark.parametrize("change", [
-    {"schema_version": "2.0.0"}, {"random_seed": -1}, {"split": "eval"},
+    {"schema_version": "3.0.0"}, {"random_seed": -1}, {"split": "eval"},
     {"maneuvers": [segment(start=17)]}, {"maneuvers": [segment(length=3)]},
     {"maneuvers": [segment(wraps=False)]}, {"maneuvers": [segment(direction="none")]},
     {"maneuvers": [segment(kind="u_turn")]}, {"maneuvers": [segment(), segment(id="other")]},

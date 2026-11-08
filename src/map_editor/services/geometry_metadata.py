@@ -13,9 +13,12 @@ GENERATOR_VERSION = "map_editor.closed_bspline.v1"
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / "schemas" / "track-metadata-v1.schema.json"
 
 
-@lru_cache(maxsize=1)
-def _validator():
-    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+@lru_cache(maxsize=2)
+def _validator(version="1.0.0"):
+    if version not in {"1.0.0", "2.0.0"}:
+        raise ValueError("Unsupported geometry metadata schema version")
+    path = SCHEMA_PATH if version == "1.0.0" else SCHEMA_PATH.with_name("track-metadata-v2.schema.json")
+    schema = json.loads(path.read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
     return Draft202012Validator(schema)
 
@@ -26,7 +29,7 @@ def validate_geometry_metadata(data: dict) -> None:
         json.dumps(data, allow_nan=False)
     except (ValueError, TypeError) as exc:
         raise ValueError("Metadata must contain finite JSON values") from exc
-    error = next(iter(_validator().iter_errors(data)), None)
+    error = next(iter(_validator(data.get("schema_version")).iter_errors(data)), None)
     if error:
         location = ".".join(str(key) for key in error.absolute_path)
         raise ValueError(f"{location}: {error.message}")
@@ -54,6 +57,8 @@ def validate_geometry_metadata(data: dict) -> None:
                    "sweeper": {"left", "right"}, "chicane": {"left_right", "right_left"},
                    "s_curve": {"left_right", "right_left"},
                    "transition": {"none", "left", "right", "left_right", "right_left"}}
+        if data["schema_version"] == "2.0.0":
+            allowed.update(corner={"left", "right"}, kink={"left", "right"}, compound_corner={"left", "right"})
         if direction not in allowed[kind]:
             raise ValueError(f"Invalid direction for maneuver {kind}")
         intervals.extend([(start, length), (0, end)] if wraps else [(start, end)])

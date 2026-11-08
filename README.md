@@ -43,6 +43,14 @@ statistics, and evaluation-only selector-window metadata. Review the
 [composite specification](docs/composite_circuits.md). Existing generator recipes
 remain unchanged; no policy observations or training are added.
 
+The [Phase 3B results](docs/phase3b_results.md) add explicit technical corners,
+distributed connector optimization, measured layout objectives and a
+[twelve-track pilot](examples/phase3b_pilot/manifest.json). Review the
+[metric-scale gallery](examples/phase3b_pilot/plots/overview.png),
+[Budapest/Hockenheim comparison](examples/phase3b_pilot/plots/reference_comparison.png),
+and [technical geometry contract](docs/technical_geometry.md). New corner labels
+use metadata schema 2; older generators keep their existing schemas and replay.
+
 ## Annotation Placement Workflow
 
 1. Open a map bundle (File → Open Map…, select the YAML file).

@@ -1,0 +1,304 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:map-edit:track-metadata:2.0.0",
+  "title": "MapEdit closed track geometry and maneuver metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "track_id",
+    "generation_mode",
+    "geometry_family",
+    "random_seed",
+    "generator_version",
+    "geometry",
+    "requested",
+    "measured",
+    "difficulty",
+    "split",
+    "provenance",
+    "occupancy_mode",
+    "maneuvers",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "2.0.0"
+    },
+    "dataset_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "track_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generation_mode": {
+      "enum": [
+        "legacy",
+        "specialist",
+        "composite"
+      ]
+    },
+    "geometry_family": {
+      "type": "string",
+      "minLength": 1
+    },
+    "random_seed": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "generator_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "geometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "coordinate_frame",
+        "closed",
+        "arc_length_origin",
+        "positive_curvature"
+      ],
+      "properties": {
+        "coordinate_frame": {
+          "const": "map"
+        },
+        "closed": {
+          "const": true
+        },
+        "arc_length_origin": {
+          "const": "centerline_first_vertex"
+        },
+        "positive_curvature": {
+          "const": "left"
+        }
+      }
+    },
+    "requested": {
+      "type": "object"
+    },
+    "measured": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "length_m",
+        "minimum_radius_m",
+        "minimum_width_m",
+        "maximum_width_m",
+        "mean_width_m",
+        "sample_count"
+      ],
+      "properties": {
+        "length_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "minimum_radius_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "minimum_width_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maximum_width_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "mean_width_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "sample_count": {
+          "type": "integer",
+          "minimum": 4
+        }
+      }
+    },
+    "difficulty": {
+      "$ref": "#/$defs/difficulty"
+    },
+    "split": {
+      "enum": [
+        "train",
+        "validation",
+        "test",
+        "unspecified"
+      ]
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "occupancy_mode": {
+      "enum": [
+        "walls",
+        "corridor"
+      ]
+    },
+    "maneuvers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/maneuver"
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "map",
+        "image",
+        "pgm",
+        "centerline",
+        "walls",
+        "track_profile",
+        "preview",
+        "recipe",
+        "metadata"
+      ],
+      "properties": {
+        "map": {
+          "$ref": "#/$defs/path"
+        },
+        "image": {
+          "$ref": "#/$defs/path"
+        },
+        "pgm": {
+          "$ref": "#/$defs/path"
+        },
+        "centerline": {
+          "$ref": "#/$defs/path"
+        },
+        "walls": {
+          "$ref": "#/$defs/path"
+        },
+        "track_profile": {
+          "$ref": "#/$defs/path"
+        },
+        "preview": {
+          "$ref": "#/$defs/path"
+        },
+        "recipe": {
+          "$ref": "#/$defs/path"
+        },
+        "metadata": {
+          "$ref": "#/$defs/path"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "difficulty": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "enum": [
+            "easy",
+            "medium",
+            "hard",
+            "unrated"
+          ]
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "indicators": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "assessment_version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "maneuver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "direction",
+        "s_start_m",
+        "s_end_m",
+        "length_m",
+        "wraps_seam",
+        "requested",
+        "measured",
+        "difficulty"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "enum": [
+            "straight",
+            "hairpin",
+            "sweeper",
+            "chicane",
+            "s_curve",
+            "transition",
+            "corner",
+            "kink",
+            "compound_corner"
+          ]
+        },
+        "direction": {
+          "enum": [
+            "none",
+            "left",
+            "right",
+            "left_right",
+            "right_left"
+          ]
+        },
+        "s_start_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "s_end_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "length_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "wraps_seam": {
+          "type": "boolean"
+        },
+        "requested": {
+          "type": "object"
+        },
+        "measured": {
+          "type": "object"
+        },
+        "difficulty": {
+          "$ref": "#/$defs/difficulty"
+        }
+      }
+    }
+  }
+}

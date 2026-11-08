@@ -129,3 +129,10 @@ with a distinct recipe generator. Periodic windows, explicit supporting
 connectors, cyclic transition counts and selector-window estimates are stored
 as evaluation metadata. A separate evaluation CSV carries IDs and boundary
 distances; the ordinary centerline schema and policy observations do not change.
+
+Phase 3B's [technical geometry contract](technical_geometry.md) introduces
+metadata schema 2.0.0 with explicit `corner`, `kink`, and `compound_corner`
+types. Schema 1.0.0 remains unchanged and supported. Only the new technical
+backend opts into schema 2; existing generator recipes retain their versions,
+labels and byte-for-byte replay. Both versions use the same periodic interval,
+artifact-path and evaluation-only labeling rules.

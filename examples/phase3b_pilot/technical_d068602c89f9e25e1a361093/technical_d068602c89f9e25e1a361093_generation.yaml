@@ -1,0 +1,209 @@
+schema_version: 1
+generator: map_editor.technical_layout.v1
+inventory:
+- name: feature_1
+  family: corner
+  parameters:
+    radius_m: 2.8000000000000003
+    direction: left
+    turn_angle_deg: 90
+    transition_m: 0.65
+  straight_after_m: 6.5
+- name: feature_2
+  family: corner
+  parameters:
+    radius_m: 1.6
+    direction: right
+    turn_angle_deg: 60
+    transition_m: 0.65
+    end_radius_m: 2.4000000000000004
+  straight_after_m: 4.5
+- name: feature_3
+  family: corner
+  parameters:
+    radius_m: 2.0
+    direction: left
+    turn_angle_deg: 100
+    transition_m: 0.65
+  straight_after_m: 6.5
+- name: feature_4
+  family: corner
+  parameters:
+    radius_m: 3.3600000000000003
+    direction: left
+    turn_angle_deg: 50
+    transition_m: 0.65
+    end_radius_m: 2.4000000000000004
+  straight_after_m: 4.5
+- name: feature_5
+  family: corner
+  parameters:
+    radius_m: 2.8000000000000003
+    direction: left
+    turn_angle_deg: 90
+    transition_m: 0.65
+  straight_after_m: 6.5
+- name: feature_6
+  family: corner
+  parameters:
+    radius_m: 1.6
+    direction: right
+    turn_angle_deg: 75
+    transition_m: 0.65
+    end_radius_m: 2.4000000000000004
+  straight_after_m: 4.5
+- name: feature_7
+  family: corner
+  parameters:
+    radius_m: 2.0
+    direction: left
+    turn_angle_deg: 80
+    transition_m: 0.65
+  straight_after_m: 6.5
+- name: feature_8
+  family: corner
+  parameters:
+    radius_m: 3.3600000000000003
+    direction: left
+    turn_angle_deg: 75
+    transition_m: 0.65
+    end_radius_m: 2.4000000000000004
+  straight_after_m: 4.5
+- name: feature_9
+  family: corner
+  parameters:
+    radius_m: 2.8000000000000003
+    direction: right
+    turn_angle_deg: 45
+    transition_m: 0.65
+  straight_after_m: 6.5
+- name: feature_10
+  family: corner
+  parameters:
+    radius_m: 1.6
+    direction: left
+    turn_angle_deg: 55
+    transition_m: 0.65
+    end_radius_m: 2.4000000000000004
+  straight_after_m: 4.5
+vehicle:
+  length_m: 0.5
+  width_m: 0.27
+  lf_m: 0.15875
+  lr_m: 0.17145
+  steering_min_rad: -0.523599
+  steering_max_rad: 0.523599
+  steering_rate_min_rad_s: -3.2
+  steering_rate_max_rad_s: 3.2
+  source: combined_slip.yaml
+  source_sha256: fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016
+  calibration_status: uncalibrated
+variant: irregular_mixed_1
+category: irregular_mixed
+topology_orders:
+- - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+- - 0
+  - 2
+  - 1
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+- - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 8
+  - 7
+  - 9
+candidate_budget: 6
+optimization_iterations: 2000
+connector_bounds_m:
+- 0.4
+- 25.0
+target_lap_length_m: 119.25437308799933
+lap_length_range_m:
+- 118.75437308799933
+- 119.75437308799933
+objectives:
+  corner_density_per_100m:
+  - 5.0
+  - 12.0
+  maximum_curvature_inv_m:
+  - 0.25
+  - 0.9
+  p95_curvature_inv_m:
+  - 0.12
+  - 0.8
+  curvature_reversals:
+  - 2
+  - 16
+  near_straight_fraction:
+  - 0.2
+  - 0.85
+  longest_straight_m:
+  - 3.0
+  - 35.0
+  shortest_significant_corner_m:
+  - 0.6
+  - 15.0
+  minimum_corner_angle_deg:
+  - 15.0
+  - 180.0
+  maximum_corner_angle_deg:
+  - 40.0
+  - 210.0
+  symmetry_error_m:
+  - 0.1
+  - 100.0
+  repetition_fraction:
+  - 0.0
+  - 0.94
+maximum_supporting_fraction: 0.45
+minimum_primary_coverage: 0.55
+minimum_useful_corner_m: 0.6
+track_width_m: 1.5
+spacing_m: 0.1
+resolution_m_per_pixel: 0.04
+padding_m: 1.0
+seam_offset_m: 1.7
+seed: 3103
+dataset_id: phase3b_technical_pilot
+generation_mode: composite
+layout_version: distributed_connector_projection.v1
+limits:
+  minimum_radius_m: 0.5
+  minimum_usable_width_m: 0.7
+  maximum_curvature_rate_inv_m2: 2.0
+  footprint_margin_m: 0.02
+  minimum_nonlocal_boundary_gap_m: 0.1
+achieved:
+  length_m: 119.25236506712814
+  minimum_radius_m: 1.6050133317574902
+  minimum_width_m: 1.5
+  maximum_width_m: 1.5
+  mean_width_m: 1.5
+  sample_count: 1231
+files:
+  map: technical_d068602c89f9e25e1a361093.yaml
+  image: technical_d068602c89f9e25e1a361093.png
+  pgm: technical_d068602c89f9e25e1a361093.pgm
+  centerline: technical_d068602c89f9e25e1a361093_centerline.csv
+  walls: technical_d068602c89f9e25e1a361093_walls.csv
+  track_profile: technical_d068602c89f9e25e1a361093_track_profile.csv
+  metadata: technical_d068602c89f9e25e1a361093_metadata.json
