@@ -163,12 +163,22 @@ def _candidate_spec(dataset,slot,attempt,vehicle):
 
 def candidate_spec(dataset,slot,attempt,vehicle):
     from map_editor.geometry.validation import GeometryLimits
-    spec=_candidate_spec(dataset,slot,attempt,vehicle)
+    if dataset.design_version=='research_design.v2':
+        variant=(slot.design_seed+attempt-1)%3
+        spec=refined_spec(slot.family or 'composite',slot.scale,variant,
+            candidate_seed(dataset,slot,attempt),vehicle,complexity=slot.complexity)
+        spec=replace(spec,seed=candidate_seed(dataset,slot,attempt),attempt=attempt,
+            split=slot.split,slot_id=slot.slot_id,parent_lineage=slot.parent_lineage,
+            dataset_id=dataset.dataset_id)
+    else:spec=_candidate_spec(dataset,slot,attempt,vehicle)
     policy=dataset.objective_ranges
     minimum=dataset.specialist_exposure[slot.family] if slot.family else spec.minimum_target_exposure
+    # V2 retains Phase 5.1 specialist dominance independently of the stricter
+    # composite coverage contract. V1's original global policy is unchanged.
+    specialist_v2=dataset.design_version=='research_design.v2' and slot.family is not None
     return replace(spec,minimum_target_exposure=minimum,
-        minimum_primary_coverage=max(policy['minimum_primary_coverage'],minimum if slot.family else 0.),
-        maximum_supporting_fraction=min(policy['maximum_supporting_fraction'],1-minimum if slot.family else 1.),
+        minimum_primary_coverage=minimum if specialist_v2 else max(policy['minimum_primary_coverage'],minimum if slot.family else 0.,.6 if dataset.design_version=='research_design.v2' else 0.),
+        maximum_supporting_fraction=1-minimum if specialist_v2 else min(policy['maximum_supporting_fraction'],1-minimum if slot.family else 1.,.4 if dataset.design_version=='research_design.v2' else 1.),
         minimum_family_exposure=policy['minimum_composite_family_exposure'],maximum_family_exposure=policy['maximum_composite_family_exposure'],
         minimum_target_active_fraction=policy['minimum_target_active_fraction'],
         limits=GeometryLimits(minimum_usable_width_m=policy['minimum_usable_width_m'],maximum_curvature_rate_inv_m2=policy['maximum_curvature_rate_inv_m2']))
@@ -250,3 +260,122 @@ def experimental_spec(family,scale,variant,seed,vehicle,attempt=1):
         maximum_supporting_fraction=1-minimum,maximum_family_exposure=.85,
         connector_length_bounds_m=(1.2,target*.45),candidate_budget=3,
         width=WidthProfile.constant(1.5),seed=seed+1009*(attempt-1),attempt=attempt,dataset_id='phase5_1_pilot')
+
+
+def refined_spec(family,scale,variant,seed,vehicle,attempt=1,*,complexity=None):
+    """Explicit V2 physical-scale designs; bounded closure and V1 replay unchanged.
+
+    Counts, fixed useful features and solver gaps supply lap length. Full resolved
+    parameters, topology and design version are included in native recipe identity.
+    """
+    rng=random.Random(seed+1009*(attempt-1));ramp=.65
+    inventory=[];turns=[]
+    target={'short':132.,'medium':210.,'long':330.}[scale]
+    def bend(kind,angle,radius,end_radius=None):
+        p=dict(radius_m=radius,turn_angle_rad=math.radians(abs(angle)),
+            direction='left' if angle>0 else 'right',entry_transition_m=ramp,exit_transition_m=ramp)
+        if end_radius is not None:p['end_radius_m']=end_radius
+        inventory.append(ResearchFeature(f'{kind}_{len(inventory)+1}',kind,p))
+    def opposing(kind):
+        radius=rng.uniform(2.8,3.7) if kind=='chicane' else rng.uniform(4.,6.2)
+        angle=rng.uniform(.78,.92) if kind=='chicane' else rng.uniform(.85,1.35)
+        inventory.append(_opposing_feature(f'{kind}_{len(inventory)+1}',kind,radius,angle,ramp,
+            rng.choice(('left_right','right_left')),.25 if kind=='chicane' else 0.,rng.uniform(1.02,1.15)))
+    def primary_straight(length):
+        inventory.append(ResearchFeature(f'straight_{len(inventory)+1}','straight',dict(length_m=length)))
+    if family=='hairpin':
+        if variant==0:
+            n={'short':5,'medium':9,'long':15}[scale]
+            if scale=='short':target=138.
+            for i in range(n):
+                radius=rng.uniform(5.8,6.) if i in (0,n-1) else rng.uniform(5.3,5.6) if i==2 else rng.uniform(3.,3.7)
+                bend('hairpin',180 if i%2==0 else -180,radius)
+            turns=[SupportingTurn(1,(90.,90.),2.3,ramp),SupportingTurn(n-1,(90.,90.),8.,ramp)]
+            topology='unequal_folded_lanes'
+        else:
+            # Outward-facing pairs are grouped around three or four existing
+            # supporting bends. These replace the self-crossing two-bank and
+            # inward orthogonal-cluster proposals retained in pilot evidence.
+            clusters=4 if variant==1 else 3
+            per_cluster=2 if scale!='long' else 4
+            radius_range=(3.9,4.8) if scale!='long' else (4.3,5.4)
+            for cluster in range(clusters):
+                for i in range(per_cluster):
+                    bend('hairpin',-180 if i%2==0 else 180,rng.uniform(*radius_range))
+                turns.append(SupportingTurn(len(inventory)-1,(360/clusters,360/clusters),3.2,ramp))
+            topology='four_outward_switchback_clusters' if variant==1 else 'three_outward_switchback_clusters'
+    elif family=='sweeper':
+        # Signed orders are intentionally concave, never a regular positive ring.
+        angles=([110,-60,100,85,85] if variant%2==0 else [80,115,-70,120,115])
+        if scale=='short':angles=[95,-45,110,100,100]
+        if scale=='long':angles=angles+([-65,65] if variant%2==0 else [-50,75,-70,45])
+        for i,angle in enumerate(angles):
+            radius=rng.uniform(8.,14.5) if i%3 else rng.uniform(6.5,9.)
+            bend('sweeper',angle,radius,rng.uniform(7.,14.5) if i%2 else None)
+        target={'short':138.,'medium':170.,'long':285.}[scale]
+        # Add unequal opposing sustained bends until useful content covers scale.
+        while sum(r.build().length_m for r in inventory)<target*.57:
+            angle=rng.uniform(48.,72.)
+            bend('sweeper',-angle,rng.uniform(9.,14.5),rng.uniform(7.,13.))
+            bend('sweeper',angle,rng.uniform(8.,13.),rng.uniform(7.,14.5))
+        deficit=360-sum(angles)
+        if deficit:
+            turns=[SupportingTurn(i,(deficit/2-5,deficit/2+5),3.2,ramp) for i in (0,len(inventory)-1)]
+        topology='concave_sustained_sweepers' if variant%2==0 else 'variable_radius_sweeper_chain'
+    elif family in ('chicane','s_curve'):
+        n={'short':8,'medium':10,'long':18}[scale]
+        if family=='chicane' and scale=='short':target=110.
+        if family=='s_curve' and scale=='medium':target=165.
+        for _ in range(n):opposing(family)
+        turns=[SupportingTurn(i,(max(16.,360/n*.65),360/n*1.4),rng.uniform(2.4,3.2),ramp) for i in range(n)]
+        topology='unequal_opposing_maneuver_ring'
+    elif family=='straight':
+        n={'short':4,'medium':5,'long':6}[scale]
+        lengths=[rng.uniform(.8,1.2) for _ in range(n)]
+        for length in lengths:primary_straight(target*.74*length/sum(lengths))
+        turns=[SupportingTurn(i,(360/n*.75,360/n*1.25),2.4,ramp) for i in range(n)]
+        topology='long_runs_compact_connectors'
+    elif family=='composite':
+        complexity=complexity or (5,4,5)[variant]
+        target=({'short':138.,'medium':(170.,210.,245.)[variant],'long':330.})[scale]
+        cores=([('corner',85),('sweeper',105),('corner',-70),('corner',115),('corner',125)] if variant==0 else
+               [('corner',85),('hairpin',170),('corner',-65),('corner',95),('corner',75)] if variant==1 else
+               [('hairpin',170),('sweeper',100),('sweeper',90),('sweeper',80),('sweeper',-80)])
+        # Lower-complexity slots retain genuinely different primary families.
+        if complexity in (2,3):
+            cores=[('sweeper' if complexity==3 and i==1 else 'corner',a)
+                for i,a in enumerate((85,105,-70,115,125))]
+        for i,(kind,angle) in enumerate(cores):
+            if kind=='corner':
+                inventory.append(ResearchFeature(f'corner_{len(inventory)+1}','corner',dict(radius_m=rng.uniform(2.5,3.8),
+                    turn_angle_deg=abs(angle),direction='left' if angle>0 else 'right',transition_m=ramp)))
+            else:bend(kind,angle,rng.uniform(3.5,5.) if kind=='hairpin' else rng.uniform(7.,12.))
+            if complexity>=4 and i in (0,2,4):opposing('s_curve' if variant==1 else 'chicane')
+            if complexity==5 and i in (1,3):opposing('s_curve' if variant!=1 else 'chicane')
+            if variant==1 and complexity>=4 and i in (0,3):opposing('s_curve')
+            if variant==2 and complexity==5 and i in (0,2):opposing('s_curve')
+            if i in (1,4):primary_straight(rng.uniform(8.,16.) if scale=='short' else rng.uniform(14.,25.))
+        # Scale with additional useful zero-net-heading maneuvers, never radii.
+        if scale=='long':
+            for kind in (('s_curve','chicane') if complexity==5 else ('s_curve',) if variant==1 and complexity>=4 else ('chicane',) if complexity>=4 else ()):
+                opposing(kind)
+        if complexity in (2,3):
+            # Same physical corner vocabulary at every scale; repetitions add
+            # content to longer slots without turning technical corners into ovals.
+            while sum(r.build().length_m for r in inventory)<target*.64:
+                angle=rng.uniform(55.,100.);radius=rng.uniform(2.8,3.8)
+                for direction in ('left','right'):
+                    inventory.append(ResearchFeature(f'corner_{len(inventory)+1}','corner',
+                        dict(radius_m=radius,turn_angle_deg=angle,direction=direction,transition_m=ramp)))
+        topology=('technical_flow_mix','hairpin_opposing_mix','five_family_irregular_chain')[variant] if complexity>=4 else 'technical_flow_mix'
+    else:raise ValueError('Unsupported V2 family')
+    minimum=.6 if family=='composite' else .5
+    return ResearchSpec(tuple(inventory),vehicle,(LayoutTopology(topology,tuple(range(len(inventory))),tuple(turns)),),
+        target,SCALES[scale],'train',f'phase5_2_{family}_{variant+1:02d}',f'research_design.v2:{family}:{scale}:{variant}:{seed}',
+        topology,generation_mode='composite' if family=='composite' else 'specialist',
+        target_family=None if family=='composite' else family,minimum_target_exposure=minimum,
+        expected_primary_families=len({r.family for r in inventory}),minimum_primary_coverage=minimum,
+        maximum_supporting_fraction=1-minimum,maximum_family_exposure=.78,
+        connector_length_bounds_m=(1.2,target*.4),candidate_budget=3,
+        width=WidthProfile.constant(1.5),seed=seed+1009*(attempt-1),attempt=attempt,
+        dataset_id='phase5_2_pilot',design_version='research_design.v2')

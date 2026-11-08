@@ -291,3 +291,71 @@ def test_experimental_tuning_preserves_formal_design_native_requests(spec,master
         requested=candidate_spec(spec,slots[entry['slot_id']],entry['attempt'],vehicle)
         saved=load_research_spec(DATA/entry['recipe'])
         assert requested.configuration_id==saved.configuration_id
+
+
+def test_v2_opt_in_contract_and_allocation_roundtrip(tmp_path,vehicle):
+    v1=default_dataset_spec();v2=default_dataset_spec(design_version='research_design.v2')
+    assert v1.design_version=='research_design.v1' and v1.dataset_id=='phase5_research_v1'
+    assert v2.dataset_id=='phase5_v2' and v2.identity!=v1.identity
+    assert v1.policy==v2.policy and v1.objective_ranges==v2.objective_ranges
+    assert [(s.slot_id,s.split,s.scale,s.generation_mode,s.complexity) for s in v1.slots]==[
+        (s.slot_id,s.split,s.scale,s.generation_mode,s.complexity) for s in v2.slots]
+    assert not set(s.parent_lineage for s in v1.slots)&set(s.parent_lineage for s in v2.slots)
+    recipe=tmp_path/'dataset.json';recipe.write_text(json.dumps(v2.recipe()))
+    assert load_dataset_spec(recipe).identity==v2.identity
+    for slot in v2.slots:
+        spec=candidate_spec(v2,slot,1,vehicle)
+        assert spec.recipe()==candidate_spec(v2,slot,1,vehicle).recipe()
+        assert spec.configuration_id==spec_from_recipe(spec.recipe()).configuration_id
+        assert spec.recipe()['design_version']=='research_design.v2'
+        assert (spec.split,spec.parent_lineage,spec.slot_id,spec.seed)==(
+            slot.split,slot.parent_lineage,slot.slot_id,candidate_seed(v2,slot,1))
+        assert spec.expected_primary_families==(slot.complexity or 1)
+        if slot.complexity:
+            assert spec.minimum_primary_coverage>=.6 and spec.maximum_supporting_fraction<=.4
+        else:
+            assert spec.minimum_target_exposure==.5 and spec.minimum_primary_coverage==.5
+        assert spec.limits.minimum_usable_width_m==.7
+        assert spec.limits.maximum_curvature_rate_inv_m2==2.
+
+
+@pytest.mark.parametrize('family,scale,variant',[
+    ('hairpin','short',0),('hairpin','medium',1),('hairpin','long',2),
+    ('sweeper','medium',0),('sweeper','long',1),('chicane','short',0),
+    ('s_curve','medium',0),('composite','medium',0),('composite','medium',1),('composite','long',2)])
+def test_v2_physical_ranges_and_resolved_design(family,scale,variant,vehicle):
+    from map_editor.services.research_design import refined_spec
+    spec=refined_spec(family,scale,variant,52000,vehicle)
+    assert spec.recipe()==refined_spec(family,scale,variant,52000,vehicle).recipe()
+    assert spec.assembly_method=='bounded_supporting_turns.v1'
+    assert spec_from_recipe(spec.recipe()).configuration_id==spec.configuration_id
+    for r in spec.inventory:
+        p=r.parameters
+        if r.family=='hairpin':
+            assert 3<=p['radius_m']<=6 and math.radians(160)<=p['turn_angle_rad']<=math.radians(190)
+        elif r.family=='sweeper':
+            assert all(6<=v<=15 for v in (p['radius_m'],p.get('end_radius_m') or p['radius_m']))
+            assert math.radians(45)<=p['turn_angle_rad']<=math.radians(120)
+        elif r.family=='chicane':
+            assert 2<=p['radius_m']<=5 and 1.5<=p['lateral_displacement_m']<=4
+            assert p['separation_m']<=.5
+        elif r.family=='s_curve':
+            assert all(3<=v<=8 for v in p['radii_m'])
+            assert math.radians(45)<=p['turn_angle_rad']<=math.radians(90)
+    if family=='hairpin':assert {r.parameters['direction'] for r in spec.inventory}=={'left','right'}
+    if family=='composite':
+        assert spec.minimum_primary_coverage==.6 and spec.maximum_supporting_fraction==.4
+        assert sum(r.build().length_m for r in spec.inventory)/spec.target_lap_length_m>=.6
+
+
+def test_v2_rejects_unknown_versions_and_retains_v1_recipe_bytes(vehicle):
+    from map_editor.services.research_design import refined_spec
+    v2=default_dataset_spec(design_version='research_design.v2')
+    with pytest.raises(GeometryError,match='design version'):replace(v2,design_version='research_design.v3')
+    native=refined_spec('hairpin','short',0,52000,vehicle)
+    with pytest.raises(GeometryError,match='design version'):replace(native,design_version='research_design.v3')
+    assert 'design_version' not in replace(native,design_version='research_design.v1').recipe()
+    slot=next(s for s in v2.slots if s.family=='hairpin')
+    attempts=[candidate_spec(v2,slot,a,vehicle) for a in range(1,4)]
+    assert len({s.topology_family for s in attempts})==3
+    assert len({s.seed for s in attempts})==3

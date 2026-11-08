@@ -71,9 +71,11 @@ class ResearchSpec:
     assembly_method: str='bounded_supporting_turns.v1'
     support_gap_m: float=.3
     minimum_target_active_fraction: float=.5
+    design_version: str='research_design.v1'
 
     def __post_init__(self):
         object.__setattr__(self,'inventory',tuple(self.inventory));object.__setattr__(self,'topologies',tuple(self.topologies))
+        if self.design_version not in ('research_design.v1','research_design.v2'):raise GeometryError('Unsupported research design version')
         if not 2<=len(self.inventory)<=40 or len({r.name for r in self.inventory})!=len(self.inventory):raise GeometryError('Research inventory requires 2..40 named features')
         if self.generation_mode not in ('specialist','composite') or self.split not in ('train','validation','test'):raise GeometryError('Explicit research intent and split required')
         if self.template_version!=TEMPLATE_VERSION or self.layout_version!='bounded_supporting_turns.v1':raise GeometryError('Unsupported research template/layout version')
@@ -95,7 +97,11 @@ class ResearchSpec:
         if set(self.objectives)-METRICS:raise GeometryError('Unknown geometric objective')
         for key,value in self.objectives.items():bounds(value,key)
 
-    def recipe(self):return dict(schema_version=1,generator=GENERATOR_VERSION,**asdict(self))
+    def recipe(self):
+        data=asdict(self)
+        # The absent V1 key is part of the frozen native identity/byte contract.
+        if self.design_version=='research_design.v1':data.pop('design_version')
+        return dict(schema_version=1,generator=GENERATOR_VERSION,**data)
     @property
     def configuration_id(self):return canonical_hash(self.recipe())
     @property

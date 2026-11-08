@@ -43,7 +43,7 @@ class DatasetSpec:
         if type(self.root_seed) is not int or self.root_seed<0 or type(self.max_attempts) is not int or not 1<=self.max_attempts<=30:raise GeometryError('Invalid dataset seed or bounded attempt count')
         verify_allocation(self.slots)
         if set(self.specialist_exposure)!=set(FAMILIES) or any(not .5<=v<=1 for v in self.specialist_exposure.values()):raise GeometryError('Invalid specialist exposure specification')
-        if self.native_generator!='map_editor.research_tracks.v1' or self.design_version!='research_design.v1':raise GeometryError('Unsupported dataset/native design version')
+        if self.native_generator!='map_editor.research_tracks.v1' or self.design_version not in ('research_design.v1','research_design.v2'):raise GeometryError('Unsupported dataset/native design version')
         required={'version','normalized_shape_threshold','relative_length_threshold','relative_radius_threshold','family_exposure_l1_threshold',
             'ambiguous_shape_threshold','ambiguous_relative_length_threshold','ambiguous_relative_curvature_threshold','ambiguous_family_exposure_l1_threshold'}
         if set(self.policy)!=required or self.policy['version']!='development_screen.v1':raise GeometryError('Unsupported independence policy')
@@ -92,7 +92,7 @@ def verify_allocation(slots):
            (s.generation_mode=='composite' and s.family is not None) for s in slots):raise GeometryError('Allocation mode/family intent mismatch')
 
 
-def default_dataset_spec(root_seed=20261108,max_attempts=24):
+def default_dataset_spec(root_seed=20261108,max_attempts=24,*,design_version='research_design.v1'):
     slots=[]
     # Joint allocation is frozen before any final candidate is constructed.
     specialist_scales={
@@ -110,7 +110,12 @@ def default_dataset_spec(root_seed=20261108,max_attempts=24):
             complexity=[2,3,4,3,2,5,3,2,4,3,5,2,3,4,3,2,5,3,2,3][i] if split=='train' else ([2,3,5][i] if split=='validation' else [2,3,4,5,2,3,5][i])
             slot=f'{split}_composite_{i+1:02d}';seed=int(canonical_hash(dict(root=root_seed,slot=slot))[:15],16)
             slots.append(DatasetSlot(slot,split,'composite',None,complexity,scale,seed,'lineage_'+canonical_hash(dict(scaffold_seed=seed,slot=slot))[:24]))
-    return DatasetSpec(tuple(slots),root_seed,max_attempts)
+    spec=DatasetSpec(tuple(slots),root_seed,max_attempts,design_version=design_version)
+    if design_version=='research_design.v2':
+        from dataclasses import replace
+        spec=replace(spec,dataset_id='phase5_v2',specialist_exposure={f:.5 for f in FAMILIES},
+            slots=tuple(replace(s,parent_lineage='research_design.v2:'+s.parent_lineage) for s in spec.slots))
+    return spec
 
 
 def load_dataset_spec(path):
