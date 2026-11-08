@@ -172,3 +172,81 @@ def candidate_spec(dataset,slot,attempt,vehicle):
         minimum_family_exposure=policy['minimum_composite_family_exposure'],maximum_family_exposure=policy['maximum_composite_family_exposure'],
         minimum_target_active_fraction=policy['minimum_target_active_fraction'],
         limits=GeometryLimits(minimum_usable_width_m=policy['minimum_usable_width_m'],maximum_curvature_rate_inv_m2=policy['maximum_curvature_rate_inv_m2']))
+
+
+def experimental_spec(family,scale,variant,seed,vehicle,attempt=1):
+    """Opt-in Phase 5.1 tuning; fully resolved native recipes keep v1 replay.
+
+    Radii never depend on target lap length. Counts and supporting gaps provide
+    scale; the frozen formal dataset design above deliberately stays unchanged.
+    """
+    rng=random.Random(seed+1009*(attempt-1));ramp=.65
+    inventory=[];turns=[]
+    def bend(kind,angle,radius):
+        inventory.append(ResearchFeature(f'{kind}_{len(inventory)+1}',kind,
+            dict(radius_m=radius,turn_angle_rad=math.radians(abs(angle)),
+                 direction='left' if angle>0 else 'right',
+                 entry_transition_m=ramp,exit_transition_m=ramp)))
+    def opposing(kind):
+        radius=rng.uniform(2.8,4.) if kind=='chicane' else rng.uniform(4.5,6.5)
+        angle=rng.uniform(.8,1.05) if kind=='chicane' else rng.uniform(.95,1.35)
+        inventory.append(_opposing_feature(f'{kind}_{len(inventory)+1}',kind,radius,angle,ramp,
+            rng.choice(('left_right','right_left')),.25 if kind=='chicane' else 0.,rng.uniform(1.02,1.18)))
+    if family=='hairpin':
+        n={'short':5,'medium':9,'long':15}[scale]
+        target={'short':138.,'medium':210.,'long':340.}[scale]
+        # A folded lane sequence, with two outer supporting bends. Alternating
+        # signs create real U-turn practice instead of two enlarged oval ends.
+        angle=180.
+        for i in range(n):bend('hairpin',angle if i%2==0 else -angle,
+            rng.uniform(5.8,6.) if i in (0,n-1) else rng.uniform(5.3,5.6) if i==2 else rng.uniform(3.,3.7))
+        turns=[SupportingTurn(1,(90.,90.),2.3,ramp),SupportingTurn(n-1,(90.,90.),8.,ramp)]
+        minimum=.50
+    elif family=='sweeper':
+        angles=[110,-60,100,85,85]
+        target=170. if scale=='medium' else 265.
+        for angle in angles:bend('sweeper',angle,rng.uniform(10.,14.5))
+        if scale=='long':
+            for _ in range(2):
+                # Opposing sustained bends add practice without adding a net
+                # revolution or enlarging the original bend radii.
+                bend('sweeper',-55,rng.uniform(10.,14.5));bend('sweeper',55,rng.uniform(10.,14.5))
+        deficit=360-sum(angles)
+        turns=[SupportingTurn(i,(deficit/2-6,deficit/2+6),3.2,ramp) for i in (0,len(inventory)-1)]
+        minimum=.50
+    elif family in ('chicane','s_curve'):
+        n=8;target=110. if family=='chicane' else 165.
+        for _ in range(n):opposing(family)
+        turns=[SupportingTurn(i,(28.,65.),rng.uniform(2.4,3.2),ramp) for i in range(n)]
+        minimum=.50
+    elif family=='composite':
+        target=(145.,245.,270.)[variant]
+        # Unequal headings, concave corners and mixed ordering, without rotated
+        # blocks. Each tuple is an independently requested primary maneuver.
+        cores=[ [('corner',85),('sweeper',105),('corner',-70),('corner',115),('corner',125)],
+                [('corner',85),('hairpin',170),('corner',-65),('corner',95),('corner',75)],
+                [('hairpin',170),('sweeper',100),('sweeper',90),('sweeper',80),('sweeper',-80)] ][variant]
+        for i,(kind,angle) in enumerate(cores):
+            if kind=='corner':
+                inventory.append(ResearchFeature(f'corner_{i}','corner',dict(radius_m=rng.uniform(2.3,3.8),
+                    turn_angle_deg=abs(angle),direction='left' if angle>0 else 'right',transition_m=ramp)))
+            else:bend(kind,angle,rng.uniform(3.,5.) if kind=='hairpin' else rng.uniform(7.,12.))
+            if (i+variant)%2==0:opposing('s_curve' if variant==1 or i%2 else 'chicane')
+            if i in (1,4):
+                inventory.append(ResearchFeature(f'straight_{i}','straight',
+                    dict(length_m=rng.uniform(*( (8.,18.) if variant==0 else (14.,28.) )))))
+        if variant==2:opposing('s_curve')
+        minimum=.40
+    else:raise ValueError('Unsupported experimental pilot family')
+    count=len(inventory);order=tuple(range(count))
+    # The folded switchback ordering is intentional; random reorderings destroy
+    # its lane progression. The mixed inventories already vary ordering.
+    topologies=(LayoutTopology('phase5_1_'+family,order,tuple(turns)),)
+    return ResearchSpec(tuple(inventory),vehicle,topologies,target,SCALES[scale],
+        'train',f'phase5_1_{family}_{variant+1:02d}',f'phase5_1_{family}_{variant}_{seed}',
+        'experimental_'+family,generation_mode='composite' if family=='composite' else 'specialist',
+        target_family=None if family=='composite' else family,minimum_target_exposure=minimum,
+        expected_primary_families=len({r.family for r in inventory}),minimum_primary_coverage=minimum,
+        maximum_supporting_fraction=1-minimum,maximum_family_exposure=.85,
+        connector_length_bounds_m=(1.2,target*.45),candidate_budget=3,
+        width=WidthProfile.constant(1.5),seed=seed+1009*(attempt-1),attempt=attempt,dataset_id='phase5_1_pilot')

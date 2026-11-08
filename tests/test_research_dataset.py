@@ -259,3 +259,35 @@ publish_research(load_research_spec(sys.argv[1]),sys.argv[2])
     metadata=json.loads((DATA/entry['metadata']).read_text())
     for name in [*metadata['artifacts'].values(),entry['track_id']+'_evaluation.csv']:
         assert ((DATA/entry['map']).parent/name).read_bytes()==(out/name).read_bytes(),name
+
+
+@pytest.mark.parametrize('family,scale,variant',[
+    ('hairpin','short',0),('hairpin','medium',1),('hairpin','long',2),
+    ('sweeper','medium',0),('sweeper','long',1),('chicane','short',0),
+    ('s_curve','medium',0),('composite','medium',0),('composite','medium',1),('composite','long',2)])
+def test_experimental_parameters_keep_physical_radii(family,scale,variant):
+    from map_editor.services.research_design import experimental_spec
+    vehicle=load_vehicle_snapshot(EVIDENCE['snapshot'])
+    spec=experimental_spec(family,scale,variant,51000,vehicle)
+    assert spec.recipe()==experimental_spec(family,scale,variant,51000,vehicle).recipe()
+    assert spec.assembly_method=='bounded_supporting_turns.v1'
+    assert spec.limits.minimum_usable_width_m==.7
+    assert spec.limits.maximum_curvature_rate_inv_m2==2.
+    if family=='hairpin':
+        assert len(spec.inventory)==dict(short=5,medium=9,long=15)[scale]
+        assert {r.parameters['direction'] for r in spec.inventory}=={'left','right'}
+        assert all(3<=r.parameters['radius_m']<=6 for r in spec.inventory)
+    elif family=='sweeper':
+        assert len(spec.inventory)==(5 if scale=='medium' else 9)
+        assert all(6<=r.parameters['radius_m']<=15 for r in spec.inventory)
+    if family!='composite':
+        assert spec.minimum_target_exposure==.5
+        assert {r.family for r in spec.inventory}=={family}
+
+
+def test_experimental_tuning_preserves_formal_design_native_requests(spec,master):
+    vehicle=load_vehicle_snapshot(EVIDENCE['snapshot']);slots={s.slot_id:s for s in spec.slots}
+    for entry in master['accepted']:
+        requested=candidate_spec(spec,slots[entry['slot_id']],entry['attempt'],vehicle)
+        saved=load_research_spec(DATA/entry['recipe'])
+        assert requested.configuration_id==saved.configuration_id

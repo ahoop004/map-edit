@@ -1,0 +1,191 @@
+schema_version: 1
+generator: map_editor.research_tracks.v1
+inventory:
+- name: hairpin_1
+  family: hairpin
+  parameters:
+    radius_m: 3.393916424459845
+    turn_angle_rad: 2.9670597283903604
+    direction: left
+    entry_transition_m: 0.65
+    exit_transition_m: 0.65
+  straight_after_m: 0.0
+- name: chicane_2
+  family: chicane
+  parameters:
+    radius_m: 3.6957982000442353
+    lateral_displacement_m: 2.9929910401956494
+    separation_m: 0.25
+    transition_length_m: 0.65
+    direction: right_left
+  straight_after_m: 0.0
+- name: sweeper_3
+  family: sweeper
+  parameters:
+    radius_m: 10.330088578951834
+    turn_angle_rad: 1.7453292519943295
+    direction: left
+    entry_transition_m: 0.65
+    exit_transition_m: 0.65
+  straight_after_m: 0.0
+- name: straight_1
+  family: straight
+  parameters:
+    length_m: 22.572022328392407
+  straight_after_m: 0.0
+- name: sweeper_5
+  family: sweeper
+  parameters:
+    radius_m: 11.1571995277926
+    turn_angle_rad: 1.5707963267948966
+    direction: left
+    entry_transition_m: 0.65
+    exit_transition_m: 0.65
+  straight_after_m: 0.0
+- name: chicane_6
+  family: chicane
+  parameters:
+    radius_m: 3.165673072881607
+    lateral_displacement_m: 2.835691582902573
+    separation_m: 0.25
+    transition_length_m: 0.65
+    direction: left_right
+  straight_after_m: 0.0
+- name: sweeper_7
+  family: sweeper
+  parameters:
+    radius_m: 8.692730127294318
+    turn_angle_rad: 1.3962634015954636
+    direction: left
+    entry_transition_m: 0.65
+    exit_transition_m: 0.65
+  straight_after_m: 0.0
+- name: sweeper_8
+  family: sweeper
+  parameters:
+    radius_m: 8.809124684639142
+    turn_angle_rad: 1.3962634015954636
+    direction: right
+    entry_transition_m: 0.65
+    exit_transition_m: 0.65
+  straight_after_m: 0.0
+- name: chicane_9
+  family: chicane
+  parameters:
+    radius_m: 3.870634006716691
+    lateral_displacement_m: 4.0489183361896215
+    separation_m: 0.25
+    transition_length_m: 0.65
+    direction: right_left
+  straight_after_m: 0.0
+- name: straight_4
+  family: straight
+  parameters:
+    length_m: 15.289103179991763
+  straight_after_m: 0.0
+- name: s_curve_11
+  family: s_curve
+  parameters:
+    radii_m:
+    - 6.344900700943412
+    - 7.003179453135789
+    turn_angle_rad: 1.0534043257929846
+    transition_length_m: 0.65
+    direction: right_left
+  straight_after_m: 0.0
+vehicle:
+  length_m: 0.5
+  width_m: 0.27
+  lf_m: 0.15875
+  lr_m: 0.17145
+  steering_min_rad: -0.523599
+  steering_max_rad: 0.523599
+  steering_rate_min_rad_s: -3.2
+  steering_rate_max_rad_s: 3.2
+  source: combined_slip.yaml
+  source_sha256: fb8bab7a7c49cb913c6adafbec84d4560e02d927087ff61956be0145f6288016
+  calibration_status: uncalibrated
+topologies:
+- name: phase5_1_composite
+  order:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  turns: []
+target_lap_length_m: 270.0
+lap_length_range_m:
+- 260.0
+- 450.0
+split: train
+slot_id: phase5_1_composite_03
+parent_lineage: phase5_1_composite_2_51009
+topology_family: experimental_composite
+generation_mode: composite
+target_family: null
+minimum_target_exposure: 0.4
+expected_primary_families: 5
+minimum_family_exposure: 0.025
+maximum_family_exposure: 0.85
+connector_length_bounds_m:
+- 1.2
+- 121.5
+width:
+  left:
+  - - 0.0
+    - 0.75
+  - - 1.0
+    - 0.75
+  right:
+  - - 0.0
+    - 0.75
+  - - 1.0
+    - 0.75
+  maximum_gradient: 0.12
+candidate_budget: 3
+optimization_iterations: 80
+spacing_m: 0.12
+resolution_m_per_pixel: 0.06
+padding_m: 1.0
+seam_offset_m: 1.7
+maximum_supporting_fraction: 0.6
+minimum_primary_coverage: 0.4
+minimum_useful_corner_m: 0.6
+maximum_offset_curvature: 0.95
+objectives: {}
+limits:
+  minimum_radius_m: 0.5
+  minimum_usable_width_m: 0.7
+  maximum_curvature_rate_inv_m2: 2.0
+  footprint_margin_m: 0.02
+  minimum_nonlocal_boundary_gap_m: 0.1
+seed: 51009
+attempt: 1
+dataset_id: phase5_1_pilot
+template_version: scaled_maneuver_inventory.v1
+layout_version: bounded_supporting_turns.v1
+assembly_method: bounded_supporting_turns.v1
+support_gap_m: 0.3
+minimum_target_active_fraction: 0.5
+achieved:
+  length_m: 269.9981765438916
+  minimum_radius_m: 3.1648746872043225
+  minimum_width_m: 1.499998745857738
+  maximum_width_m: 1.5000013235029865
+  mean_width_m: 1.5000001292234149
+  sample_count: 2280
+files:
+  map: research_0126dcbd6161df6be22ea19a.yaml
+  image: research_0126dcbd6161df6be22ea19a.png
+  pgm: research_0126dcbd6161df6be22ea19a.pgm
+  centerline: research_0126dcbd6161df6be22ea19a_centerline.csv
+  walls: research_0126dcbd6161df6be22ea19a_walls.csv
+  track_profile: research_0126dcbd6161df6be22ea19a_track_profile.csv
+  metadata: research_0126dcbd6161df6be22ea19a_metadata.json

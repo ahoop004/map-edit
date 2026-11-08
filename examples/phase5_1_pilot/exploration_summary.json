@@ -1,0 +1,38 @@
+{
+  "preliminary_requests": 45,
+  "geometry_passes_not_published": 16,
+  "rejected": 29,
+  "stages": [
+    {
+      "stage": "initial parameter probe",
+      "requests": 10,
+      "passed": 4,
+      "rejected": 6
+    },
+    {
+      "stage": "count and connector adjustment",
+      "requests": 10,
+      "passed": 5,
+      "rejected": 5
+    },
+    {
+      "stage": "outer-return adjustment",
+      "requests": 10,
+      "passed": 5,
+      "rejected": 5
+    },
+    {
+      "stage": "bounded layout probes",
+      "requests": 15,
+      "passed": 2,
+      "rejected": 13
+    }
+  ],
+  "reasons": [
+    "bounded closure failure",
+    "centerline self-intersection",
+    "wall self-intersection",
+    "primary coverage/supporting-fraction objective failure"
+  ],
+  "note": "Preliminary successful preparations are not additional dataset tracks. Initial probe stdout was retained in the session; later structured evidence remains under generated_maps/phase5_1_work. Formal Phase 5 release untouched."
+}

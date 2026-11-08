@@ -1,0 +1,67 @@
+Phase 5.1 pilot: 10/10 accepted. No formal dataset regeneration.
+
+Gallery: plots/overview.png (111 m x 111 m metric axes in all panels).
+Before/after: plots/original_comparison.png; original_comparison.json.
+Individual previews: plots/<name>.png and tracks/<name>/*_preview.png.
+All metrics: comparison.csv and comparison.json; full requests/rejections: manifest.json.
+
+Name             Lap m  Target windows  Radius range m  p95 |k|  Exposure  Active  Significant turns
+hairpin_01         138        5       3.11- 5.89       0.324    56.9%   69.6%     6
+hairpin_02         210        9       3.14- 6.00       0.320    58.1%   66.4%     10
+hairpin_03         340       15       3.03- 5.86       0.332    54.9%   60.0%     16
+sweeper_01         170        5       11.96-13.53       0.084    57.5%   59.6%     5
+sweeper_02         265        9       10.51-14.47       0.088    59.2%   60.5%     9
+chicane_01         110        8       3.01- 3.55       0.354    55.5%   73.9%     20
+s_curve_01         165        8       4.55- 6.47       0.330    64.9%   78.4%     21
+composite_01       145       10       2.42- 7.22       0.339    mixed   39.3%     11
+composite_02       245        9       2.38- 6.35       0.290    mixed   25.7%     9
+composite_03       270       11       3.17-11.16       0.272    mixed   41.3%     13
+
+Counts: 10 published tracks; 5 rejected pilot candidates. The compact first composite was
+recovered in a second tuning pass by restoring its short straight range; its four earlier
+rejections remain explicitly marked tuning_pass=1. Earlier development probes: 45 requests,
+16 valid preparations (not published), 29 rejected. Including development: 60 preparations,
+26 valid (10 published), 34 rejected. Failed geometry was never published as accepted.
+
+Parameter changes (opt-in only):
+- Hairpin radii 3-6 m, 180-degree left/right switchbacks, counts 5/9/15; two outer
+  supporting quarter-turns and a wider first fold provide clearance around the return.
+- Sweeper radii 10-14.5 m, signed 55-110-degree bends, counts 5/9 with straight gaps.
+- Chicanes: radius 2.8-4 m, opposing 0.8-1.05 rad turns and 0.25 m separation.
+- S-curves: initial radius 4.5-6.5 m, opposing 0.95-1.35 rad turns; second radius
+  independently differs by a 1.02-1.18 ratio. Eight target windows each.
+- Composites: unequal corner/turn inventories, concave turns, 2.3-3.8 m technical
+  corners, short fixed straights and asymmetric closure. No repeated halfturn blocks.
+- Specialist exposure floors reduced to 50%; primary active-window floor remains 50%.
+  Composite primary-coverage floor 40%. Geometric safety limits are unchanged.
+
+Representative originals versus pilot (same axes; lengths are shown, not all matched):
+- Hairpin: 209 m, two 29.34-30.00 m-radius ends -> 210 m, nine 3.14-6.00 m U-turns;
+  p95 curvature 0.034 -> 0.320 /m. Exposure falls 77.2% -> 58.1%, frequency rises
+  0.96 -> 4.29 hairpins/100 m. This is the clearest improvement.
+- Sweeper: 182 m, six 24.14-33.12 m bends -> 170 m, five 11.96-13.53 m bends;
+  p95 curvature 0.041 -> 0.084 /m, with separate sustained corners and a concavity.
+- Chicane: five 12.10-17.16 m-radius windows at 177 m -> eight 3.01-3.55 m windows
+  at 110 m. S-curve: four 11.09-15.08 m windows at 156 m -> eight 4.55-6.47 m
+  windows at 165 m. Family radii improve more clearly than whole-lap p95, which
+  also includes tight supporting bends.
+- Composites show distinct tight/flowing sections and concave ordering. They are not
+  uniformly more severe: representative original p95 0.413 /m versus pilot 0.272-0.339.
+
+Validation: existing source closure/G2, maneuver classification, radius/rate, intersections,
+width, vehicle footprint and raster checks pass all ten. Native reload/export compares
+100 artifacts byte-for-byte; their recorded artifact checksums also verify.
+Targeted tests: 11 passed, 48 deselected in 3.49 s. Includes matching all 60 original
+formal candidate recipe identities, without regeneration or a full-dataset audit.
+
+Files changed: src/map_editor/services/research_design.py (additive opt-in function);
+scripts/generate_research_tuning_pilot.py (new); tests/test_research_dataset.py.
+Generated artifacts are only in generated_maps/phase5_1_pilot and phase5_1_work.
+
+Limitations: hairpins still share a folded-lane template; chicane/S-curve scaffolds remain
+ring-like; sweeper specialization and composite severity improve unevenly. The 245 m
+composite has 59% supporting geometry and 26% active curvature. Widths are uniformly
+1.5 m. This is a visual geometry pilot, not a new screened independent research dataset.
+Clearance is sampled, physical drivability unassessed, difficulty unrated. No simulator,
+controller, training, full suite, profiling, formal release changes, commit or push.
+Stopped after this pilot.
